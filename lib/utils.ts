@@ -132,7 +132,10 @@ async function compressImage(file: File, maxSizeMB: number = MAX_FILE_SIZE_MB): 
       const tryCompress = () => {
         canvas.toBlob(
           (blob) => {
-            if (!blob) { resolve(file); return; }
+            if (!blob) {
+              resolve(file);
+              return;
+            }
             if (blob.size > maxSizeMB * 1024 * 1024 && quality > 0.3) {
               quality -= 0.1;
               tryCompress();
@@ -141,7 +144,7 @@ async function compressImage(file: File, maxSizeMB: number = MAX_FILE_SIZE_MB): 
             }
           },
           "image/jpeg",
-          quality
+          quality,
         );
       };
       tryCompress();
@@ -155,18 +158,18 @@ async function compressImage(file: File, maxSizeMB: number = MAX_FILE_SIZE_MB): 
  * Agent 专用图片压缩（更激进：最大 2MB，最大边 1600px）
  */
 export async function compressImageForAgent(file: File): Promise<File> {
-  const MAX_AGENT_SIZE = 2 * 1024 * 1024; // 2MB
-  if (file.size <= MAX_AGENT_SIZE) return file;
+  const maxAgentSize = 2 * 1024 * 1024;
+  if (file.size <= maxAgentSize) return file;
 
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement("canvas");
       let { width, height } = img;
-      const MAX_EDGE = 1600;
+      const maxEdge = 1600;
 
-      if (width > MAX_EDGE || height > MAX_EDGE) {
-        const scale = MAX_EDGE / Math.max(width, height);
+      if (width > maxEdge || height > maxEdge) {
+        const scale = maxEdge / Math.max(width, height);
         width = Math.round(width * scale);
         height = Math.round(height * scale);
       }
@@ -185,7 +188,7 @@ export async function compressImageForAgent(file: File): Promise<File> {
           }
         },
         "image/jpeg",
-        0.82
+        0.82,
       );
     };
     img.onerror = () => resolve(file);

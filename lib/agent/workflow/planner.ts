@@ -16,6 +16,7 @@ export type PlannerRequest = {
   images: WorkflowInputImage[];
   mode: WorkflowMode;
   defaults: GenerationDefaults;
+  fallbackStrategy?: "deterministic" | "clarify";
   conversationSummary?: string;
   activeWorkflowSummary?: string;
   userPreferences?: Record<string, unknown>;
@@ -32,6 +33,10 @@ export async function planWorkflow(request: PlannerRequest): Promise<WorkflowPla
 
   const llmPlan = await callPlannerModel(request).catch(() => null);
   const normalized = llmPlan ? normalizePlannerOutput(llmPlan, request) : null;
+  if (request.fallbackStrategy === "clarify") {
+    return normalized || buildClarificationPlan("我需要再确认一下你的目标和图片关系，才能安全创建生成工作流。");
+  }
+
   const fallback = buildFallbackPlan(request);
   if (normalized) {
     if (shouldPreferFallbackPlan(normalized, fallback, request)) return fallback;

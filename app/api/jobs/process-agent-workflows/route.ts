@@ -18,7 +18,9 @@ async function handleProcessRequest(request: NextRequest) {
   if (authError) return authError;
 
   try {
-    const result = await runNextAgentWorkflows(getBatchLimit(request));
+    const result = await runNextAgentWorkflows(getBatchLimit(request), {
+      staleAfterMinutes: getStaleAfterMinutes(request),
+    });
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {
     console.error("[jobs] process-agent-workflows failed:", err);
@@ -46,4 +48,11 @@ function getBatchLimit(request: NextRequest) {
   const parsed = Number(rawLimit || 2);
   if (!Number.isFinite(parsed)) return 2;
   return Math.min(Math.max(Math.floor(parsed), 1), 10);
+}
+
+function getStaleAfterMinutes(request: NextRequest) {
+  const raw = request.nextUrl.searchParams.get("staleAfterMinutes") || process.env.AGENT_WORKFLOW_STALE_AFTER_MINUTES;
+  const parsed = Number(raw || 10);
+  if (!Number.isFinite(parsed)) return 10;
+  return Math.min(Math.max(Math.floor(parsed), 1), 120);
 }

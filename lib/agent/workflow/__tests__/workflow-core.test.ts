@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { estimateWorkflowCost } from "@/lib/agent/workflow/cost";
 import { planWorkflow } from "@/lib/agent/workflow/planner";
+import { normalizeGenerationDefaults } from "@/lib/agent/workflow/request";
 import { WORKFLOW_TOOLS } from "@/lib/agent/workflow/tools";
 import { validateWorkflowPlan } from "@/lib/agent/workflow/validator";
 import type { GenerationDefaults, WorkflowInputImage } from "@/lib/agent/workflow/types";
@@ -18,6 +19,22 @@ const images: WorkflowInputImage[] = [
 ];
 
 describe("workflow production core", () => {
+  it("normalizes generation defaults sent from the agent UI", () => {
+    const normalized = normalizeGenerationDefaults({
+      model: "nano-banana-2",
+      aspectRatio: "9:16",
+      imageSize: "4K",
+      count: 9,
+    });
+
+    expect(normalized).toEqual({
+      model: "nano-banana-2",
+      aspectRatio: "9:16",
+      imageSize: "4K",
+      count: 4,
+    });
+  });
+
   it("registers core visual tools and keeps future video disabled", () => {
     expect(WORKFLOW_TOOLS.text_to_image.enabled).toBe(true);
     expect(WORKFLOW_TOOLS.image_to_image.enabled).toBe(true);
@@ -37,6 +54,19 @@ describe("workflow production core", () => {
 
     expect(plan.steps.map((step) => step.type)).toEqual(["tryon", "pose_variation"]);
     expect(plan.steps[1].dependsOn).toEqual(["step_1"]);
+  });
+
+  it("Mastra planner path clarifies instead of using deterministic keyword fallback", async () => {
+    const plan = await planWorkflow({
+      userText: "put image 2 clothes on image 1 person, then create four pose variations",
+      images,
+      mode: "agent",
+      defaults,
+      fallbackStrategy: "clarify",
+    });
+
+    expect(plan.needsClarification).toBe(true);
+    expect(plan.steps).toEqual([]);
   });
 
   it("respects explicit person and clothing image references", async () => {

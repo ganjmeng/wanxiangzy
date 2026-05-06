@@ -30,13 +30,18 @@ export async function POST(request: NextRequest) {
   const conversationId = stringOrNull(body.conversationId);
   const messageId = stringOrNull(body.messageId);
   const traceId = stringOrNull(body.traceId);
+  const messageExcerpt = stringOrNull(body.messageExcerpt) ?? stringOrNull(body.userText);
+  const assistantExcerpt = stringOrNull(body.assistantExcerpt) ?? stringOrNull(body.assistantText);
+  const imageUrls = normalizeImageUrls(body.imageUrls ?? body.images);
   const reason = typeof body.reason === "string" ? body.reason.trim().slice(0, 800) : "";
   const tags = Array.isArray(body.tags)
     ? body.tags.filter((tag: unknown): tag is string => typeof tag === "string" && tag.trim().length > 0).slice(0, 12)
     : [];
 
   const trace = traceId ? await loadTrace(auth.supabase, auth.user.id, traceId) : null;
-  const evalCase = rating === "bad" ? buildEvalCase({ trace, rating, reason, tags }) : null;
+  const evalCase = rating === "bad"
+    ? buildEvalCase({ trace, rating, reason, tags, messageExcerpt, assistantExcerpt, imageUrls })
+    : null;
   const preferencePatch = extractPreferencePatchFromFeedback({ rating, reason, tags });
 
   const { error } = await auth.supabase
@@ -52,6 +57,9 @@ export async function POST(request: NextRequest) {
       feedback: {
         userAgent: request.headers.get("user-agent") || null,
         traceFinal: trace?.trace?.final || null,
+        messageExcerpt,
+        assistantExcerpt,
+        imageUrls,
       },
       eval_case: evalCase,
     });
@@ -123,25 +131,35 @@ function buildEvalCase(params: {
   rating: FeedbackRating;
   reason: string;
   tags: string[];
+  messageExcerpt: string | null;
+  assistantExcerpt: string | null;
+  imageUrls: string[];
 }) {
+  const userText = params.trace?.message_excerpt || params.messageExcerpt || "";
   return {
     id: `feedback-${params.trace?.id || Date.now()}`,
     title: params.reason ? params.reason.slice(0, 80) : "用户标记 Agent 判断不符合预期",
     request: {
-      userText: params.trace?.message_excerpt || "",
+      userText,
       intentMode: "smart",
-      images: [],
+      images: params.imageUrls.map((url, index) => ({
+        index: index + 1,
+        url,
+        role: "source",
+      })),
     },
     observed: {
       action: params.trace?.action || null,
       module: params.trace?.module || null,
       confidence: params.trace?.confidence || null,
       source: params.trace?.source || null,
+      assistantExcerpt: params.assistantExcerpt,
     },
     feedback: {
       rating: params.rating,
       reason: params.reason || null,
       tags: params.tags,
+      assistantExcerpt: params.assistantExcerpt,
     },
     expectedBehavior: inferExpectedBehavior(`${params.reason}\n${params.tags.join("\n")}`),
     trace: params.trace?.trace || null,
@@ -168,4 +186,21 @@ function normalizeRating(value: unknown): FeedbackRating | null {
 
 function stringOrNull(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function normalizeImageUrls(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => {
+      if (typeof item === "string") return item;
+      if (!item || typeof item !== "object") return "";
+      const record = item as Record<string, unknown>;
+      return typeof record.url === "string"
+        ? record.url
+        : typeof record.hostedUrl === "string"
+          ? record.hostedUrl
+          : "";
+    })
+    .filter((url): url is string => /^https?:\/\//i.test(url))
+    .slice(0, 8);
 }

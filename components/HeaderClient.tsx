@@ -31,6 +31,7 @@ export function HeaderClient() {
   const [creditsReady, setCreditsReady] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const loadedCreditsForUserRef = useRef<string | null>(null);
+  const isAgentV2Page = pathname === "/agent-v2" || pathname.startsWith("/agent-v2/");
 
   useEffect(() => {
     let cancelled = false;
@@ -149,6 +150,8 @@ export function HeaderClient() {
     clearSupabaseLocalStorage();
     window.location.replace("/login");
   };
+
+  if (isAgentV2Page) return null;
 
   return (
     <header className="studio-app-header sticky top-0 z-50">

@@ -122,6 +122,32 @@ export async function getWorkflowBundle(workflowId: string, userId: string): Pro
   };
 }
 
+export async function getLatestWorkflowBundle(params: {
+  userId: string;
+  conversationId?: string | null;
+  statuses?: WorkflowStatus[];
+}): Promise<WorkflowBundle | null> {
+  const supabase = getAdminClient();
+  let query = supabase
+    .from("agent_workflows")
+    .select("id")
+    .eq("user_id", params.userId)
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (params.conversationId) {
+    query = query.eq("conversation_id", params.conversationId);
+  }
+  if (params.statuses?.length) {
+    query = query.in("status", params.statuses);
+  }
+
+  const { data, error } = await query.maybeSingle();
+  if (error) throw new Error(`查询最近 workflow 失败: ${error.message}`);
+  const workflowId = (data as { id?: string } | null)?.id;
+  return workflowId ? getWorkflowBundle(workflowId, params.userId) : null;
+}
+
 export async function getWorkflowBundleForWorker(workflowId: string): Promise<WorkflowBundle | null> {
   const supabase = getAdminClient();
   const { data: workflow, error } = await supabase
@@ -192,6 +218,38 @@ export async function setStepStatus(
     .update(patch)
     .eq("id", stepId);
   if (error) throw new Error(`更新 step 状态失败: ${error.message}`);
+}
+
+export async function tryStartWorkflowStep(stepId: string): Promise<boolean> {
+  const { data, error } = await getAdminClient()
+    .from("agent_workflow_steps")
+    .update({
+      status: "running",
+      started_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", stepId)
+    .in("status", ["ready", "queued"])
+    .select("id")
+    .maybeSingle();
+
+  if (error) throw new Error(`start workflow step failed: ${error.message}`);
+  return Boolean((data as { id?: string } | null)?.id);
+}
+
+export async function cancelWorkflowSteps(workflowId: string, reason = "Workflow cancelled by user") {
+  const { error } = await getAdminClient()
+    .from("agent_workflow_steps")
+    .update({
+      status: "cancelled",
+      completed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      error_message: reason,
+    })
+    .eq("workflow_id", workflowId)
+    .in("status", ["pending", "ready", "queued", "running", "waiting_user"]);
+
+  if (error) throw new Error(`cancel workflow steps failed: ${error.message}`);
 }
 
 export async function updateStepDefinition(
@@ -282,12 +340,26 @@ export async function releaseWorkflowCredits(userId: string, workflowId: string,
   if (error) throw new Error(`释放 workflow 积分失败: ${error.message}`);
 }
 
-export async function claimNextAgentWorkflows(limit = 2): Promise<string[]> {
+export async function claimNextAgentWorkflows(limit = 2, staleAfterMinutes = 10): Promise<string[]> {
   const { data, error } = await getAdminClient().rpc("claim_next_agent_workflows", {
     p_limit: limit,
+    p_stale_after: `${Math.max(1, Math.floor(staleAfterMinutes))} minutes`,
   });
   if (error) throw new Error(`领取 agent workflow 失败: ${error.message}`);
   return Array.isArray(data) ? data.map((row) => String((row as { id: string }).id)).filter(Boolean) : [];
+}
+
+export async function claimAgentWorkflowById(workflowId: string): Promise<boolean> {
+  const { data, error } = await getAdminClient()
+    .from("agent_workflows")
+    .update({ status: "running", updated_at: new Date().toISOString() })
+    .eq("id", workflowId)
+    .eq("status", "queued")
+    .select("id")
+    .maybeSingle();
+
+  if (error) throw new Error(`claim agent workflow failed: ${error.message}`);
+  return Boolean((data as { id?: string } | null)?.id);
 }
 
 async function insertPlanVersion(

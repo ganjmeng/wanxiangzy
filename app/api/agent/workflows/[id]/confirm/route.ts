@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/api/auth";
 import { appendWorkflowEvent, getWorkflowBundle, reserveWorkflowCredits, setWorkflowStatus } from "@/lib/agent/workflow/repository";
+import { wakeAgentWorkflow } from "@/lib/agent/workflow/runtime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,9 +45,10 @@ export async function POST(
     if (nextStatus === "queued") {
       await appendWorkflowEvent({ workflowId: id, type: "workflow_queued", message: "Workflow queued after confirmation" });
     }
+    const wakeStarted = nextStatus === "queued" ? wakeAgentWorkflow(id) : false;
 
     const refreshed = await getWorkflowBundle(id, auth.user.id);
-    return NextResponse.json({ ok: true, creditsRemaining, ...refreshed });
+    return NextResponse.json({ ok: true, creditsRemaining, wakeStarted, ...refreshed });
   } catch (err) {
     console.error("[agent-workflows/confirm] error:", err);
     return NextResponse.json(

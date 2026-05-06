@@ -122,6 +122,9 @@ async function executePoseVariation(input: StepExecutionInput) {
     "姿势自然可信，避免手指、关节、肢体拉长和换脸。",
     String(input.step.params.prompt || input.workflow.summary || ""),
   ].join("\n");
+  const count = outputMode === "separate"
+    ? normalizeCount(input.step.params.count || input.step.params.genCount || 4)
+    : 1;
   const result = await gatewayGenerateImages({
     model: input.model,
     prompt,
@@ -129,9 +132,9 @@ async function executePoseVariation(input: StepExecutionInput) {
     aspectRatio: input.aspectRatio,
     imageSize: input.imageSize,
     images: [source],
-    count: outputMode === "separate" ? 4 : 1,
+    count,
   });
-  return persistAndCheck(input, result.urls, result.promptTrace, result.providerTrace, outputMode === "separate" ? 4 : 1);
+  return persistAndCheck(input, result.urls, result.promptTrace, result.providerTrace, count);
 }
 
 async function executeSelectImage(input: StepExecutionInput): Promise<StepExecutionResult> {

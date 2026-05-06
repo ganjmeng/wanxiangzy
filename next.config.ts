@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: process.cwd(),
+  serverExternalPackages: ["@mastra/ai-sdk", "@mastra/core"],
   experimental: {
     serverActions: {
       bodySizeLimit: "20mb",

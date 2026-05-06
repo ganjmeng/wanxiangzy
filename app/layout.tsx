@@ -3,6 +3,7 @@ import { Toaster } from "sonner";
 import "./globals.css";
 import { HeaderClient } from "@/components/HeaderClient";
 import "@/lib/env";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata: Metadata = {
   title: "VastWear｜服装视觉生成平台",
@@ -21,19 +22,21 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className="min-h-screen bg-[#f4f5f7] text-slate-950">
-        <HeaderClient />
-        <main>{children}</main>
-        <Toaster
-          richColors
-          closeButton
-          expand={false}
-          visibleToasts={1}
-          gap={8}
-          duration={2400}
-          position="top-right"
-          offset={{ top: 76, right: 18 }}
-          mobileOffset={{ top: 70, right: 12, left: 12 }}
-        />
+        <TooltipProvider>
+          <HeaderClient />
+          <main>{children}</main>
+          <Toaster
+            richColors
+            closeButton
+            expand={false}
+            visibleToasts={1}
+            gap={8}
+            duration={2400}
+            position="top-right"
+            offset={{ top: 76, right: 18 }}
+            mobileOffset={{ top: 70, right: 12, left: 12 }}
+          />
+        </TooltipProvider>
       </body>
     </html>
   );

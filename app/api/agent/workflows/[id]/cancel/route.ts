@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/api/auth";
-import { appendWorkflowEvent, getWorkflowBundle, releaseWorkflowCredits, setWorkflowStatus } from "@/lib/agent/workflow/repository";
+import {
+  appendWorkflowEvent,
+  cancelWorkflowSteps,
+  getWorkflowBundle,
+  releaseWorkflowCredits,
+  setWorkflowStatus,
+} from "@/lib/agent/workflow/repository";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +29,7 @@ export async function POST(
       await releaseWorkflowCredits(auth.user.id, id, releaseAmount, `Agent workflow cancelled release (${id})`);
       await appendWorkflowEvent({ workflowId: id, type: "credit_released", message: `Released ${releaseAmount} credits`, payload: { releaseAmount } });
     }
+    await cancelWorkflowSteps(id);
     await setWorkflowStatus(id, "cancelled");
     await appendWorkflowEvent({ workflowId: id, type: "workflow_cancelled", message: "Workflow cancelled by user" });
     const refreshed = await getWorkflowBundle(id, auth.user.id);

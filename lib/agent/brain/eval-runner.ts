@@ -4,6 +4,7 @@ import { BRAIN_EVAL_CASES, evaluateBrainDecision, type BrainEvalCase } from "@/l
 import { getAgentFeatureFlags } from "@/lib/agent/brain/feature-flags";
 import { getAgentUserPreferences } from "@/lib/agent/brain/preferences";
 import { getAgentKnowledgeContext } from "@/lib/agent/brain/knowledge";
+import { runMastraRouteEvalSuite, type MastraRouteEvalRunResult } from "@/lib/mastra/planning/route-evals";
 
 export type BrainEvalRunResult = {
   runId: string;
@@ -83,7 +84,12 @@ export async function runScheduledBrainEvals(params: {
   includeFeedbackCases?: boolean;
 }) {
   const userIds = await loadRecentEvalUserIds(params.maxUsers || 20);
-  const results: Array<BrainEvalRunResult & { userId: string; ok: boolean; error?: string }> = [];
+  const results: Array<BrainEvalRunResult & {
+    userId: string;
+    ok: boolean;
+    error?: string;
+    mastraRoute?: MastraRouteEvalRunResult;
+  }> = [];
   for (const userId of userIds) {
     try {
       const result = await runBrainEvalSuite({
@@ -91,7 +97,13 @@ export async function runScheduledBrainEvals(params: {
         includeFeedbackCases: params.includeFeedbackCases !== false,
         maxFeedbackCases: 30,
       });
-      results.push({ ...result, userId, ok: result.failed === 0 });
+      const mastraRoute = await runMastraRouteEvalSuite({ userId });
+      results.push({
+        ...result,
+        userId,
+        ok: result.failed === 0 && mastraRoute.failed === 0,
+        mastraRoute,
+      });
     } catch (err) {
       results.push({
         userId,

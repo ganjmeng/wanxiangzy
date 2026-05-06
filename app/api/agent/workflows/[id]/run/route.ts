@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/api/auth";
 import { appendWorkflowEvent, getWorkflowBundle, setWorkflowStatus } from "@/lib/agent/workflow/repository";
+import { wakeAgentWorkflow } from "@/lib/agent/workflow/runtime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,8 +23,9 @@ export async function POST(
       await setWorkflowStatus(id, "queued");
       await appendWorkflowEvent({ workflowId: id, type: "workflow_queued", message: "Workflow queued by user" });
     }
+    const wakeStarted = bundle.workflow.status === "running" ? false : wakeAgentWorkflow(id);
     const refreshed = await getWorkflowBundle(id, auth.user.id);
-    return NextResponse.json({ ok: true, ...refreshed });
+    return NextResponse.json({ ok: true, wakeStarted, ...refreshed });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "执行 workflow 失败" },

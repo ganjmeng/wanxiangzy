@@ -1,28 +1,29 @@
+@import "tw-animate-css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 220 20% 97%;
-    --foreground: 222 28% 9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 262 83% 58%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 262 83% 58%;
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.708 0 0);
     --radius: 0.625rem;
 
     --studio-bg: #f4f5f7;
@@ -34,6 +35,66 @@
     --studio-accent: #7c3aed;
     --studio-accent-2: #db2777;
     --studio-shadow: 0 20px 52px rgba(15, 23, 42, 0.07);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+  }
+  .theme {
+    --font-heading: var(--font-sans);
+    --font-sans: var(--font-sans);
+  }
+  .dark {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.556 0 0);
+  }
+  * {
+    @apply border-border;
+    outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
   }
 }
 
@@ -670,9 +731,142 @@
   animation: shimmer 2.5s ease-in-out infinite;
 }
 
+.shimmer {
+  color: transparent;
+  background: linear-gradient(
+    105deg,
+    rgba(100, 116, 139, 0.45) 0%,
+    rgba(124, 58, 237, 0.85) 35%,
+    rgba(15, 23, 42, 0.98) 50%,
+    rgba(124, 58, 237, 0.85) 65%,
+    rgba(100, 116, 139, 0.45) 100%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: shimmer 1.8s linear infinite;
+}
+
+.agent-thinking-pill-v2 {
+  position: relative;
+  overflow: hidden;
+}
+
+.agent-thinking-pill-v2::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 15%,
+    rgba(15, 23, 42, 0.08) 45%,
+    rgba(15, 23, 42, 0.16) 50%,
+    rgba(15, 23, 42, 0.08) 55%,
+    transparent 85%
+  );
+  background-size: 220% 100%;
+  animation: agent-thinking-sweep 1.35s ease-in-out infinite;
+}
+
+.agent-thinking-orb {
+  filter: drop-shadow(0 0 8px rgba(15, 23, 42, 0.16));
+}
+
+.agent-thinking-ring {
+  animation: agent-thinking-ring 1.2s ease-in-out infinite;
+}
+
+.agent-thinking-core {
+  animation: agent-thinking-core 1.2s ease-in-out infinite;
+}
+
+.agent-thinking-label-v2 {
+  position: relative;
+  z-index: 1;
+  animation: agent-thinking-label 1.35s ease-in-out infinite;
+}
+
+.thinking-pill {
+  position: relative;
+  overflow: hidden;
+}
+
+.thinking-pill::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 10%,
+    rgba(148, 163, 184, 0.16) 42%,
+    rgba(15, 23, 42, 0.08) 50%,
+    rgba(148, 163, 184, 0.16) 58%,
+    transparent 90%
+  );
+  background-size: 220% 100%;
+  animation: thinking-sweep 1.6s ease-in-out infinite;
+}
+
+.thinking-text {
+  position: relative;
+  z-index: 1;
+  animation: thinking-text 1.2s ease-in-out infinite;
+}
+
+.thinking-dot {
+  animation: thinking-dot 1.2s ease-in-out infinite;
+}
+
+.thinking-dot-2 {
+  animation-delay: 160ms;
+}
+
+.thinking-dot-3 {
+  animation-delay: 320ms;
+}
+
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+@keyframes agent-thinking-sweep {
+  0% { background-position: 180% 0; opacity: 0; }
+  18% { opacity: 1; }
+  100% { background-position: -180% 0; opacity: 0; }
+}
+
+@keyframes agent-thinking-ring {
+  0%, 100% { transform: scale(0.72); opacity: 0.28; }
+  45% { transform: scale(1); opacity: 0.7; }
+}
+
+@keyframes agent-thinking-core {
+  0%, 100% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.58; }
+  45% { transform: translate(-50%, -50%) scale(1.18); opacity: 1; }
+}
+
+@keyframes agent-thinking-label {
+  0%, 100% { opacity: 0.62; }
+  45% { opacity: 1; }
+}
+
+@keyframes thinking-sweep {
+  0% { background-position: 180% 0; opacity: 0; }
+  20% { opacity: 1; }
+  100% { background-position: -180% 0; opacity: 0; }
+}
+
+@keyframes thinking-text {
+  0%, 100% { opacity: 0.58; }
+  50% { opacity: 1; }
+}
+
+@keyframes thinking-dot {
+  0%, 20%, 100% { opacity: 0.18; transform: translateY(0); }
+  45% { opacity: 1; transform: translateY(-1px); }
 }
 
 @keyframes pulse {

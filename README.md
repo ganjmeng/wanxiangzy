@@ -39,6 +39,50 @@
   └─────────────────────────────┘
 ```
 
+## 下一代 Agent 架构
+
+当前生产版已经包含自研 Agent Brain、视觉 workflow、积分预占、worker、trace 和 eval 闭环。下一阶段不再继续在旧聊天 UI 上小修小补，而是按生产迁移路线接入：
+
+```text
+assistant-ui  -> GPT-like 前端体验
+AI SDK v6     -> 流式消息、工具调用、审批协议
+Mastra        -> Agent runtime、workflow、memory、eval、trace
+现有服务       -> 换装、姿势裂变、3D、详情页、生图、积分和任务队列
+```
+
+完整迁移蓝图见：
+
+- `docs/next-gen-agent-mastra-ai-sdk-architecture.md`
+
+当前 `/agent` 已直接切换到新 assistant-ui 界面，默认配置：
+
+```env
+AGENT_CHAT_V2_ENABLED=true
+AGENT_RUNTIME_PROVIDER=mastra
+AGENT_UI_PROVIDER=assistant_ui
+AGENT_MASTRA_MODEL=mimo-v2.5-pro
+AGENT_MASTRA_MEMORY_ENABLED=true
+AGENT_ALLOW_LEGACY_FALLBACK=0
+```
+
+访问 `/agent` 即可看到新 UI。Mastra Agent 会优先使用小米 OpenAI-compatible 配置：
+
+```env
+XIAOMI_MIMO_API_KEY=your-xiaomi-mimo-api-key
+XIAOMI_MIMO_BASE_URL=https://token-plan-cn.xiaomimimo.com/v1
+AGENT_MASTRA_MODEL=mimo-v2.5-pro
+```
+
+如果没有配置小米 key，则回退到 `AGENT_MASTRA_MODEL` 指向的 AI SDK gateway 模型。为了避免误配，`AGENT_MASTRA_MODEL=openai/gpt-*` 这类 gateway slug 不会被发送到小米 endpoint；小米场景会自动使用 `XIAOMI_MIMO_TEXT_MODEL` / `XIAOMI_MIMO_MODEL` / `mimo-v2.5-pro`。
+
+生产默认关闭旧关键词链路：`AGENT_ALLOW_LEGACY_FALLBACK=0`。Mastra 调用失败时只返回安全聊天兜底，不再自动进入老 Brain v2 adapter；只有紧急回滚时才临时设为 `1`。
+
+当前确认卡规划也已切到 Mastra/AI SDK 结构化 planner：`createWorkflowApproval` 会先读取偏好和项目知识，再生成 `WorkflowPlan`，然后复用现有 validator、cost、workflow repository。旧 `planWorkflow` 只保留给显式回滚和历史测试，不再是 `/agent` 的生产主路径。
+
+确认卡生成前还有独立 verifier：先跑确定性安全规则，再跑 Mastra/AI SDK critic，专门拦截详情页误判、图片编号错、姿势输出模式错、负面约束冲突等问题。规划成功、validator 阻断、critic 阻断和异常失败都会写入 `agent_observability_events`，方便线上排查。
+
+确认生成后默认会立即唤醒当前 Node 进程里的 workflow worker（`AGENT_WORKFLOW_INLINE_WAKE=1`），让任务尽快从 `queued` 进入 `running`；生产环境仍然必须保留 `/api/jobs/process-agent-workflows` 的定时任务作为崩溃恢复和漏单兜底。
+
 ## 快速开始
 
 ### 1. 安装依赖
@@ -129,7 +173,16 @@ curl -H "Authorization: Bearer $JOB_PROCESSOR_SECRET" \
   http://localhost:3000/api/jobs/process-agent-workflows
 ```
 
-生产环境建议同样每 1 分钟请求一次 `/api/jobs/process-agent-workflows`。这个处理器负责执行文生图、图生图、换装、姿势裂变、3D 展示、电商详情页等 workflow step，并处理积分预占后的结算或释放。
+生产环境建议同样每 1 分钟请求一次 `/api/jobs/process-agent-workflows`。这个处理器负责执行文生图、图生图、换装、姿势裂变、3D 展示、电商详情页等 workflow step，并处理积分预占后的结算或释放。可用 `?limit=4&staleAfterMinutes=10` 调整单批数量和 stale running 恢复阈值。
+
+如果线上发现任务卡住，可以调用受保护的修复处理器。它会先读取 workflow ops 快照，再认领 queued/stale running 工作流并执行，最后返回修复后的队列状态和建议：
+
+```bash
+curl -H "Authorization: Bearer $JOB_PROCESSOR_SECRET" \
+  "http://localhost:3000/api/jobs/repair-agent-workflows?limit=4&staleAfterMinutes=10"
+```
+
+修复接口可单独配置 `AGENT_WORKFLOW_REPAIR_SECRET`；默认复用 `AGENT_WORKFLOW_PROCESSOR_SECRET`、`JOB_PROCESSOR_SECRET` 或 `CRON_SECRET`。
 
 Agent 质量闭环还提供两个生产处理器：
 
@@ -140,7 +193,16 @@ curl -H "Authorization: Bearer $JOB_PROCESSOR_SECRET" \
 
 建议每天或每小时请求一次 `/api/jobs/run-agent-evals`。它会对近期使用过 Agent 的用户运行内置 eval + 用户差评沉淀 case，写入 `agent_eval_runs` 和 `agent_eval_results`，用于上线后回归评分。
 
-生成 worker 内置视觉质量评估与一次自动修复重生策略：结果完成后会用视觉评估器检查数量、可访问性、任务一致性、人物/服装/版式风险；低于阈值时会自动追加修复提示词重生一次。可用 `AGENT_VISUAL_AUTO_REGENERATE_ENABLED=false` 关闭。
+生成 worker 内置视觉质量评估与一次自动修复重生策略：结果完成后会用视觉评估器检查数量、可访问性、任务一致性、人物/服装/版式风险；低于阈值时会自动追加修复提示词重生一次。可用 `AGENT_WORKFLOW_QUALITY_REPAIR_ENABLED=false` 关闭，用 `AGENT_WORKFLOW_QUALITY_REPAIR_MAX_ATTEMPTS=1` 控制最多自动质量重试次数。`/api/agent/observability` 和 `/api/jobs/agent-health` 会汇总质量分、自动重试率和高频问题，方便上线后排查模型或提示词退化。
+
+生产运维健康检查：
+
+```bash
+curl -H "Authorization: Bearer $JOB_PROCESSOR_SECRET" \
+  http://localhost:3000/api/jobs/agent-health
+```
+
+该接口会检查 Agent v2 / assistant-ui / Mastra 配置、模型路由、关键 provider 环境变量、Supabase workflow/trace/eval 表、workflow 队列堆积、stale running 任务和最近 1 小时观测失败率，并返回 `recommendations`。可以单独设置 `AGENT_HEALTH_PROCESSOR_SECRET`，否则复用 `JOB_PROCESSOR_SECRET` 或 `CRON_SECRET`。
 
 ### 6. AWS Tag 自动部署
 

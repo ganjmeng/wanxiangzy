@@ -1,7 +1,17 @@
 import { normalizeAspectRatio, normalizeImageSize, normalizeLingyaModel, type ImageSize } from "@/lib/api/lingya";
+import { evaluateGeneratedImages } from "@/lib/agent/brain/visual-quality";
 import { getStepExecutor } from "@/lib/agent/workflow/executors";
 import {
+  buildQualityRepairPatch,
+  getExpectedImageCount,
+  isQualityRepairEnabled,
+  shouldReviewStepImageQuality,
+  shouldRetryForQuality,
+  toQualityCheckResult,
+} from "@/lib/agent/workflow/quality-repair";
+import {
   appendWorkflowEvent,
+  claimAgentWorkflowById,
   claimNextAgentWorkflows,
   createWorkflowAssets,
   getWorkflowBundleForWorker,
@@ -9,18 +19,43 @@ import {
   setStepStatus,
   setWorkflowStatus,
   settleWorkflowCredits,
+  tryStartWorkflowStep,
   updateStepDefinition,
 } from "@/lib/agent/workflow/repository";
 import type { WorkflowBundle } from "@/lib/agent/workflow/repository";
-import type { WorkflowCostEstimate, WorkflowStepRecord, WorkflowStepResultOutput } from "@/lib/agent/workflow/types";
+import type { StepExecutionResult, WorkflowCostEstimate, WorkflowStepRecord, WorkflowStepResultOutput } from "@/lib/agent/workflow/types";
 import { getWorkflowTool } from "@/lib/agent/workflow/tools";
 
-export async function runNextAgentWorkflows(limit = 2) {
-  const ids = await claimNextAgentWorkflows(limit);
+const terminalWorkflowStatuses = new Set(["completed", "partially_completed", "failed", "cancelled"]);
+const backgroundWorkflowRuns = new Set<string>();
+
+export function wakeAgentWorkflow(workflowId: string) {
+  if (!workflowId || process.env.AGENT_WORKFLOW_INLINE_WAKE === "0") return false;
+  if (backgroundWorkflowRuns.has(workflowId)) return false;
+
+  backgroundWorkflowRuns.add(workflowId);
+  setTimeout(() => {
+    void runAgentWorkflowById(workflowId)
+      .catch((err) => {
+        console.error(`[agent-workflow] immediate wake failed for ${workflowId}:`, err);
+      })
+      .finally(() => {
+        backgroundWorkflowRuns.delete(workflowId);
+      });
+  }, 0);
+
+  return true;
+}
+
+export async function runNextAgentWorkflows(
+  limit = 2,
+  options: { staleAfterMinutes?: number } = {},
+) {
+  const ids = await claimNextAgentWorkflows(limit, options.staleAfterMinutes);
   const results: Array<{ id: string; ok: boolean; error?: string }> = [];
   for (const id of ids) {
     try {
-      await runAgentWorkflowById(id);
+      await runAgentWorkflowById(id, { alreadyClaimed: true });
       results.push({ id, ok: true });
     } catch (err) {
       results.push({ id, ok: false, error: err instanceof Error ? err.message : "workflow failed" });
@@ -29,31 +64,43 @@ export async function runNextAgentWorkflows(limit = 2) {
   return { claimed: ids.length, results };
 }
 
-export async function runAgentWorkflowById(workflowId: string) {
+export async function runAgentWorkflowById(
+  workflowId: string,
+  options: { alreadyClaimed?: boolean } = {}
+) {
+  if (!options.alreadyClaimed) {
+    const claimed = await claimAgentWorkflowById(workflowId);
+    if (!claimed) return { processed: 0, skipped: 1 };
+  }
+
   const bundle = await getWorkflowBundleForWorker(workflowId);
   if (!bundle) return { processed: 0, skipped: 1 };
-  if (["completed", "failed", "cancelled"].includes(bundle.workflow.status)) {
+  if (terminalWorkflowStatuses.has(bundle.workflow.status)) {
     return { processed: 0, skipped: 1 };
   }
 
   await setWorkflowStatus(workflowId, "running");
   await appendWorkflowEvent({ workflowId, type: "workflow_queued", message: "Workflow picked by worker" });
 
-  let current = bundle;
+  let current = await recoverInterruptedSteps(bundle);
   while (true) {
-    const ready = getReadySteps(current.steps);
-    if (!ready.length) break;
+    let ready = getReadySteps(current.steps);
+    if (!ready.length) {
+      const refreshed = await refreshAfterMarkingReadySteps(workflowId, current);
+      current = refreshed;
+      ready = getReadySteps(current.steps);
+      if (!ready.length) break;
+    }
     for (const step of ready) {
       await executeStep(current, step);
       const refreshed = await getWorkflowBundleForWorker(workflowId);
       if (!refreshed) throw new Error("Workflow disappeared during execution");
       current = refreshed;
-      if (current.workflow.status === "failed") return { processed: 1, skipped: 0 };
+      if (terminalWorkflowStatuses.has(current.workflow.status)) return { processed: 1, skipped: 0 };
     }
-    await markNewReadySteps(current);
-    const refreshed = await getWorkflowBundleForWorker(workflowId);
-    if (!refreshed) throw new Error("Workflow disappeared during execution");
-    current = refreshed;
+    if (terminalWorkflowStatuses.has(current.workflow.status)) return { processed: 1, skipped: 0 };
+    current = await refreshAfterMarkingReadySteps(workflowId, current);
+    if (terminalWorkflowStatuses.has(current.workflow.status)) return { processed: 1, skipped: 0 };
   }
 
   await finalizeWorkflow(current);
@@ -61,13 +108,24 @@ export async function runAgentWorkflowById(workflowId: string) {
 }
 
 async function executeStep(bundle: WorkflowBundle, step: WorkflowStepRecord) {
+  const started = await tryStartWorkflowStep(step.id);
+  if (!started) {
+    await appendWorkflowEvent({
+      workflowId: bundle.workflow.id,
+      stepId: step.id,
+      type: "step_skipped",
+      message: `${step.title} was not started because its status changed`,
+      payload: { previousStatus: step.status },
+    });
+    return;
+  }
+
   const executor = getStepExecutor(step.type);
   if (!executor) {
     await failStep(bundle, step, `工具 ${step.type} 没有可用 executor`);
     return;
   }
 
-  await setStepStatus(step.id, "running");
   await appendWorkflowEvent({
     workflowId: bundle.workflow.id,
     stepId: step.id,
@@ -89,13 +147,27 @@ async function executeStep(bundle: WorkflowBundle, step: WorkflowStepRecord) {
       aspectRatio,
       imageSize,
     });
+    if (await shouldIgnoreStepWrite(bundle.workflow.id, step.id)) {
+      await appendWorkflowEvent({
+        workflowId: bundle.workflow.id,
+        stepId: step.id,
+        type: "step_skipped",
+        message: `${step.title} result ignored because workflow was cancelled`,
+      });
+      return;
+    }
+
+    const qualityReview = await reviewStepOutputQuality(bundle, step, result);
+    if (qualityReview.retry) return;
+    const quality = qualityReview.quality || result.quality || null;
+
     const assets = result.output.imageUrls?.length
       ? await createWorkflowAssets({
         userId: bundle.workflow.user_id,
         workflowId: bundle.workflow.id,
         stepId: step.id,
         kind: "image",
-        role: "intermediate",
+        role: isTerminalOutputStep(bundle.steps, step) ? "final" : "intermediate",
         urls: result.output.imageUrls,
         provider: result.providerTrace?.[0]?.provider || null,
         model,
@@ -106,17 +178,121 @@ async function executeStep(bundle: WorkflowBundle, step: WorkflowStepRecord) {
       ...result.output,
       assetIds: assets.length ? assets.map((asset) => asset.id) : result.output.assetIds,
     };
-    await setStepStatus(step.id, "completed", { output, quality: result.quality || null });
+    await setStepStatus(step.id, "completed", { output, quality });
     await appendWorkflowEvent({
       workflowId: bundle.workflow.id,
       stepId: step.id,
       type: "step_completed",
       message: `${step.title} completed`,
-      payload: { output, quality: result.quality || null, providerTrace: result.providerTrace || [] },
+      payload: { output, quality, providerTrace: result.providerTrace || [] },
     });
   } catch (err) {
+    if (await shouldIgnoreStepWrite(bundle.workflow.id, step.id)) {
+      await appendWorkflowEvent({
+        workflowId: bundle.workflow.id,
+        stepId: step.id,
+        type: "step_skipped",
+        message: `${step.title} failure ignored because workflow was cancelled`,
+      });
+      return;
+    }
     await failStep(bundle, step, err instanceof Error ? err.message : "step failed");
   }
+}
+
+async function reviewStepOutputQuality(
+  bundle: WorkflowBundle,
+  step: WorkflowStepRecord,
+  result: StepExecutionResult
+): Promise<{ retry: boolean; quality: StepExecutionResult["quality"] | null }> {
+  if (!isQualityRepairEnabled() || !shouldReviewStepImageQuality(step, result.output)) {
+    return { retry: false, quality: result.quality || null };
+  }
+
+  try {
+    const expectedCount = getExpectedImageCount(step, result.output);
+    const evaluation = await evaluateGeneratedImages({
+      userPrompt: String(step.params.prompt || bundle.workflow.summary || step.title),
+      module: step.type,
+      resultUrls: result.output.imageUrls || [],
+      expectedCount,
+      referenceImageUrls: bundle.workflow.input_images.map((image) => image.url).filter(Boolean).slice(0, 4),
+    });
+    const quality = toQualityCheckResult(evaluation);
+    const tool = getWorkflowTool(step.type);
+    const toolMaxAttempts = tool?.retryPolicy.maxAttempts ?? 3;
+
+    await appendWorkflowEvent({
+      workflowId: bundle.workflow.id,
+      stepId: step.id,
+      type: "quality_checked",
+      message: evaluation.ok ? `${step.title} visual review passed` : `${step.title} visual review needs attention`,
+      payload: {
+        score: evaluation.score,
+        ok: evaluation.ok,
+        shouldRegenerate: evaluation.shouldRegenerate,
+        source: evaluation.source,
+        summary: evaluation.summary,
+        issues: evaluation.issues.slice(0, 8),
+        expectedCount,
+        outputCount: result.output.imageUrls?.length || 0,
+      },
+    });
+
+    if (shouldRetryForQuality({
+      quality: evaluation,
+      retryCount: step.retry_count,
+      toolMaxAttempts,
+    })) {
+      const nextRetry = step.retry_count + 1;
+      const repaired = buildQualityRepairPatch(step, evaluation, nextRetry);
+      await updateStepDefinition(step.id, {
+        params: repaired.params,
+        input: repaired.input,
+      });
+      await setStepStatus(step.id, "ready", {
+        quality,
+        errorMessage: evaluation.summary,
+        retryCount: nextRetry,
+      });
+      await appendWorkflowEvent({
+        workflowId: bundle.workflow.id,
+        stepId: step.id,
+        type: "step_retried",
+        message: `${step.title} will retry after visual quality review`,
+        payload: {
+          retryCount: nextRetry,
+          maxAttempts: toolMaxAttempts,
+          repairSummary: repaired.summary,
+          score: evaluation.score,
+          issues: evaluation.issues.slice(0, 8),
+        },
+      });
+      return { retry: true, quality };
+    }
+
+    return { retry: false, quality };
+  } catch (err) {
+    await appendWorkflowEvent({
+      workflowId: bundle.workflow.id,
+      stepId: step.id,
+      type: "quality_checked",
+      message: `${step.title} visual review unavailable`,
+      payload: {
+        ok: result.quality?.ok ?? true,
+        score: result.quality?.score ?? null,
+        error: err instanceof Error ? err.message : "visual quality review failed",
+      },
+    });
+    return { retry: false, quality: result.quality || null };
+  }
+}
+
+async function shouldIgnoreStepWrite(workflowId: string, stepId: string) {
+  const latest = await getWorkflowBundleForWorker(workflowId);
+  if (!latest) return true;
+  const latestStep = latest.steps.find((candidate) => candidate.id === stepId);
+  return terminalWorkflowStatuses.has(latest.workflow.status) || latestStep?.status === "cancelled";
 }
 
 async function failStep(bundle: WorkflowBundle, step: WorkflowStepRecord, message: string) {
@@ -278,6 +454,47 @@ async function finalizeFailedWorkflow(
 
 function getReadySteps(steps: WorkflowStepRecord[]) {
   return steps.filter((step) => step.status === "ready");
+}
+
+async function recoverInterruptedSteps(bundle: WorkflowBundle) {
+  if (bundle.workflow.status !== "running") return bundle;
+
+  const interrupted = bundle.steps.filter((step) => step.status === "running" || step.status === "queued");
+  if (!interrupted.length) return bundle;
+
+  for (const step of interrupted) {
+    await setStepStatus(step.id, "ready", {
+      errorMessage: "Recovered from an interrupted worker run; retrying this step.",
+      retryCount: step.retry_count,
+    });
+    await appendWorkflowEvent({
+      workflowId: bundle.workflow.id,
+      stepId: step.id,
+      type: "step_retried",
+      message: `${step.title} recovered after interrupted worker run`,
+      payload: { recoveredStatus: step.status, retryCount: step.retry_count },
+    });
+  }
+
+  return getRequiredWorkerBundle(bundle.workflow.id);
+}
+
+async function refreshAfterMarkingReadySteps(workflowId: string, bundle: WorkflowBundle) {
+  await markNewReadySteps(bundle);
+  return getRequiredWorkerBundle(workflowId);
+}
+
+async function getRequiredWorkerBundle(workflowId: string) {
+  const refreshed = await getWorkflowBundleForWorker(workflowId);
+  if (!refreshed) throw new Error("Workflow disappeared during execution");
+  return refreshed;
+}
+
+function isTerminalOutputStep(steps: WorkflowStepRecord[], step: WorkflowStepRecord) {
+  return !steps.some((candidate) =>
+    !["skipped", "cancelled"].includes(candidate.status) &&
+    candidate.depends_on.includes(step.step_key)
+  );
 }
 
 function collectFinalOutputs(steps: WorkflowStepRecord[]): WorkflowStepResultOutput {
