@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildModelBackgroundPrompt,
+  decideModelBackgroundMode,
   enforceModelBackgroundPromptRequirements,
 } from "@/lib/model-background";
 
@@ -16,6 +17,7 @@ describe("model background prompt handling", () => {
       hasBackgroundReference: false,
     });
 
+    expect(prompt).toContain("HARD 硬规则 · 换景身份模式");
     expect(prompt).toContain("服装产品保真");
     expect(prompt).toContain("图1服装按商品资产处理");
     expect(prompt).toContain("环境光可以影响服装明暗");
@@ -38,9 +40,30 @@ describe("model background prompt handling", () => {
       hasBackgroundReference: true,
     });
 
+    expect(prompt).toContain("HARD 硬规则 · 换景身份模式");
     expect(prompt).toContain("换模特换背景");
     expect(prompt).toContain("图1是唯一服装/穿搭来源");
     expect(prompt).toContain("服装产品保真");
     expect(prompt).toContain("不重新设计布料");
+  });
+
+  it("face-swap mode preserves the model_only hard rule (no body/pose change)", () => {
+    const prompt = enforceModelBackgroundPromptRequirements("", {
+      mode: "model_only",
+      hasModelReference: true,
+      hasBackgroundReference: false,
+    });
+    expect(prompt).toContain("HARD 硬规则 · 换景身份模式");
+    expect(prompt).toContain("只换模特脸部");
+    expect(prompt).toContain("禁止合成新脸");
+    expect(prompt).toContain("禁止面具边缘");
+  });
+});
+
+describe("decideModelBackgroundMode", () => {
+  it("returns the caller mode today (decision point reserved for future auto)", () => {
+    expect(decideModelBackgroundMode({ mode: "background_only", hasModelReference: false, hasBackgroundReference: false })).toBe("background_only");
+    expect(decideModelBackgroundMode({ mode: "model_only", hasModelReference: true, hasBackgroundReference: false })).toBe("model_only");
+    expect(decideModelBackgroundMode({ mode: "model_background", hasModelReference: true, hasBackgroundReference: true })).toBe("model_background");
   });
 });

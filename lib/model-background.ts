@@ -176,38 +176,57 @@ export function getBackgroundPreset(presetId: BackgroundPresetId) {
   return BACKGROUND_PRESETS.find((item) => item.id === presetId) || BACKGROUND_PRESETS[0];
 }
 
-const MODEL_BACKGROUND_HARD_RULE_MARK = "【换景硬规则】";
+const MODEL_BACKGROUND_HARD_RULE_MARK = "【HARD 硬规则 · 换景身份模式】";
 const MODEL_BACKGROUND_PRODUCT_FIDELITY_RULE =
   "服装产品保真：图1服装按商品资产处理，锁定品类、版型、固有色、图案/logo、面料表面、穿着层次和清洁度；换背景/换模特只允许调整环境光、投影、接触阴影和边缘融合，不重新设计布料、不套风格滤镜。";
+
+// Resolve the explicit caller mode today. Centralized so the prompt builder,
+// enforce, and downstream callers agree on the hard-rule branch.
+//
+// We treat the caller's `mode` as authoritative (no "auto" yet). This
+// function is a decision POINT for future auto-mode logic; today it just
+// passes the caller mode through, but a single switch here keeps the
+// rest of the file single-branch on a string.
+export function decideModelBackgroundMode(params: {
+  mode: ModelBackgroundMode;
+  hasModelReference: boolean;
+  hasBackgroundReference: boolean;
+}): ModelBackgroundMode {
+  return params.mode;
+}
 
 function buildModelBackgroundHardRule(params: {
   mode: ModelBackgroundMode;
   hasModelReference: boolean;
   hasBackgroundReference: boolean;
 }) {
+  const resolvedMode = decideModelBackgroundMode(params);
   const modelIndex = params.hasModelReference ? "图2" : "模特参考";
   const backgroundIndex = params.hasModelReference ? "图3" : "图2";
 
-  if (params.mode === "background_only") {
+  if (resolvedMode === "background_only") {
     return `${MODEL_BACKGROUND_HARD_RULE_MARK}
-只换背景。图1是唯一人物和唯一服装来源，保留同一张脸、发型、肤色、身材比例、衣服、穿搭和主体姿态。
-${MODEL_BACKGROUND_PRODUCT_FIDELITY_RULE}
-${params.hasBackgroundReference ? `${backgroundIndex} 只提供无人环境参考：场景、空间透视、光线、色彩、景深、墙面、地面、建筑、绿植等。忽略 ${backgroundIndex} 里的人物、脸、衣服、包、配饰和姿势。` : "没有背景参考图时，只根据文字描述更换背景。"}
-必须把图1人物真实放进新环境，不要像抠图贴上去：根据新背景重新匹配光线方向、色温、曝光、对比度、景深、镜头距离、地面透视和人物尺度；在脚下、腿部、衣摆、鞋子与地面接触处生成自然接触阴影和环境反射；人物边缘、发丝、袖口、裙摆和鞋底边界要自然融合，没有白边、硬切边、漂浮感或贴纸感。
-任何冲突都以图1人物和服装为准。`;
+1) 只换背景。图1是唯一人物和唯一服装来源，保留同一张脸、发型、肤色、身材比例、衣服、穿搭和主体姿态。
+2) ${MODEL_BACKGROUND_PRODUCT_FIDELITY_RULE}
+3) ${params.hasBackgroundReference ? `${backgroundIndex} 只提供无人环境参考：场景、空间透视、光线、色彩、景深、墙面、地面、建筑、绿植等。忽略 ${backgroundIndex} 里的人物、脸、衣服、包、配饰和姿势。` : "没有背景参考图时，只根据文字描述更换背景。"}
+4) 必须把图1人物真实放进新环境，不要像抠图贴上去：根据新背景重新匹配光线方向、色温、曝光、对比度、景深、镜头距离、地面透视和人物尺度；在脚下、腿部、衣摆、鞋子与地面接触处生成自然接触阴影和环境反射；人物边缘、发丝、袖口、裙摆和鞋底边界要自然融合，没有白边、硬切边、漂浮感或贴纸感。
+5) 任何冲突都以图1人物和服装为准。`;
   }
 
-  if (params.mode === "model_background") {
+  if (resolvedMode === "model_background") {
     return `${MODEL_BACKGROUND_HARD_RULE_MARK}
-换模特换背景。图1是唯一服装/穿搭来源，不能被任何参考图替换。
-${MODEL_BACKGROUND_PRODUCT_FIDELITY_RULE}
-${modelIndex} 是必选模特参考图，只参考脸型气质、五官比例、肤色、发型和身材比例，不复制服装或背景。
-${params.hasBackgroundReference ? `${backgroundIndex} 只参考背景场景、光线、色彩和空间氛围；忽略其中人物、衣服、包、配饰和姿势。` : "没有背景参考图时，根据文字或预设设计背景。"}
-生成的人物必须自然融入新环境：统一光线方向、色温、曝光、对比度、景深、镜头距离和地面透视；脸部、颈部、手臂等可见皮肤要处在同一套光影和肤色连续性里，头部大小、颈肩衔接和头身比真实自然；脚下与地面有可信接触阴影，边缘没有抠图白边、硬切边或漂浮感。`;
+1) 换模特换背景。图1是唯一服装/穿搭来源，不能被任何参考图替换。
+2) ${MODEL_BACKGROUND_PRODUCT_FIDELITY_RULE}
+3) ${modelIndex} 是必选模特参考图，只参考脸型气质、五官比例、肤色、发型和身材比例，不复制服装或背景。
+4) ${params.hasBackgroundReference ? `${backgroundIndex} 只参考背景场景、光线、色彩和空间氛围；忽略其中人物、衣服、包、配饰和姿势。` : "没有背景参考图时，根据文字或预设设计背景。"}
+5) 生成的人物必须自然融入新环境：统一光线方向、色温、曝光、对比度、景深、镜头距离和地面透视；脸部、颈部、手臂等可见皮肤要处在同一套光影和肤色连续性里，头部大小、颈肩衔接和头身比真实自然；脚下与地面有可信接触阴影，边缘没有抠图白边、硬切边或漂浮感。`;
   }
 
+  // model_only (face swap)
   return `${MODEL_BACKGROUND_HARD_RULE_MARK}
-只换模特脸部。图1是唯一身体、服装、发型、姿势、构图、背景、头部位置、头部大小、颈肩衔接和光影来源；只把图1脸部身份/五官替换为${modelIndex}的脸部特征。最终脸部肤色、曝光、色温、阴影、噪点和清晰度必须匹配图1的颈部、身体和整体摄影质感，不要出现贴上去的头、面具边缘、不同图层光影或头部比例变化。`;
+1) 只换模特脸部。图1是唯一身体、服装、发型、姿势、构图、背景、头部位置、头部大小、颈肩衔接和光影来源；只把图1脸部身份/五官替换为${modelIndex}的脸部特征。
+2) 禁止合成新脸、禁止面具边缘、禁止改头部比例、禁止复制模特图的身体或服装。
+3) 最终脸部肤色、曝光、色温、阴影、噪点和清晰度必须匹配图1的颈部、身体和整体摄影质感；脸、颈和可见身体皮肤要自然连续。`;
 }
 
 export function enforceModelBackgroundPromptRequirements(prompt: string, params: {
@@ -215,10 +234,11 @@ export function enforceModelBackgroundPromptRequirements(prompt: string, params:
   hasModelReference: boolean;
   hasBackgroundReference: boolean;
 }) {
+  const resolvedMode = decideModelBackgroundMode(params);
   const normalized = prompt.trim();
-  if (!normalized) return buildModelBackgroundHardRule(params);
+  if (!normalized) return buildModelBackgroundHardRule({ ...params, mode: resolvedMode });
   if (normalized.includes(MODEL_BACKGROUND_HARD_RULE_MARK)) return normalized;
-  return `${buildModelBackgroundHardRule(params)}
+  return `${buildModelBackgroundHardRule({ ...params, mode: resolvedMode })}
 
 ${normalized}`;
 }
