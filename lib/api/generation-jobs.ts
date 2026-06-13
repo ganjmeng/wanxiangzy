@@ -1395,10 +1395,22 @@ async function executePayload(
         maxAttemptsPerSlot: 3,
         promptKind: "pose",
         run: async (index, onTaskProgress) => {
+          // CRITICAL: when the user picked a preset plan (4-pose template),
+          // payload.prompt contains ALL 4 pose descriptions joined together.
+          // If we forward the whole string, the image model interprets
+          // "姿势1..姿势4" as a 2x2 grid request and returns a 4-pose
+          // contact sheet per slot (the bug the user reported on
+          // v2026.06.14-pose-mode-decide). For preset/AI plans, narrow
+          // userIntent to ONLY the current slot's line + non-pose
+          // supplement lines. For user_custom, keep the full intent.
+          const slotIndex = index + 1;
+          const scopedUserIntent = poseStyle === "user_custom"
+            ? userIntent
+            : scopePoseUserIntentToSlot(userIntent, slotIndex);
           const posePrompt = [
             roleBasedPrompt,
-            userIntent ? `用户补充：${userIntent}` : "",
-            buildSeparatePosePrompt(fallbackPrompt, index + 1, poseStyle, payload.prompt, poseAnalysis, posePlan),
+            scopedUserIntent ? `用户补充：${scopedUserIntent}` : "",
+            buildSeparatePosePrompt(fallbackPrompt, slotIndex, poseStyle, payload.prompt, poseAnalysis, posePlan),
             garmentDetailDirective,
           ].filter(Boolean).join("\n");
           const result = await generateImage({
@@ -2326,4 +2338,26 @@ import { getAdminClient } from "@/lib/supabase/admin";
 
 function createAdminClient() {
   return getAdminClient();
+}
+
+// Narrow a multi-pose user prompt to the lines relevant to one slot.
+// Preset / AI-plan prompts contain "姿势1..姿势4" descriptions joined
+// together. Forwarding all of them makes the image model interpret it
+// as a 2x2 grid request. Keep only the current slot's pose line and
+// any non-pose supplement lines (e.g. "补充要求: ...").
+// For user_custom, the caller should pass the full prompt unchanged.
+export function scopePoseUserIntentToSlot(prompt: string, slotIndex: number): string {
+  if (!prompt) return "";
+  const lines = prompt.split("\n");
+  const kept = lines.filter((line) => {
+    const trimmed = line.trim();
+    if (!trimmed) return false;
+    // Always keep the current slot's pose line
+    if (new RegExp(`^姿势\\s*${slotIndex}[：:]`).test(trimmed)) return true;
+    // Drop other slots' pose lines
+    if (/^姿势\s*[1-4][：:]/.test(trimmed)) return false;
+    // Keep everything else (supplements, style direction, etc.)
+    return true;
+  });
+  return kept.join("\n").trim();
 }
