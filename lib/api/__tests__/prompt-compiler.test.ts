@@ -292,3 +292,54 @@ describe("compileImagePromptForModel", () => {
     expect(result).toContain("发型发色硬约束");
   });
 });
+
+describe("prompt compiler hard rule leading", () => {
+  it("commerceDetail kind header is now Chinese (no longer English Core task)", () => {
+    const result = compileImagePromptForModel({
+      kind: "commerceDetail",
+      model: "nano-banana-2",
+      prompt: "生成一个分段。",
+    });
+    expect(result).toContain("核心任务：生成一个独立的电商详情页分段/分模块素材");
+    expect(result).not.toContain("Core task: generate one independent e-commerce");
+  });
+
+  it("separate pose quality line is now Chinese (no longer English Image quality)", () => {
+    // Trigger compileSeparatePosePrompt via a separate-pose prompt shape.
+    const result = compileImagePromptForModel({
+      kind: "pose",
+      model: "nano-banana-2",
+      prompt: [
+        "每个姿势单独生成一张完整图片",
+        "Use the source image only to preserve: same person, same outfit.",
+        "Image 1 is the original model photo and the target canvas.",
+        "Target pose:",
+        "Pose 1: standing front.",
+        "Priority: execute this pose direction clearly.",
+      ].join("\n"),
+    });
+    // Chinese quality line leads; English "Image quality:" is gone.
+    expect(result).toContain("图像质量：");
+    expect(result).not.toMatch(/^Image quality:/m);
+  });
+
+  it("preserves a leading HARD rule marker at the head of the compiled prompt (grid pose path)", () => {
+    // Use a non-separate pose prompt so it goes through compileConcisePrompt
+    // (where the new getHardRuleLine hook is wired in).
+    const result = compileImagePromptForModel({
+      kind: "pose",
+      model: "nano-banana-2",
+      prompt: [
+        "【HARD 硬规则 · 姿势身份模式 pose_burst_full_subject】",
+        "1) 仅改变姿势：人物身份、性别表达、年龄感必须与图 1 严格一致。",
+        "2) 禁止换脸、禁止合成新脸。",
+        "Use the source image only to preserve: same person, same outfit.",
+        "Image 1 is the original model photo and the target canvas.",
+        "Priority: execute this pose direction clearly.",
+      ].join("\n"),
+    });
+    // HARD marker should appear at or near the top of the compiled prompt
+    const headSlice = result.slice(0, 500);
+    expect(headSlice).toContain("【HARD 硬规则");
+  });
+});

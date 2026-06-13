@@ -20,7 +20,7 @@ const KIND_HEADERS: Record<ImagePromptKind, string> = {
   faceSwap:
     "核心任务：AI 换脸。图1是原始模特/主体画面，图2只提供面部五官身份；只替换五官，不改变图1肤色、发型、身体、服装款式、背景、光线、曝光、对比度和构图；如启用细节恢复，只允许轻量恢复图1服装已有细节。",
   commerceDetail:
-    "Core task: generate one independent e-commerce detail-page section/module, not a complete detail page. The section must be mobile-first, readable, spacious, and structurally different from other sections.",
+    "核心任务：生成一个独立的电商详情页分段/分模块素材，不是完整详情页；该分段必须移动端优先、可读、有呼吸感、且结构上与其它分段明显不同。",
   productSet:
     "核心任务：生成一张独立商品套图素材。商品图是唯一商品硬参考；样式参考只提供版式和氛围；不要生成整套拼图、网页截图或编辑器界面。",
 };
@@ -38,7 +38,14 @@ const REFERENCE_FUSION_TONE_RULE =
 const SOURCE_TEXTURE_SAFETY_RULE =
   "细密纹理安全：细条纹、罗纹、针织、裤纹、网纱、格纹和重复图案只按原图可见尺度自然保留；不要增强成摩尔纹、波纹、水波纹、频闪条纹、振荡线、假纤维或不存在的面料纹理。";
 const SEPARATE_POSE_QUALITY_LINE =
-  "Image quality: source-matched natural camera photo; keep original exposure, contrast, white balance, tone, grain/noise; no HDR, no extra sharpening, no clarity boost, no moire or wavy fabric artifacts.";
+  "图像质量：源图匹配的自然相机成片；保持图1原始曝光、对比度、白平衡、色调、颗粒/噪点；不要 HDR、不要额外锐化、不要提高 clarity、不要摩尔纹或波纹布料。";
+
+/* Bilingual (Chinese + English anchor) prompts were abandoned in v3:
+ * - Doubled token budget with no quality lift
+ * - Chinese-only is clearer for the model on this product (gpt-image-2
+ *   + nano-banana both handle 中文硬规则 semantics better than English)
+ * - If we ever need English anchors, add them per-model, not globally
+ */
 const SOURCE_MATCHED_KINDS = new Set<ImagePromptKind>(["grass", "modelBackground", "materialEnhancement", "pose", "faceSwap"]);
 const REFERENCE_MATCHED_KINDS = new Set<ImagePromptKind>(["grass", "modelBackground"]);
 const OBSOLETE_QUALITY_SANITIZED_KINDS = new Set<ImagePromptKind>(["tryon", ...SOURCE_MATCHED_KINDS]);
@@ -172,6 +179,7 @@ function compileConcisePrompt(kind: ImagePromptKind, prompt: string, maxChars: n
   const highSignal = lines.filter((line) => IMPORTANT_PATTERNS.some((pattern) => pattern.test(line)));
   const selected = dedupeLines([
     getKindHeader(kind, prompt),
+    getHardRuleLine(lines),
     modelLine,
     ...requiredSignal,
     ...highSignal,
@@ -179,6 +187,42 @@ function compileConcisePrompt(kind: ImagePromptKind, prompt: string, maxChars: n
   ]);
 
   return limitPrompt(selected.join("\n"), maxChars);
+}
+
+// Pull the leading hard-rule segment (if any) out of the input prompt so
+// the concise-compile output preserves its priority position. Today we
+// just identify the first 1-2 marker lines and re-emit them at the head;
+// no rewriting, no translation. Idempotent: if no marker matches, returns "".
+const HARD_RULE_MARKERS = [
+  /【HARD 硬规则/,
+  /Hard rule:/i,
+  /硬性保图规则/,
+  /换景硬规则/,
+  /种草硬规则/,
+  /专属模特执行提示/,
+  /姿势身份锁定/,
+];
+
+function getHardRuleLine(lines: string[]) {
+  const matched: string[] = [];
+  for (const line of lines) {
+    if (HARD_RULE_MARKERS.some((re) => re.test(line))) {
+      matched.push(line);
+      // Take at most the first 2 marker lines (header + first numbered).
+      if (matched.length >= 2) break;
+      continue;
+    }
+    if (matched.length > 0 && /^\d+\)/.test(line)) {
+      // Continue collecting first numbered children of the hard rule block.
+      matched.push(line);
+      break;
+    }
+    if (matched.length > 0) {
+      // Stop when we hit a non-marker, non-numbered line.
+      break;
+    }
+  }
+  return matched.join("\n");
 }
 
 function getQualityLine(kind: ImagePromptKind) {
