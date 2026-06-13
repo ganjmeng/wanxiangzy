@@ -266,15 +266,23 @@ export function clampOutfitFusionCount(value: unknown) {
   return Math.min(Math.max(count, 1), 4);
 }
 
-// Hard-rule marker + leading segment. Single-branch, ~250 chars.
+// Hard-rule marker + leading segment. Single-branch, ~350 chars.
 // Centralized so refactor/analysis can pre-check it (idempotency).
+// Priority is FACES FIRST: if a model reference is provided, the model's
+// face owns the output regardless of the reference photo. Items (clothing/
+// accessories) follow the outfit images.
 export const OUTFIT_FUSION_HARD_RULE_MARK = "【HARD 硬规则 · 套装融合模式】";
-const OUTFIT_FUSION_HARD_RULE = `${OUTFIT_FUSION_HARD_RULE_MARK}
-1) 商品准确性优先：所有服装、鞋包、配饰的颜色、版型、材质、图案、Logo 和穿戴位置必须与搭配图一致；禁止改款、错穿层级、丢失图案、凭空新增未提供的核心商品。
-2) 模特身份一致：换模特时，脸型、肤色、发型、身材比例必须与模特图一致，禁止换脸、合成新脸、改体型、改变年龄感。
-3) 单张输出：最终只生成一张完整单人商业摄影穿搭照片，禁止拼图、四宫格、分屏、contact sheet、before/after 对比、商品陈列页或多张合集。`;
 
-export type OutfitFusionMode = "items_only" | "with_reference" | "with_model" | "full";
+// Default hard rule (no model owner known). Used as a base; buildOutfit
+// FusionPrompt can overlay the face-owner line when decideOutfitFusionFace
+// Owner resolves to a specific image index.
+const OUTFIT_FUSION_HARD_RULE_BASE = `${OUTFIT_FUSION_HARD_RULE_MARK}
+1) 模特身份第一：模特图的五官、脸型、肤色、发型、年龄感、身材比例是最终人物身份的唯一来源；禁止与参考图融合脸、禁止合成新脸、禁止与搭配图拼凑脸。
+2) 商品准确性第二：所有服装、鞋包、配饰的颜色、版型、材质、图案、Logo 和穿戴位置必须与搭配图一致；禁止改款、错穿层级、丢失图案、凭空新增未提供的核心商品。
+3) 参考图参考构图：参考图只提供姿态、构图、背景、氛围参考；不复制参考图的脸、衣服、配件。
+4) 单张输出：最终只生成一张完整单人商业摄影穿搭照片，禁止拼图、四宫格、分屏、contact sheet、before/after 对比、商品陈列页或多张合集。`;
+
+export type OutfitFusionMode = "items_only" | "with_model" | "with_reference" | "full";
 
 export function decideOutfitFusionMode(assets: OutfitFusionAsset[]): OutfitFusionMode {
   const hasModel = assets.some((a) => a.role === "model");
@@ -286,29 +294,49 @@ export function decideOutfitFusionMode(assets: OutfitFusionAsset[]): OutfitFusio
   return "items_only";
 }
 
+// Find the index (1-based, matching 【搭配图N】/【模特图N】 labels) of
+// the asset that owns the face identity. Returns undefined if no model
+// asset is present (then face identity is left to the caller / template).
+export function decideOutfitFusionFaceOwner(assets: OutfitFusionAsset[]): number | undefined {
+  const modelIdx = assets.findIndex((a) => a.role === "model");
+  if (modelIdx < 0) return undefined;
+  return modelIdx + 1; // 1-based to match the template label "【模特图N】"
+}
+
+function buildOutfitFusionHardRule(faceOwnerIndex?: number): string {
+  if (faceOwnerIndex === undefined) return OUTFIT_FUSION_HARD_RULE_BASE;
+  // Inject an explicit face-owner line at the top so the image model
+  // sees "脸 = 模特图N" up front, not buried in role lines.
+  return [
+    OUTFIT_FUSION_HARD_RULE_MARK,
+    `脸主锁定：图${faceOwnerIndex}（模特图）是最终人物的唯一脸部身份来源；其它任何图都不得参与脸、肤色、发型、年龄感、身材、表情的融合。`,
+    OUTFIT_FUSION_HARD_RULE_BASE.split("\n").slice(1).join("\n"),
+  ].join("\n");
+}
+
 export function buildOutfitFusionPrompt(input: {
   templatePrompt?: string;
   assets: OutfitFusionAsset[];
   customPrompt?: string;
   config: OutfitFusionConfig;
 }) {
+  const faceOwnerIndex = decideOutfitFusionFaceOwner(input.assets);
   const roleLines = input.assets.map((asset, index) => {
     const label = asset.name || getOutfitFusionAssetLabel(asset, index);
     if (asset.role === "reference") return `【${label}】只作为人物姿态、构图、背景光影和穿搭关系参考`;
-    if (asset.role === "model") return `【${label}】只作为最终模特身份、脸型、发型和气质参考`;
+    if (asset.role === "model") return `【${label}】是最终人物身份、脸型、发型和气质的唯一来源，其它图都不得参与脸部融合`;
     return `【${label}】只提取服装、鞋包、配饰、颜色、材质、版型、图案、Logo 和正确穿戴位置，不复制拍摄背景`;
   });
   const templatePrompt = input.templatePrompt?.trim() || "让模特穿着所有搭配图中的服装、鞋包和配饰，生成一张真实自然的模特穿搭图。";
   const customPrompt = input.customPrompt?.trim();
 
-  // 6 段结构（v2）：硬规则 → 核心任务 → 固定规则 → 图片关系 → 商品保真/优先级/质量 → 用户/负面
+  // 7 段结构（v3）：硬规则（含脸主锁定）→ 核心任务 → 固定规则 → 图片关系 → 商品保真/优先级/质量 → 用户 → 负面
   return [
-    OUTFIT_FUSION_HARD_RULE,
+    buildOutfitFusionHardRule(faceOwnerIndex),
     `核心任务：${templatePrompt}`,
     `固定生成规则：最终只生成一张完整的单人商业摄影穿搭照片，输出比例 ${input.config.aspectRatio}，分辨率 ${input.config.imageSize}；不要把参考图、商品图、步骤图或多个候选结果拼到同一张画面里。`,
     `图片关系：${roleLines.join("；")}。`,
     "商品保真：保持所有服装、鞋包、帽子、围巾和配饰的颜色、轮廓、材质、图案、Logo、层叠关系和穿戴位置准确。",
-    "优先级：商品准确性 > 模特身份与身形 > 参考图姿态构图 > 背景氛围。若参考图、搭配图和模特图发生冲突，按此优先级处理。",
     "画面质量：真实自然商业摄影质感，人物比例自然，肢体连接合理，面部和手部干净，布料褶皱、阴影、接触关系和透视一致。",
     customPrompt ? `补充要求: ${customPrompt}` : "",
     "负面约束：不要多余肢体、错误手指、变形脸、错穿层级、错色、丢失图案、硬贴图、塑料质感、水印、边框、海报文字、电商模板排版、拼图、四宫格、2x2 网格、分屏、contact sheet、before/after 对比图、商品陈列页或多张照片合集。",

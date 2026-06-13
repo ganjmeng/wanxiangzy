@@ -4,6 +4,7 @@ import {
   buildOutfitFusionPrompt,
   clampOutfitFusionCount,
   decideOutfitFusionMode,
+  decideOutfitFusionFaceOwner,
   DEFAULT_OUTFIT_FUSION_CONFIG,
   enforceOutfitFusionPromptRequirements,
   normalizeOutfitFusionAssistantPrompt,
@@ -121,6 +122,42 @@ describe("decideOutfitFusionMode", () => {
 
   it("returns items_only when only items are present", () => {
     expect(decideOutfitFusionMode(items(1, 2, 3))).toBe("items_only");
+  });
+});
+
+describe("decideOutfitFusionFaceOwner", () => {
+  it("returns 1-based index of the first model asset", () => {
+    // Assets: [ref, items1, items2, model] → 1-based model index = 4
+    expect(decideOutfitFusionFaceOwner([
+      { id: "r1", role: "reference", url: "u" },
+      { id: "i1", role: "outfit", url: "u" },
+      { id: "i2", role: "outfit", url: "u" },
+      { id: "m1", role: "model", url: "u" },
+    ])).toBe(4);
+  });
+
+  it("returns undefined when no model asset is present", () => {
+    expect(decideOutfitFusionFaceOwner([
+      { id: "r1", role: "reference", url: "u" },
+      { id: "i1", role: "outfit", url: "u" },
+    ])).toBeUndefined();
+  });
+
+  it("face owner line is injected into the leading hard rule when a model is present", () => {
+    const template = OUTFIT_FUSION_TEMPLATES[0];
+    const prompt = buildOutfitFusionPrompt({
+      templatePrompt: template.prompt,
+      assets: template.assets,
+      config: DEFAULT_OUTFIT_FUSION_CONFIG,
+    });
+    // The first numbered line under the hard-rule marker must declare
+    // the face owner, not just say "商品准确性".
+    const headSlice = prompt.split("\n").slice(0, 5).join("\n");
+    expect(headSlice).toContain("【HARD 硬规则 · 套装融合模式】");
+    expect(headSlice).toContain("脸主锁定");
+    expect(headSlice).toMatch(/图\d+（模特图）.*唯一脸部身份/);
+    // And the priority order: 模特身份第一
+    expect(prompt).toContain("模特身份第一");
   });
 });
 
