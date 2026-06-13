@@ -266,21 +266,43 @@ export function clampOutfitFusionCount(value: unknown) {
   return Math.min(Math.max(count, 1), 4);
 }
 
-// Hard-rule marker + leading segment. Single-branch, ~350 chars.
-// Centralized so refactor/analysis can pre-check it (idempotency).
-// Priority is FACES FIRST: if a model reference is provided, the model's
-// face owns the output regardless of the reference photo. Items (clothing/
-// accessories) follow the outfit images.
+// Hard-rule marker + leading segment. Single-branch.
+// Pattern mirrors tryon's (lib/tryon-prompt.ts) which has been the
+// highest-quality module:
+//   - CLOTHING_IMAGE_ROLE_RULE: 服装图角色隔离
+//   - FACE_RULE: 模特脸规则
+//   - REFERENCE_RULE: 参考图规则
+// Here we apply the same discipline to outfit-fusion (4 image kinds:
+// outfit / reference / model).
 export const OUTFIT_FUSION_HARD_RULE_MARK = "【HARD 硬规则 · 套装融合模式】";
 
-// Default hard rule (no model owner known). Used as a base; buildOutfit
-// FusionPrompt can overlay the face-owner line when decideOutfitFusionFace
-// Owner resolves to a specific image index.
+// 图角色隔离规则：搭配图即使有真人/模特/脸/身体/姿势/背景，也不得作为身份来源。
+// (Mirrors tryon's TRYON_CLOTHING_IMAGE_ROLE_RULE — the rule that made
+//  tryon look natural instead of blending the model on the clothes.)
+const OUTFIT_FUSION_ITEM_ISOLATION_RULE =
+  "搭配图角色隔离规则：所有标记为搭配图的输入图只提供服装、鞋包、配饰本身的信息；即使图里有真人、模特、人台、脸、身体、姿势、背景、房间、户外环境、光线或构图，也一律不得作为最终人物身份、姿势、背景、场景、镜头距离或构图参考；只提取目标衣服的品类、版型、颜色、图案/logo、面料、纹理、长短、领口、袖口、下摆、口袋、纽扣/拉链、缝线和穿戴层次。最终人物、姿势、背景和构图来自模特图/参考图，不得复制搭配图里的穿衣人和拍摄环境。";
+
+// 模特身份规则：模特图 = 唯一脸部身份锚点。
+const OUTFIT_FUSION_MODEL_FACE_RULE =
+  "模特图规则：模特图是最终脸部身份锚点，提供可识别的五官结构、脸型轮廓和五官相对位置；不提供肤色、妆容、表情、身体比例、年龄身高、头部大小、肩宽、四肢长度、衣服、姿势、背景、构图或场景光线。最终脸必须仍然一眼像模特图本人，禁止合成新脸、禁止与参考图融合脸、禁止与搭配图拼凑脸。";
+
+// 参考图规则：参考图 = 画面骨架。
+const OUTFIT_FUSION_REFERENCE_RULE =
+  "参考图规则：参考图是最终画面的主参考图和画面骨架，必须保持参考图中的可见身体范围、人物姿势、身体角度、可见四肢位置、背景、构图、镜头角度、光影方向、人物位置和镜头距离；但允许为了服装真实贴合人体产生自然褶皱、遮挡关系和边缘轮廓调整。参考图不提供脸部身份——脸部身份由模特图提供。";
+
+// 服装还原规则。
+const OUTFIT_FUSION_GARMENT_FIDELITY_RULE =
+  "服装还原规则：必须忠实还原搭配图中的品类、版型、肩线、领口、袖长、腰线、下摆、开合位置、颜色、面料、纹理、图案、印花、刺绣、纽扣、拉链、口袋、缝线和所有可见细节；不要凭空新增配饰、图案、logo 或改变服装长度和结构。";
+
+const OUTFIT_FUSION_OUTPUT_RULE =
+  "单张输出规则：最终只生成一张完整单人商业摄影穿搭照片，禁止拼图、四宫格、2x2 网格、分屏、边框、编号文字、contact sheet、before/after 对比、商品陈列页或多张照片合集。";
+
 const OUTFIT_FUSION_HARD_RULE_BASE = `${OUTFIT_FUSION_HARD_RULE_MARK}
-1) 模特身份第一：模特图的五官、脸型、肤色、发型、年龄感、身材比例是最终人物身份的唯一来源；禁止与参考图融合脸、禁止合成新脸、禁止与搭配图拼凑脸。
-2) 商品准确性第二：所有服装、鞋包、配饰的颜色、版型、材质、图案、Logo 和穿戴位置必须与搭配图一致；禁止改款、错穿层级、丢失图案、凭空新增未提供的核心商品。
-3) 参考图参考构图：参考图只提供姿态、构图、背景、氛围参考；不复制参考图的脸、衣服、配件。
-4) 单张输出：最终只生成一张完整单人商业摄影穿搭照片，禁止拼图、四宫格、分屏、contact sheet、before/after 对比、商品陈列页或多张合集。`;
+1) ${OUTFIT_FUSION_ITEM_ISOLATION_RULE}
+2) ${OUTFIT_FUSION_MODEL_FACE_RULE}
+3) ${OUTFIT_FUSION_REFERENCE_RULE}
+4) ${OUTFIT_FUSION_GARMENT_FIDELITY_RULE}
+5) ${OUTFIT_FUSION_OUTPUT_RULE}`;
 
 export type OutfitFusionMode = "items_only" | "with_model" | "with_reference" | "full";
 
@@ -296,7 +318,7 @@ export function decideOutfitFusionMode(assets: OutfitFusionAsset[]): OutfitFusio
 
 // Find the index (1-based, matching 【搭配图N】/【模特图N】 labels) of
 // the asset that owns the face identity. Returns undefined if no model
-// asset is present (then face identity is left to the caller / template).
+// asset is present.
 export function decideOutfitFusionFaceOwner(assets: OutfitFusionAsset[]): number | undefined {
   const modelIdx = assets.findIndex((a) => a.role === "model");
   if (modelIdx < 0) return undefined;
@@ -304,12 +326,12 @@ export function decideOutfitFusionFaceOwner(assets: OutfitFusionAsset[]): number
 }
 
 function buildOutfitFusionHardRule(faceOwnerIndex?: number): string {
-  if (faceOwnerIndex === undefined) return OUTFIT_FUSION_HARD_RULE_BASE;
   // Inject an explicit face-owner line at the top so the image model
   // sees "脸 = 模特图N" up front, not buried in role lines.
+  if (faceOwnerIndex === undefined) return OUTFIT_FUSION_HARD_RULE_BASE;
   return [
     OUTFIT_FUSION_HARD_RULE_MARK,
-    `脸主锁定：图${faceOwnerIndex}（模特图）是最终人物的唯一脸部身份来源；其它任何图都不得参与脸、肤色、发型、年龄感、身材、表情的融合。`,
+    `0) 脸主锁定：图${faceOwnerIndex}（模特图）是最终人物的唯一脸部身份来源；其它任何图（包括参考图、搭配图）都不得参与脸、肤色、发型、年龄感、身材、表情的融合。`,
     OUTFIT_FUSION_HARD_RULE_BASE.split("\n").slice(1).join("\n"),
   ].join("\n");
 }

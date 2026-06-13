@@ -150,14 +150,17 @@ describe("decideOutfitFusionFaceOwner", () => {
       assets: template.assets,
       config: DEFAULT_OUTFIT_FUSION_CONFIG,
     });
-    // The first numbered line under the hard-rule marker must declare
-    // the face owner, not just say "商品准确性".
-    const headSlice = prompt.split("\n").slice(0, 5).join("\n");
+    // The face-owner line must be the FIRST numbered rule (0)).
+    const headSlice = prompt.split("\n").slice(0, 6).join("\n");
     expect(headSlice).toContain("【HARD 硬规则 · 套装融合模式】");
     expect(headSlice).toContain("脸主锁定");
     expect(headSlice).toMatch(/图\d+（模特图）.*唯一脸部身份/);
-    // And the priority order: 模特身份第一
-    expect(prompt).toContain("模特身份第一");
+    // And the 3 responsibility rules (mirroring tryon) must all be present
+    expect(prompt).toContain("搭配图角色隔离规则");
+    expect(prompt).toContain("模特图规则");
+    expect(prompt).toContain("参考图规则");
+    expect(prompt).toContain("服装还原规则");
+    expect(prompt).toContain("单张输出规则");
   });
 });
 
