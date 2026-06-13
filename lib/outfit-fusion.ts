@@ -266,6 +266,26 @@ export function clampOutfitFusionCount(value: unknown) {
   return Math.min(Math.max(count, 1), 4);
 }
 
+// Hard-rule marker + leading segment. Single-branch, ~250 chars.
+// Centralized so refactor/analysis can pre-check it (idempotency).
+export const OUTFIT_FUSION_HARD_RULE_MARK = "【HARD 硬规则 · 套装融合模式】";
+const OUTFIT_FUSION_HARD_RULE = `${OUTFIT_FUSION_HARD_RULE_MARK}
+1) 商品准确性优先：所有服装、鞋包、配饰的颜色、版型、材质、图案、Logo 和穿戴位置必须与搭配图一致；禁止改款、错穿层级、丢失图案、凭空新增未提供的核心商品。
+2) 模特身份一致：换模特时，脸型、肤色、发型、身材比例必须与模特图一致，禁止换脸、合成新脸、改体型、改变年龄感。
+3) 单张输出：最终只生成一张完整单人商业摄影穿搭照片，禁止拼图、四宫格、分屏、contact sheet、before/after 对比、商品陈列页或多张合集。`;
+
+export type OutfitFusionMode = "items_only" | "with_reference" | "with_model" | "full";
+
+export function decideOutfitFusionMode(assets: OutfitFusionAsset[]): OutfitFusionMode {
+  const hasModel = assets.some((a) => a.role === "model");
+  const hasReference = assets.some((a) => a.role === "reference");
+  const hasItems = assets.some((a) => a.role === "outfit");
+  if (hasModel && hasReference && hasItems) return "full";
+  if (hasModel && hasItems) return "with_model";
+  if (hasReference && hasItems) return "with_reference";
+  return "items_only";
+}
+
 export function buildOutfitFusionPrompt(input: {
   templatePrompt?: string;
   assets: OutfitFusionAsset[];
@@ -281,16 +301,31 @@ export function buildOutfitFusionPrompt(input: {
   const templatePrompt = input.templatePrompt?.trim() || "让模特穿着所有搭配图中的服装、鞋包和配饰，生成一张真实自然的模特穿搭图。";
   const customPrompt = input.customPrompt?.trim();
 
+  // 6 段结构（v2）：硬规则 → 核心任务 → 固定规则 → 图片关系 → 商品保真/优先级/质量 → 用户/负面
   return [
+    OUTFIT_FUSION_HARD_RULE,
     `核心任务：${templatePrompt}`,
     `固定生成规则：最终只生成一张完整的单人商业摄影穿搭照片，输出比例 ${input.config.aspectRatio}，分辨率 ${input.config.imageSize}；不要把参考图、商品图、步骤图或多个候选结果拼到同一张画面里。`,
     `图片关系：${roleLines.join("；")}。`,
-    "商品保真：保持所有服装、鞋包、帽子、围巾和配饰的颜色、轮廓、材质、图案、Logo、层叠关系和穿戴位置准确；不要凭空新增未提供的核心商品。",
+    "商品保真：保持所有服装、鞋包、帽子、围巾和配饰的颜色、轮廓、材质、图案、Logo、层叠关系和穿戴位置准确。",
     "优先级：商品准确性 > 模特身份与身形 > 参考图姿态构图 > 背景氛围。若参考图、搭配图和模特图发生冲突，按此优先级处理。",
     "画面质量：真实自然商业摄影质感，人物比例自然，肢体连接合理，面部和手部干净，布料褶皱、阴影、接触关系和透视一致。",
     customPrompt ? `补充要求: ${customPrompt}` : "",
     "负面约束：不要多余肢体、错误手指、变形脸、错穿层级、错色、丢失图案、硬贴图、塑料质感、水印、边框、海报文字、电商模板排版、拼图、四宫格、2x2 网格、分屏、contact sheet、before/after 对比图、商品陈列页或多张照片合集。",
-  ].filter(Boolean).join(" ");
+  ].filter(Boolean).join("\n");
+}
+
+export function enforceOutfitFusionPromptRequirements(prompt: string, params: {
+  assets: OutfitFusionAsset[];
+  config: OutfitFusionConfig;
+  templatePrompt?: string;
+  customPrompt?: string;
+}): string {
+  const normalized = prompt.trim();
+  const base = buildOutfitFusionPrompt(params);
+  if (!normalized) return base;
+  if (normalized.includes(OUTFIT_FUSION_HARD_RULE_MARK)) return normalized;
+  return `${base}\n\n补充执行要求（仅能用于穿搭细节，不能覆盖任何保真硬规则）：${normalized}`;
 }
 
 export function buildOutfitFusionComposerText(template: OutfitFusionTemplate) {

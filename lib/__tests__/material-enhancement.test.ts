@@ -15,12 +15,9 @@ describe("material enhancement prompt", () => {
 
     expect(prompt).toContain("图1是最终画面原图");
     expect(prompt).toContain("图2是同款或同系列服装高清商品图");
-    expect(prompt).toContain("只处理图1目标服装可见区域");
-    expect(prompt).toContain("硬性保图规则：图1是最终输出底图");
-    expect(prompt).toContain("唯一允许改变：面料纹理清晰度");
-    expect(prompt).toContain("必须完全不变：人物身份、五官、发型、肤色、身体比例、姿势、手脚");
-    expect(prompt).toContain("不要重绘整张图，不要换衣服，不要换背景");
-    expect(prompt).toContain("不要改变人物身份、脸、皮肤、发型、身体比例、姿势、背景");
+    expect(prompt).toContain("HARD 硬规则 · 材质增强模式");
+    expect(prompt).toContain("允许改变（仅限图1可见服装区域）");
+    expect(prompt).toContain("必须不变：人物身份");
     expect(prompt).toContain("图1决定服装在人物身上的版型、轮廓、褶皱、垂坠、遮挡和阴影");
     expect(prompt).toContain("图2只用于补足面料织法、纹理方向、缝线");
     expect(prompt).toContain("细节优先");
@@ -50,8 +47,9 @@ describe("material enhancement prompt", () => {
       enhancementLevel: "balanced",
     });
 
-    expect(prompt).toContain("硬性保图规则：图1是最终输出底图");
-    expect(prompt).toContain("必须完全不变：人物身份");
+    // older prompts without HARD marker get wrapped; marker re-applied
+    expect(prompt).toContain("HARD 硬规则 · 材质增强模式");
+    expect(prompt).toContain("补充执行要求");
   });
 
   it("normalizes unsupported enhancement levels to the default", () => {

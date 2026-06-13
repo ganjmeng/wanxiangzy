@@ -3,10 +3,13 @@ import {
   buildOutfitFusionDemoResults,
   buildOutfitFusionPrompt,
   clampOutfitFusionCount,
+  decideOutfitFusionMode,
   DEFAULT_OUTFIT_FUSION_CONFIG,
+  enforceOutfitFusionPromptRequirements,
   normalizeOutfitFusionAssistantPrompt,
   outfitFusionReferencesFromAssets,
   OUTFIT_FUSION_TEMPLATES,
+  type OutfitFusionAsset,
 } from "@/lib/outfit-fusion";
 import { createGenericImagePreviewSession, getPreviewCanvasInputReferences } from "@/lib/studio-image-preview";
 
@@ -36,12 +39,12 @@ describe("outfit fusion templates", () => {
       config: DEFAULT_OUTFIT_FUSION_CONFIG,
     });
 
+    expect(prompt).toContain("HARD 硬规则 · 套装融合模式");
     expect(prompt).toContain("核心任务");
     expect(prompt).toContain("图片关系");
-    expect(prompt).toContain("商品准确性");
+    expect(prompt).toContain("商品保真");
     expect(prompt).toContain("不要多余肢体");
     expect(prompt).toContain("保持电商商拍质感");
-    expect(prompt).not.toContain("\n");
   });
 
   it("keeps multi-image count out of the single-image generation prompt", () => {
@@ -94,5 +97,56 @@ describe("outfit fusion templates", () => {
     expect(normalizeOutfitFusionAssistantPrompt(echoedInternalPrompt, "")).toBe(
       "让【参考图8】的模特穿着【搭配图1】的一双银色的高跟凉鞋，穿着【搭配图2】的一件浅灰色的吊带连衣裙，戴着【搭配图4】的米色编织帽子，拿着【搭配图6】的绿色手提包，把模特换成【模特图7】的模特。"
     );
+  });
+});
+
+describe("decideOutfitFusionMode", () => {
+  function items(...n: number[]): OutfitFusionAsset[] {
+    return n.map((i) => ({ id: `i${i}`, role: "outfit" as const, url: `https://e.com/${i}.jpg` }));
+  }
+  function ref(): OutfitFusionAsset { return { id: "r1", role: "reference", url: "https://e.com/r.jpg" }; }
+  function mdl(): OutfitFusionAsset { return { id: "m1", role: "model", url: "https://e.com/m.jpg" }; }
+
+  it("returns full when reference + model + items are all present", () => {
+    expect(decideOutfitFusionMode([ref(), mdl(), ...items(1, 2)])).toBe("full");
+  });
+
+  it("returns with_model when only model + items are present", () => {
+    expect(decideOutfitFusionMode([mdl(), ...items(1, 2)])).toBe("with_model");
+  });
+
+  it("returns with_reference when only reference + items are present", () => {
+    expect(decideOutfitFusionMode([ref(), ...items(1, 2)])).toBe("with_reference");
+  });
+
+  it("returns items_only when only items are present", () => {
+    expect(decideOutfitFusionMode(items(1, 2, 3))).toBe("items_only");
+  });
+});
+
+describe("enforceOutfitFusionPromptRequirements", () => {
+  const template = OUTFIT_FUSION_TEMPLATES[0];
+
+  it("is idempotent when hard rule marker is present", () => {
+    const prompt = buildOutfitFusionPrompt({
+      templatePrompt: template.prompt,
+      assets: template.assets,
+      config: DEFAULT_OUTFIT_FUSION_CONFIG,
+    });
+    const second = enforceOutfitFusionPromptRequirements(prompt, {
+      assets: template.assets,
+      config: DEFAULT_OUTFIT_FUSION_CONFIG,
+      templatePrompt: template.prompt,
+    });
+    expect(second).toBe(prompt);
+  });
+
+  it("wraps older prompts with the hard rule segment", () => {
+    const wrapped = enforceOutfitFusionPromptRequirements("让模特穿上所有服装", {
+      assets: template.assets,
+      config: DEFAULT_OUTFIT_FUSION_CONFIG,
+    });
+    expect(wrapped).toContain("HARD 硬规则 · 套装融合模式");
+    expect(wrapped).toContain("让模特穿上所有服装");
   });
 });
