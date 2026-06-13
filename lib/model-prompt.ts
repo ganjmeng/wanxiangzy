@@ -70,6 +70,15 @@ export function enforceModelPromptRequirements(params: {
 
   const referenceCount = normalizeReferenceCount(params.referenceCount);
   const normalizedPrompt = normalizeModelPrompt(params.prompt);
+
+  // Idempotency: if the prompt already contains the protocol marker and
+  // the hard-rule segment, return it as-is. This prevents the bug where
+  // a previous round's output is fed back as input and ends up duplicated
+  // (HARD 硬规则 segment gets pulled into userIntent and re-wrapped).
+  if (normalizedPrompt.includes(`【${MODEL_PROMPT_MARKER}】`) && normalizedPrompt.includes("【HARD 硬规则")) {
+    return normalizedPrompt;
+  }
+
   const fragments = extractModelPromptFragments(normalizedPrompt);
 
   const roleStatement = buildModelIdentityRoleStatement({
@@ -210,6 +219,11 @@ const MODEL_SYSTEM_LINE_PATTERNS = [
   /^年龄感和肤质规则[:：]/,
   /^白色基础上衣/,
   /^图\d+\s*(是|只作为).*?(发型|发色).*?参考/,
+  // HARD hard-rule segment lines (whole segment or numbered children) MUST
+  // be treated as system lines, not user intent. Without these, round-trip
+  // re-enforce causes 2-3x duplication of the hard rule.
+  /^【HARD 硬规则/,
+  /^\d+\)\s*(脸型|多参考|年龄感|年龄)/,
 ];
 
 function cleanInlineText(value?: string | null) {

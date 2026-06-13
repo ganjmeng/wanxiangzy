@@ -58,6 +58,32 @@ describe("model prompt handling", () => {
     });
 
     expect(second.match(/专属模特生成协议 v2/g)?.length).toBe(1);
-    expect(second.length).toBeLessThanOrEqual(first.length + 400);
+    // Idempotency: round-trip self-enforce is now a no-op (marker + hard
+    // rule already present → return as-is). The 400-char tolerance from
+    // the previous version masked a real bug: hard rule was being pulled
+    // into userIntent and re-wrapped, causing 2-3x duplication.
+    expect(second).toBe(first);
+  });
+
+  it("hard rule segment appears exactly once even with multiple references and user prompt", () => {
+    const prompt = enforceModelPromptRequirements({
+      prompt: [
+        "专属模特拍摄风格档位：融合原生感。",
+        "用户希望眼神更温柔。",
+        "多一些雀斑保留。",
+        "想要淡妆。",
+      ].join("\n"),
+      referenceCount: 3,
+      gender: "female",
+      hairStyle: "齐肩短波波头",
+      hairColor: "深棕色",
+    });
+    // HARD 硬规则 marker must appear exactly once
+    const hardRuleCount = prompt.match(/【HARD 硬规则/g)?.length ?? 0;
+    expect(hardRuleCount).toBe(1);
+    // The 3 numbered children should also appear exactly once each
+    expect(prompt.match(/1\) 脸型骨相/g)?.length).toBe(1);
+    expect(prompt.match(/2\) 多参考融合/g)?.length).toBe(1);
+    expect(prompt.match(/3\) 年龄感/g)?.length).toBe(1);
   });
 });
