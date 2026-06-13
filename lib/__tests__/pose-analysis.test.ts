@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  decidePoseMode,
   getPoseVisualAnalysisDetailItems,
   getPoseVisualAnalysisSummary,
   normalizePoseVisualAnalysis,
@@ -62,5 +63,44 @@ describe("pose visual analysis display", () => {
     });
 
     expect(analysis?.confidence).toBe(0.82);
+  });
+});
+
+describe("decidePoseMode", () => {
+  function withCrop(crop: PoseVisualAnalysis["bodyCrop"], extras: Partial<PoseVisualAnalysis> = {}): PoseVisualAnalysis {
+    return { ...baseAnalysis, bodyCrop: crop, ...extras };
+  }
+
+  it("returns pose_burst_full_subject when analysis is missing (assume we have a person)", () => {
+    expect(decidePoseMode({ analysis: null, outputMode: "grid" })).toBe("pose_burst_full_subject");
+  });
+
+  it("returns preserve_reference_crop for lower_body", () => {
+    expect(decidePoseMode({ analysis: withCrop("lower_body"), outputMode: "separate" })).toBe("preserve_reference_crop");
+  });
+
+  it("returns preserve_reference_crop for closeup with no head/face visible", () => {
+    expect(decidePoseMode({
+      analysis: withCrop("closeup", { headVisible: false, faceVisible: false }),
+      outputMode: "grid",
+    })).toBe("preserve_reference_crop");
+  });
+
+  it("returns pose_burst_full_subject for closeup with head visible", () => {
+    expect(decidePoseMode({
+      analysis: withCrop("closeup", { headVisible: true }),
+      outputMode: "grid",
+    })).toBe("pose_burst_full_subject");
+  });
+
+  it("returns preserve_reference_crop for partial_unknown with no head/face visible", () => {
+    expect(decidePoseMode({
+      analysis: withCrop("partial_unknown", { headVisible: false, faceVisible: false }),
+      outputMode: "grid",
+    })).toBe("preserve_reference_crop");
+  });
+
+  it("returns pose_burst_full_subject for full_body", () => {
+    expect(decidePoseMode({ analysis: withCrop("full_body"), outputMode: "grid" })).toBe("pose_burst_full_subject");
   });
 });

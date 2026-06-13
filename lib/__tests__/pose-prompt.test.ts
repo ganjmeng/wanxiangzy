@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyPoseSeriesStylePrompt } from "@/lib/module-style-presets";
-import { buildSeparatePosePrompt, buildSeparatePoseSlotDirective, enforcePosePromptRequirements } from "@/lib/pose-prompt";
+import { buildSeparatePosePrompt, buildSeparatePoseSlotDirective, buildPoseHardRule, enforcePosePromptRequirements } from "@/lib/pose-prompt";
 import { normalizePoseVisualAnalysis } from "@/lib/pose-analysis";
 import { buildFallbackPosePlan } from "@/lib/pose-plan";
 
@@ -333,5 +333,29 @@ describe("pose prompt handling", () => {
     expect(slot3).toContain(posePlan.slots[2].bodyAction);
     expect(slot3).not.toContain(posePlan.slots[0].bodyAction);
     expect(slot3).toContain("补充要求：衣摆清晰。");
+  });
+});
+
+describe("buildPoseHardRule", () => {
+  it("emits preserve_reference_crop segment with crop-lock + grid layout hint", () => {
+    const rule = buildPoseHardRule({ poseMode: "preserve_reference_crop", outputMode: "grid" });
+    expect(rule).toContain("HARD 硬规则");
+    expect(rule).toContain("preserve_reference_crop");
+    expect(rule).toContain("严格保持图 1 的画面裁切范围");
+    expect(rule).toContain("2x2 四宫格");
+  });
+
+  it("emits pose_burst_full_subject segment with single-image layout hint for separate mode", () => {
+    const rule = buildPoseHardRule({ poseMode: "pose_burst_full_subject", outputMode: "separate" });
+    expect(rule).toContain("HARD 硬规则");
+    expect(rule).toContain("pose_burst_full_subject");
+    expect(rule).toContain("禁止换脸");
+    expect(rule).toContain("3:4 单人完整图");
+  });
+
+  it("keeps the rule short and single-branch (no if/then language)", () => {
+    const rule = buildPoseHardRule({ poseMode: "pose_burst_full_subject", outputMode: "grid" });
+    expect(rule).not.toMatch(/如果|如果图/);
+    expect(rule.length).toBeLessThan(700);
   });
 });

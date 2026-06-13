@@ -543,3 +543,34 @@ function clampText(value: string, maxLength = 140) {
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
+
+// ---- Pose mode decision ----
+// Centralized decision for pose-burst prompt generation. Helps the prompt
+// stay single-branch (no contradictory if/then instructions) and gives the
+// image-generation model one clear directive set per pose task.
+//
+// Output: which face-identity / crop mode to apply when composing the prompt.
+//   - "preserve_reference_crop": reference crop is headless or partial;
+//     keep the reference's body range strictly, no head/face expansion.
+//   - "pose_burst_full_subject": reference has a visible full subject;
+//     preserve identity (face, body, outfit) and only vary pose.
+export type PoseMode = "preserve_reference_crop" | "pose_burst_full_subject";
+
+export function decidePoseMode(params: {
+  analysis?: PoseVisualAnalysis | null;
+  outputMode: "grid" | "separate";
+}): PoseMode {
+  const a = params.analysis;
+  if (!a) return "pose_burst_full_subject"; // no analysis -> assume we have a person
+  if (a.bodyCrop === "lower_body") {
+    return "preserve_reference_crop";
+  }
+  if (a.bodyCrop === "closeup" && !a.headVisible && !a.faceVisible) {
+    return "preserve_reference_crop";
+  }
+  // partial_unknown with no visible head -> treat as headless to be safe
+  if (a.bodyCrop === "partial_unknown" && !a.headVisible && !a.faceVisible) {
+    return "preserve_reference_crop";
+  }
+  return "pose_burst_full_subject";
+}

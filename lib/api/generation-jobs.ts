@@ -64,7 +64,7 @@ import {
 } from "@/lib/commerce-detail-sections";
 import { enforceModelPromptRequirements } from "@/lib/model-prompt";
 import { buildGarmentDetailReferencePrompt, buildPoseRoleBasedPrompt, normalizeGarmentDetailUrls } from "@/lib/garment-detail-references";
-import { buildSeparatePosePrompt, enforcePosePromptRequirements, type PoseOutputMode } from "@/lib/pose-prompt";
+import { buildSeparatePosePrompt, buildPoseHardRule, decidePoseMode, enforcePosePromptRequirements, type PoseOutputMode } from "@/lib/pose-prompt";
 import {
   applyGarment3dDisplayStylePrompt,
   applyModelShootStylePrompt,
@@ -1367,6 +1367,8 @@ async function executePayload(
       prompt: payload.prompt,
     });
     const detailCount = Math.max(0, imageInputs.clothingUrls.length - 1);
+    const poseMode = decidePoseMode({ analysis: poseAnalysis, outputMode });
+    const hardRule = buildPoseHardRule({ poseMode, outputMode });
     const roleBasedPrompt = buildPoseRoleBasedPrompt({
       outputMode,
       detailCount,
@@ -1391,6 +1393,7 @@ async function executePayload(
         promptKind: "pose",
         run: async (index, onTaskProgress) => {
           const posePrompt = [
+            hardRule,
             roleBasedPrompt,
             userIntent ? `用户补充：${userIntent}` : "",
             buildSeparatePosePrompt(fallbackPrompt, index + 1, poseStyle, payload.prompt, poseAnalysis, posePlan),

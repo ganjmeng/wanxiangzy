@@ -6,6 +6,7 @@ import {
 } from "@/lib/module-style-presets";
 import {
   buildPoseVisualAnalysisRule,
+  decidePoseMode,
   shouldSuppressPoseFacePlanning,
   type PoseVisualAnalysis,
 } from "@/lib/pose-analysis";
@@ -566,3 +567,40 @@ function toSinglePoseRule(rule: string) {
     .replace(/同组独立图/g, "当前单张图片")
     .replace(/四宫格/g, "单图");
 }
+
+// ---- Hard rule (must lead every pose prompt) ----
+// Single source of truth for which identity-preservation rules apply.
+// Output is short, single-branch, bilingual so both image-generation models
+// and visual analyzers stay aligned.
+//
+// We deliberately keep this small (~250 chars) so it can be prepended to
+// every pose prompt without bloating token budget.
+export function buildPoseHardRule(params: {
+  poseMode: "preserve_reference_crop" | "pose_burst_full_subject";
+  outputMode: "grid" | "separate";
+}): string {
+  const { poseMode, outputMode } = params;
+  const layoutHint = outputMode === "grid"
+    ? "必须生成 2x2 四宫格，四个分格分别展示姿势 1/2/3/4；不要拆成多张独立图，不要只生成单人单姿势。"
+    : "当前请求只生成一张 3:4 单人完整图；不要四宫格、不要拼图、不要分屏、不要边框、不要编号文字、不要 contact sheet。";
+  if (poseMode === "preserve_reference_crop") {
+    return [
+      "【HARD 硬规则 · 姿势身份模式 preserve_reference_crop】",
+      "1) 严格保持图 1 的画面裁切范围：头/脸/上半身/下半身各自落在哪一档就只动哪一档；不要扩展到原本没出现的人体部位。",
+      "2) 仅改变姿势/构图：人物身份、性别表达、年龄感、身材骨架、肤色、发型、服装款式/颜色/纹理、背景、光线、色调必须与图 1 完全一致。",
+      "3) 禁止生成新的人物、禁止换脸、禁止改服装、禁止改背景。",
+      layoutHint,
+    ].join("\n");
+  }
+  return [
+    "【HARD 硬规则 · 姿势身份模式 pose_burst_full_subject】",
+    "1) 仅改变姿势：人物身份、性别表达、年龄感、身材骨架、脸型骨相、肤色、发型必须与图 1 严格一致；禁止换脸、禁止合成新脸、禁止改体型。",
+    "2) 服装与配件：款式、颜色、面料纹理、印花、logo、口袋、纽扣等细节与图 1 完全一致；禁止改款、禁止改色、禁止加 logo 或去除 logo。",
+    "3) 场景与光线：背景、光线、色温、相机风格必须与图 1 保持同一套商业时装大片感觉；不要换背景、不要加 HDR、不要磨皮。",
+    layoutHint,
+  ].join("\n");
+}
+
+// Re-export so callers don't need to import the analysis file twice.
+export { decidePoseMode };
+
