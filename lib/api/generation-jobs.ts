@@ -63,7 +63,7 @@ import {
   type CommerceDetailSectionSpec,
 } from "@/lib/commerce-detail-sections";
 import { enforceModelPromptRequirements } from "@/lib/model-prompt";
-import { buildGarmentDetailReferencePrompt, buildPoseRoleBasedPrompt, normalizeGarmentDetailUrls } from "@/lib/garment-detail-references";
+import { buildGarmentDetailReferencePrompt, normalizeGarmentDetailUrls } from "@/lib/garment-detail-references";
 import { buildSeparatePosePrompt, enforcePosePromptRequirements, type PoseOutputMode } from "@/lib/pose-prompt";
 import {
   applyGarment3dDisplayStylePrompt,
@@ -1366,20 +1366,13 @@ async function executePayload(
       outputMode,
       prompt: payload.prompt,
     });
-    const detailCount = Math.max(0, imageInputs.clothingUrls.length - 1);
-    const roleBasedPrompt = buildPoseRoleBasedPrompt({
-      outputMode,
-      detailCount,
-      poseCount: getPoseGenerationCount(payload),
-    });
-    const fallbackPrompt = enforcePosePromptRequirements(applyPoseSeriesStylePrompt(payload.prompt, poseStyle), {
+    const prompt = enforcePosePromptRequirements(applyPoseSeriesStylePrompt(payload.prompt, poseStyle), {
       poseStyle,
       outputMode,
       poseAnalysis,
       posePlan,
     });
-    const garmentDetailDirective = buildGarmentDetailReferencePrompt(detailCount);
-    const userIntent = (payload.prompt || "").trim();
+    const garmentDetailDirective = buildGarmentDetailReferencePrompt(Math.max(0, imageInputs.clothingUrls.length - 1));
 
     if (outputMode === "separate") {
       const generationCount = getPoseGenerationCount(payload);
@@ -1391,9 +1384,7 @@ async function executePayload(
         promptKind: "pose",
         run: async (index, onTaskProgress) => {
           const posePrompt = [
-            roleBasedPrompt,
-            userIntent ? `用户补充：${userIntent}` : "",
-            buildSeparatePosePrompt(fallbackPrompt, index + 1, poseStyle, payload.prompt, poseAnalysis, posePlan),
+            buildSeparatePosePrompt(prompt, index + 1, poseStyle, payload.prompt, poseAnalysis, posePlan),
             garmentDetailDirective,
           ].filter(Boolean).join("\n");
           const result = await generateImage({
@@ -1416,12 +1407,7 @@ async function executePayload(
       });
     }
 
-    const posePrompt = [
-      roleBasedPrompt,
-      userIntent ? `用户补充：${userIntent}` : "",
-      fallbackPrompt,
-      garmentDetailDirective,
-    ].filter(Boolean).join("\n");
+    const posePrompt = [prompt, garmentDetailDirective].filter(Boolean).join("\n");
     const result = await generateImage({
       model: payload.aiModel,
       prompt: posePrompt,

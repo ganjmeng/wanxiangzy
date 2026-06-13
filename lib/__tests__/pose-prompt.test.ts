@@ -38,7 +38,7 @@ describe("pose prompt handling", () => {
 
     expect(enforced).toContain("姿势3：右手拿包，轻微迈步。");
     expect(enforced).not.toContain("一手轻抚头发或整理衣领");
-    expect(enforced).toContain("人物身份规则");
+    expect(enforced).toContain("身体动作规则");
     expect(enforced).toContain("图1角色");
   });
 
@@ -56,7 +56,7 @@ describe("pose prompt handling", () => {
     expect(enforced).toContain("头部方向与肩膀、躯干和身体转向保持一致");
     expect(enforced).not.toContain("动态行走、转身或回眸方向");
     expect(enforced).not.toContain("consistent medium full-body framing");
-    expect(enforced).toContain("服装保真规则");
+    expect(enforced).toContain("时装大片连贯性规则");
     expect(enforced).not.toContain("手指自然整理发丝或衣领");
     expect(enforced).not.toContain("由 AI 按风格自由设计");
   });
@@ -183,25 +183,29 @@ describe("pose prompt handling", () => {
 
     expect(enforced).toContain("表情规则");
     expect(enforced).toContain("轻微自然");
-    expect(enforced).toContain("身体骨架必须保持不变");
+    expect(enforced).toContain("过度扭颈");
     expect(enforced).not.toContain("表情控制");
   });
 
   it("locks source gender identity and body frame for pose generation", () => {
     const enforced = enforcePosePromptRequirements("保持图1人物和服装，生成姿势变化。");
 
-    expect(enforced).toContain("人物身份规则");
+    expect(enforced).toContain("性别身份锁定");
+    expect(enforced).toContain("如果图1是男性");
+    expect(enforced).toContain("不要把男性变成女性");
+    expect(enforced).toContain("比例锁定");
     expect(enforced).toContain("同一性别表达");
-    expect(enforced).toContain("原图人物的性别表达");
   });
 
   it("uses product-fidelity wording instead of defect keyword stuffing", () => {
     const enforced = enforcePosePromptRequirements("保持图1人物和服装，生成姿势变化。");
     const separate = buildSeparatePosePrompt("补充要求：保持衣服质感。", 2);
 
-    expect(enforced).toContain("服装保真规则");
-    expect(enforced).toContain("原图服装的款式");
-    expect(enforced).toContain("原图色调规则");
+    expect(enforced).toContain("服装产品保真规则");
+    expect(enforced).toContain("受保护的商品资产");
+    expect(enforced).toContain("不重新设计布料");
+    expect(enforced).toContain("neutral source color management");
+    expect(enforced).toContain("细密纹理安全规则");
     expect(enforced).toContain("摩尔纹");
     expect(enforced).not.toContain("cinematic color grade");
     expect(separate).toContain("Product fidelity");

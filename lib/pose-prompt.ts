@@ -78,20 +78,6 @@ export const POSE_EXPRESSION_VARIATION_REQUIREMENT =
 export const POSE_EXPRESSION_CONSISTENT_REQUIREMENT =
   POSE_EXPRESSION_VARIATION_REQUIREMENT;
 
-// 合并后的精简规则：把原本散落的 9 条规则压成 3 条。
-// - POSE_GARMENT_FIDELITY_MERGED_RULE: POSE_SERIES_RULE + POSE_CLOTHING_RULE + POSE_GARMENT_PRODUCT_FIDELITY_RULE
-// - POSE_PERSON_IDENTITY_MERGED_RULE: POSE_GENDER_IDENTITY_LOCK_RULE + POSE_PROPORTION_LOCK_RULE + POSE_FACE_SHAPE_RULE + POSE_BODY_RULE
-// - POSE_SOURCE_TONE_MERGED_RULE: POSE_SOURCE_TONE_LOCK_RULE + POSE_FINE_TEXTURE_SAFETY_RULE + POSE_SKIN_COLOR_RULE
-
-export const POSE_GARMENT_FIDELITY_MERGED_RULE =
-  "服装保真规则：原图服装的款式、版型、固有色、图案、logo、文字、面料表面、领口、袖口、下摆、纽扣、拉链、口袋、缝线必须保持不变；姿势变化只允许自然褶皱、垂坠、张力、接触阴影的变化，不能重新设计布料、不能换服装、不能套滤镜。";
-
-export const POSE_PERSON_IDENTITY_MERGED_RULE =
-  "人物身份规则：原图人物的性别表达、年龄感、脸型骨相、脸长宽比例、颧骨下颌下巴、眼型眼距、鼻翼唇形、五官辨识度、肤色冷暖、皮肤质感、头身比、肩宽腰胯、四肢长度、身体骨架必须保持不变；不能拉高拉瘦、不能变体型、不能磨皮、不能变成网红脸、不能更换身份。";
-
-export const POSE_SOURCE_TONE_MERGED_RULE =
-  "原图色调规则：保持原图的曝光、对比度、白平衡、色温、肤色明暗、阴影层次、颗粒噪点和相机质感；细条纹、罗纹、针织、裤纹、网纱、格纹、重复图案按原图可见尺度自然保留，不要强化成摩尔纹/波纹/频闪条纹/假纤维；不要整体重调色、HDR、提高 clarity、额外锐化、超分纹理或商业精修滤镜。";
-
 const POSE_SINGLE_IMAGE_CONSISTENCY_REQUIREMENT =
   "当前单张图片以图1作为人物身份、性别表达、年龄感、身体骨架、服装、背景和光线参考；优先让姿势明显变化，同时保持同一套服装设计、颜色、图案、面料质感、自然脸部身份、肤色和真实身体比例。";
 
@@ -202,12 +188,20 @@ export function enforcePosePromptRequirements(
   }
 
   const requiredRules = [
-    ["服装保真规则", POSE_GARMENT_FIDELITY_MERGED_RULE],
-    ["人物身份规则", POSE_PERSON_IDENTITY_MERGED_RULE],
-    ["原图色调规则", POSE_SOURCE_TONE_MERGED_RULE],
+    ["时装大片连贯性规则", POSE_SERIES_RULE],
+    ["服装展示规则", POSE_CLOTHING_RULE],
+    ["服装产品保真规则", POSE_GARMENT_PRODUCT_FIDELITY_RULE],
+    ["原图影调保真规则", POSE_SOURCE_TONE_LOCK_RULE],
+    ["细密纹理安全规则", POSE_FINE_TEXTURE_SAFETY_RULE],
+    ["性别身份锁定", POSE_GENDER_IDENTITY_LOCK_RULE],
+    ["比例锁定", POSE_PROPORTION_LOCK_RULE],
+    ["身体动作规则", POSE_BODY_RULE],
+    ["肤色和色彩规则", POSE_SKIN_COLOR_RULE],
+    ["脸型五官规则", POSE_FACE_SHAPE_RULE],
   ] as const;
   requiredRules.forEach(([marker, rule]) => {
-    if (suppressFacePlanning && marker === "人物身份规则") return;
+    if (options.outputMode === "separate" && marker === "时装大片连贯性规则") return;
+    if (suppressFacePlanning && marker === "脸型五官规则") return;
     if (!nextPrompt.includes(marker)) {
       const nextRule = options.outputMode === "separate" ? toSinglePoseRule(rule) : rule;
       nextPrompt = `${nextPrompt}\n${nextRule}`;

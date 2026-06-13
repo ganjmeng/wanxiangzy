@@ -57,29 +57,3 @@ export function buildTryOnRoleBasedPrompt(params: {
     `最终输出一张真实自然的融合图：服装是图 2 的${params.hasModelFace ? "，脸是图 3 的" : ""}，姿势和场景是图 1 的。`,
   ].filter(Boolean).join("");
 }
-
-/**
- * 友商风格主任务模板：姿势裂变（pose）。
- * 图 1 = 参考人物（保留人物身份），图 2+ = 服装细节补充（可选）。
- * outputMode: grid（2x2 四宫格） / separate（每张独立）。
- */
-export function buildPoseRoleBasedPrompt(params: {
-  outputMode: "grid" | "separate";
-  detailCount: number;
-  poseCount: number;
-}) {
-  const layoutPart = params.outputMode === "grid"
-    ? `最终输出一张 2x2 四宫格，每个分格展示一个姿势；不要拆成多张独立图片，不要拼贴成普通单人照。`
-    : `最终输出${params.poseCount}张独立的单人换姿势图，每张只展示一个姿势。`;
-
-  const detailPart = params.detailCount > 0
-    ? `图 2 及之后共 ${params.detailCount} 张为图 1 服装的局部细节补充（领口、口袋、纽扣、背面、侧面等），精准还原局部特征，不放大任何纹理。`
-    : "";
-
-  return [
-    `姿势裂变：图 1 是参考人物（保留人物身份：脸型、五官、骨相、肤色、发型、年龄感、服装款式、版型、颜色、图案）。`,
-    `在指定的 N 个新姿势下重新生成同一人物的图片，姿势按提示词描述执行，服装款式、颜色、版型必须与图 1 一致，背景简洁干净。`,
-    detailPart,
-    layoutPart,
-  ].filter(Boolean).join("");
-}
