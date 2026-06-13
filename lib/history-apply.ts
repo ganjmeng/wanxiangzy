@@ -35,6 +35,7 @@ export type HistoryJobPayload =
       clothingMode?: TryOnClothingMode;
       clothingRoles?: TryOnClothingRole[];
       clothingAnalysis?: TryOnClothingAnalysis | null;
+      garmentDetailUrls?: string[];
       garmentAudience?: TryOnGarmentAudience;
       ageGroup?: TryOnAgeGroup;
       modelFaceUrl?: string | null;
@@ -103,6 +104,7 @@ export type HistoryJobPayload =
       genCount?: number;
       poseAnalysis?: PoseVisualAnalysis | null;
       posePlan?: PosePlan | null;
+      garmentDetailUrls?: string[];
     }
   | {
       kind: "garment3d";
@@ -139,6 +141,7 @@ export type HistoryJobPayload =
   | {
       kind: "faceSwap";
       sourceUrl: string;
+      sourceUrls?: string[];
       faceUrl: string;
       aiModel: LingyaModel;
       aspectRatio: AspectRatio;

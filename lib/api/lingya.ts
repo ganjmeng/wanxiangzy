@@ -29,6 +29,7 @@ import {
   type TryOnGarmentAudience,
 } from "@/lib/tryon-prompt";
 import { compileImagePromptForModel, type ImagePromptKind } from "@/lib/api/prompt-compiler";
+import { buildGarmentDetailReferencePrompt, normalizeGarmentDetailUrls } from "@/lib/garment-detail-references";
 import { TRYON_CATEGORY_BY_CODE, type TryOnClothingAnalysis } from "@/lib/tryon-reference-config";
 import {
   buildTryOnReferenceCropLockRule,
@@ -151,6 +152,7 @@ interface BatchTryOnInput {
   clothingMode?: TryOnClothingMode;
   clothingRoles?: TryOnClothingRole[];
   clothingAnalysis?: TryOnClothingAnalysis | null;
+  garmentDetailUrls?: string[];
   garmentAudience?: TryOnGarmentAudience;
   ageGroup?: TryOnAgeGroup;
   garmentCategory?: TryOnGarmentCategory;
@@ -174,6 +176,7 @@ type TryOnRequestPromptOptions = {
   referenceAnalysis?: TryOnReferenceAnalysis | null;
   referenceImageNumber?: number;
   modelFaceUrl?: string;
+  garmentDetailCount?: number;
 };
 
 export async function generateImage(input: GenerateInput, retries = 2): Promise<GenerateResult> {
@@ -364,6 +367,7 @@ export async function batchTryOn(input: BatchTryOnInput): Promise<{ resultUrls: 
   if (!input.clothingUrls.length) {
     throw new Error("缺少服装图片");
   }
+  const garmentDetailUrls = normalizeGarmentDetailUrls(input.garmentDetailUrls);
   const aspectRatio = normalizeAspectRatio(await resolveSmartImageAspectRatio({
     aspectRatio: input.aspect_ratio || "3:4",
     image: input.referenceUrl || input.modelFaceUrl || input.clothingUrls[0],
@@ -387,12 +391,14 @@ export async function batchTryOn(input: BatchTryOnInput): Promise<{ resultUrls: 
   const finalPrompt = applyTryOnRequestPrompt(input.raw_prompt?.trim() || prompt, {
     ...input,
     referenceImageNumber: input.referenceUrl ? input.clothingUrls.length + 1 : undefined,
+    garmentDetailCount: garmentDetailUrls.length,
   });
 
   const imageInputs = [
     ...input.clothingUrls,
     ...(input.referenceUrl ? [input.referenceUrl] : []),
     ...(input.modelFaceUrl ? [input.modelFaceUrl] : []),
+    ...garmentDetailUrls,
   ];
 
   const result = await generateImage({
@@ -421,6 +427,8 @@ export function applyTryOnRequestPrompt(prompt: string, input: TryOnRequestPromp
   if (cropDirective) lines.push(cropDirective);
   const candidateDirective = buildTryOnCandidateDirective(input);
   if (candidateDirective) lines.push(candidateDirective);
+  const garmentDetailDirective = buildGarmentDetailReferencePrompt(input.garmentDetailCount || 0);
+  if (garmentDetailDirective) lines.push(garmentDetailDirective);
   return lines.filter(Boolean).join("\n");
 }
 

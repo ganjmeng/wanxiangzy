@@ -379,7 +379,7 @@ export default function MaterialEnhancementPage() {
   }
 
   function handleRepairGenerate(repairValue: string) {
-    const repairedPrompt = applyRepairPrompt(finalPrompt, "general", repairValue);
+    const repairedPrompt = applyRepairPrompt(finalPrompt, "materialEnhancement", repairValue);
     toast.info("已加入修复指令，正在重新生成...");
     generate(repairedPrompt);
   }
@@ -642,7 +642,7 @@ export default function MaterialEnhancementPage() {
             <div className="absolute bottom-0 left-0 right-0 border-t border-white/70 bg-white/78 backdrop-blur-2xl px-4 sm:px-6 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-[0_-18px_45px_rgba(15,23,42,0.08)]">
               <span className="text-xs text-gray-400">材质增强结果</span>
               <RepairPromptPanel
-                kind="general"
+                kind="materialEnhancement"
                 onRepair={handleRepairGenerate}
                 disabled={isGenerating}
                 className="max-w-2xl flex-1"
@@ -670,7 +670,7 @@ export default function MaterialEnhancementPage() {
             onRetry={() => generate()}
             onRepair={handleRepairGenerate}
             isGenerating={isGenerating}
-            repairKind="general"
+            repairKind="materialEnhancement"
           />
         )}
       </div>

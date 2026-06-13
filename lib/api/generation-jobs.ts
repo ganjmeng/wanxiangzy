@@ -36,6 +36,7 @@ import {
   type CommerceDetailSectionSpec,
 } from "@/lib/commerce-detail-sections";
 import { enforceModelPromptRequirements } from "@/lib/model-prompt";
+import { buildGarmentDetailReferencePrompt, normalizeGarmentDetailUrls } from "@/lib/garment-detail-references";
 import { buildSeparatePosePrompt, enforcePosePromptRequirements, type PoseOutputMode } from "@/lib/pose-prompt";
 import {
   applyGarment3dDisplayStylePrompt,
@@ -58,7 +59,7 @@ import type { TryOnClothingMode, TryOnClothingRole } from "@/lib/tryon-upload-ru
 import type { GrassPayloadBase } from "@/lib/grass-planting";
 import type { ModelBackgroundPayloadBase } from "@/lib/model-background";
 import type { MaterialEnhancementPayloadBase } from "@/lib/material-enhancement";
-import { enforceFaceSwapPromptRequirements } from "@/lib/face-swap";
+import { enforceFaceSwapPromptRequirements, normalizeFaceSwapSourceUrls } from "@/lib/face-swap";
 import {
   buildProductSetPrompt,
   createProductSetModuleResult,
@@ -108,6 +109,7 @@ export type GenerationJobPayload = GenerationJobPayloadBase & (
       clothingMode?: TryOnClothingMode;
       clothingRoles?: TryOnClothingRole[];
       clothingAnalysis?: TryOnClothingAnalysis | null;
+      garmentDetailUrls?: string[];
       garmentAudience?: TryOnGarmentAudience;
       ageGroup?: TryOnAgeGroup;
       garmentCategory?: TryOnGarmentCategory;
@@ -177,6 +179,7 @@ export type GenerationJobPayload = GenerationJobPayloadBase & (
       genCount?: number;
       poseAnalysis?: PoseVisualAnalysis | null;
       posePlan?: PosePlan | null;
+      garmentDetailUrls?: string[];
     }
   | {
       kind: "garment3d";
@@ -195,6 +198,7 @@ export type GenerationJobPayload = GenerationJobPayloadBase & (
   | {
       kind: "faceSwap";
       sourceUrl: string;
+      sourceUrls?: string[];
       faceUrl: string;
       aiModel: LingyaModel;
       aspectRatio: AspectRatio;
@@ -1105,11 +1109,15 @@ async function executePayload(
 
   if (payload.kind === "tryon") {
     const referenceUrls = getTryOnPayloadReferenceUrls(payload);
+    const garmentDetailUrls = normalizeGarmentDetailUrls(payload.garmentDetailUrls);
     const imageInputs = await resolvePayloadImageInputs({
       clothingUrls: payload.clothingUrls,
       modelFaceUrl: payload.modelFaceUrl || undefined,
       referenceUrls,
     });
+    const garmentDetailInputs = garmentDetailUrls.length
+      ? await resolvePayloadImageInputs({ clothingUrls: garmentDetailUrls })
+      : { clothingUrls: [] as string[] };
     const resolvedReferenceUrls = imageInputs.referenceUrls?.length ? imageInputs.referenceUrls : [];
     const referenceAnalyses = alignTryOnReferenceAnalyses(payload.referenceAnalyses, resolvedReferenceUrls.length);
     const referenceBatchSize = Math.max(1, resolvedReferenceUrls.length);
@@ -1131,6 +1139,7 @@ async function executePayload(
           clothingMode: payload.clothingMode,
           clothingRoles: payload.clothingRoles,
           clothingAnalysis: payload.clothingAnalysis,
+          garmentDetailUrls: garmentDetailInputs.clothingUrls,
           garmentAudience: payload.garmentAudience,
           ageGroup: payload.ageGroup,
           garmentCategory: payload.garmentCategory,
@@ -1319,7 +1328,8 @@ async function executePayload(
   }
 
   if (payload.kind === "pose") {
-    const imageInputs = await resolvePayloadImageInputs({ clothingUrls: [payload.mainImageUrl] });
+    const garmentDetailUrls = normalizeGarmentDetailUrls(payload.garmentDetailUrls);
+    const imageInputs = await resolvePayloadImageInputs({ clothingUrls: [payload.mainImageUrl, ...garmentDetailUrls] });
     const poseStyle = normalizePoseSeriesStyle(payload.poseStyle);
     const outputMode = normalizePoseOutputMode(payload.outputMode);
     const poseAnalysis = normalizePoseVisualAnalysis(payload.poseAnalysis);
@@ -1335,6 +1345,7 @@ async function executePayload(
       poseAnalysis,
       posePlan,
     });
+    const garmentDetailDirective = buildGarmentDetailReferencePrompt(Math.max(0, imageInputs.clothingUrls.length - 1));
 
     if (outputMode === "separate") {
       const generationCount = getPoseGenerationCount(payload);
@@ -1345,7 +1356,10 @@ async function executePayload(
         maxAttemptsPerSlot: 3,
         promptKind: "pose",
         run: async (index, onTaskProgress) => {
-          const posePrompt = buildSeparatePosePrompt(prompt, index + 1, poseStyle, payload.prompt, poseAnalysis, posePlan);
+          const posePrompt = [
+            buildSeparatePosePrompt(prompt, index + 1, poseStyle, payload.prompt, poseAnalysis, posePlan),
+            garmentDetailDirective,
+          ].filter(Boolean).join("\n");
           const result = await generateImage({
             model: payload.aiModel,
             prompt: posePrompt,
@@ -1366,9 +1380,10 @@ async function executePayload(
       });
     }
 
+    const posePrompt = [prompt, garmentDetailDirective].filter(Boolean).join("\n");
     const result = await generateImage({
       model: payload.aiModel,
-      prompt,
+      prompt: posePrompt,
       prompt_kind: "pose",
       aspect_ratio: payload.aspectRatio || "auto",
       image: imageInputs.clothingUrls,
@@ -1384,29 +1399,34 @@ async function executePayload(
         kind: payload.kind,
         model: payload.aiModel,
         promptKind: "pose",
-        prompt,
-        compiledPrompt: result.compiledPrompt || prompt,
+        prompt: posePrompt,
+        compiledPrompt: result.compiledPrompt || posePrompt,
       })],
     };
   }
 
   if (payload.kind === "faceSwap") {
-    const imageInputs = await resolvePayloadImageInputs({
-      clothingUrls: [payload.sourceUrl, payload.faceUrl],
-    });
+    const sourceUrls = normalizeFaceSwapSourceUrls(payload.sourceUrls, payload.sourceUrl);
+    const sourceInputs = await resolvePayloadImageInputs({ clothingUrls: sourceUrls });
+    const faceInputs = await resolvePayloadImageInputs({ clothingUrls: [payload.faceUrl] });
+    const faceInputUrl = faceInputs.clothingUrls[0] || payload.faceUrl;
     const prompt = enforceFaceSwapPromptRequirements(payload.prompt);
+    const perSourceCount = Math.max(1, Math.floor(Number(payload.genCount || 1)));
 
     return executeParallelImageBatch({
-      count: payload.genCount,
-      promptKind: "faceSwap",
-      run: async (_index, onTaskProgress) => {
+      count: Math.max(1, sourceUrls.length) * perSourceCount,
+      concurrency: 4,
+      promptKind: (index) => `faceSwap:source-${Math.floor(index / perSourceCount) + 1}`,
+      run: async (index, onTaskProgress) => {
+        const sourceIndex = Math.min(Math.floor(index / perSourceCount), sourceInputs.clothingUrls.length - 1);
+        const sourceInputUrl = sourceInputs.clothingUrls[sourceIndex] || sourceInputs.clothingUrls[0] || payload.sourceUrl;
         const result = await generateImage({
           model: payload.aiModel,
           prompt,
           prompt_kind: "faceSwap",
           aspect_ratio: payload.aspectRatio,
-          image: imageInputs.clothingUrls,
-          smart_aspect_image: payload.sourceUrl,
+          image: [sourceInputUrl, faceInputUrl],
+          smart_aspect_image: sourceUrls[sourceIndex] || payload.sourceUrl,
           image_size: payload.imageSize,
           onProgress: onTaskProgress,
         });
@@ -1917,6 +1937,10 @@ function getPayloadPrompt(payload: GenerationJobPayload) {
 function getExpectedResultCount(payload: GenerationJobPayload) {
   if (payload.kind === "pose") return getPoseGenerationCount(payload);
   if (payload.kind === "productSet" && payload.moduleResults?.length) return payload.moduleResults.length;
+  if (payload.kind === "faceSwap") {
+    const sourceCount = normalizeFaceSwapSourceUrls(payload.sourceUrls, payload.sourceUrl).length || 1;
+    return Math.max(1, Number(payload.genCount || 1)) * sourceCount;
+  }
   if (payload.kind === "tryon") {
     const referenceCount = getTryOnPayloadReferenceUrls(payload).length || 1;
     return Math.max(1, Number(payload.genCount || 1)) * referenceCount;
@@ -1929,6 +1953,7 @@ function getPayloadReferenceImages(payload: GenerationJobPayload) {
     ...payload.clothingUrls,
     ...getTryOnPayloadReferenceUrls(payload),
     payload.modelFaceUrl,
+    ...(Array.isArray(payload.garmentDetailUrls) ? payload.garmentDetailUrls : []),
   ].filter((url): url is string => typeof url === "string" && url.length > 0);
   if (payload.kind === "model") return [
     ...payload.referenceUrls,
@@ -1939,11 +1964,11 @@ function getPayloadReferenceImages(payload: GenerationJobPayload) {
   if (payload.kind === "modelBackground") return [payload.sourceUrl, payload.modelReferenceUrl, payload.backgroundReferenceUrl].filter((url): url is string => typeof url === "string" && url.length > 0);
   if (payload.kind === "materialEnhancement") return [payload.sourceUrl, payload.garmentUrl];
   if (payload.kind === "generalImage" || payload.kind === "outfitFusion") return payload.referenceUrls;
-  if (payload.kind === "pose") return [payload.mainImageUrl];
+  if (payload.kind === "pose") return [payload.mainImageUrl, ...(Array.isArray(payload.garmentDetailUrls) ? payload.garmentDetailUrls : [])];
   if (payload.kind === "videoImageToVideo") return [payload.imageUrl];
   if (payload.kind === "videoMotion") return [payload.modelImageUrl];
   if (payload.kind === "videoFirstLastFrame") return [payload.firstFrameUrl, payload.lastFrameUrl];
-  if (payload.kind === "faceSwap") return [payload.sourceUrl, payload.faceUrl];
+  if (payload.kind === "faceSwap") return [...normalizeFaceSwapSourceUrls(payload.sourceUrls, payload.sourceUrl), payload.faceUrl];
   if (payload.kind === "commerceDetail") return payload.sourceUrls;
   if (payload.kind === "productSet") {
     const imageType = normalizeProductSetImageType(payload.imageType);

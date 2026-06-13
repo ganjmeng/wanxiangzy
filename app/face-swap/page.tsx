@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import {
   Check,
   ChevronRight,
+  CirclePlus,
   Copy,
+  Loader2,
   RotateCcw,
   Activity,
   UserRoundCheck,
@@ -34,6 +36,7 @@ import {
   FACE_SWAP_NOTE,
   FACE_SWAP_SAMPLE_IMAGES,
   DEFAULT_FACE_SWAP_TEXTURE_ENHANCE,
+  MAX_FACE_SWAP_SOURCE_IMAGES,
   getFaceSwapUserPromptFromPayload,
   normalizeFaceSwapCount,
   normalizeFaceSwapTextureEnhance,
@@ -51,6 +54,7 @@ import {
   MAX_FILE_SIZE_MB,
   uploadImage,
 } from "@/lib/utils";
+import { getImageVariantUrl } from "@/lib/image-variants";
 import { showInsufficientCreditsToast } from "@/lib/ui/credit-copy";
 import { setCachedProfileCredits } from "@/lib/supabase/client";
 import { fetchHistoryApplyDetail, takeApplyDetail, type HistoryJobPayload } from "@/lib/history-apply";
@@ -96,6 +100,7 @@ type FaceSwapHistoryPayload = Extract<HistoryJobPayload, { kind: "faceSwap" }>;
 type ActiveFaceSwapJob = {
   generationId: string;
   sourceUrl: string;
+  sourceUrls?: string[];
   faceUrl: string;
   resultUrls: string[];
   progress: number;
@@ -120,7 +125,7 @@ export default function FaceSwapPage() {
     setCredits,
     refreshAuth,
   } = useStudioAuth();
-  const [sourceUrl, setSourceUrl] = useState("");
+  const [sourceUrls, setSourceUrls] = useState<string[]>([]);
   const [faceUrl, setFaceUrl] = useState("");
   const [aiModel, setAiModel] = useState<LingyaModel>("nano-banana-2");
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>("auto");
@@ -144,14 +149,14 @@ export default function FaceSwapPage() {
   const supportedSizes = useMemo(() => getSupportedImageSizes(aiModel, aspectRatio), [aiModel, aspectRatio]);
   const imageSizeValue = normalizeImageSize(aiModel, imageSize, aspectRatio);
   const unitCost = getCreditCost(aiModel, imageSizeValue, aspectRatio);
-  const totalCost = unitCost * normalizeFaceSwapCount(genCount);
   const requestedFaceSwapCount = normalizeFaceSwapCount(genCount);
+  const totalCost = unitCost * requestedFaceSwapCount * Math.max(sourceUrls.length, 1);
   const faceLibrary = FACE_SWAP_LIBRARY.filter((item) => item.gender === genderFilter);
-  const validationHint = !sourceUrl
+  const validationHint = sourceUrls.length === 0
     ? "请先上传或选择原始模特图"
     : !faceUrl
       ? "请选择目标脸图"
-      : sourceUrl === faceUrl
+      : sourceUrls.includes(faceUrl)
         ? "原始模特图和目标脸图不能是同一张"
         : credits !== null && credits < totalCost
           ? `灵点不足，生成需要 ${totalCost} 灵点`
@@ -186,7 +191,10 @@ export default function FaceSwapPage() {
       if (cancelled || !detail) return;
       const payload = detail.payload;
       historyApplyConsumedRef.current = true;
-      setSourceUrl(payload.sourceUrl);
+      const detailSourceUrls = Array.isArray(payload.sourceUrls) && payload.sourceUrls.length > 0
+        ? payload.sourceUrls
+        : payload.sourceUrl ? [payload.sourceUrl] : [];
+      setSourceUrls(detailSourceUrls);
       setFaceUrl(payload.faceUrl);
       setAiModel(payload.aiModel);
       setAspectRatio(payload.aspectRatio);
@@ -229,7 +237,10 @@ export default function FaceSwapPage() {
     clearPolling();
     historyApplyConsumedRef.current = true;
     skipActiveRestoreRef.current = true;
-    setSourceUrl(payload.sourceUrl);
+    const historySourceUrls = Array.isArray(payload.sourceUrls) && payload.sourceUrls.length > 0
+      ? payload.sourceUrls
+      : payload.sourceUrl ? [payload.sourceUrl] : [];
+    setSourceUrls(historySourceUrls);
     setFaceUrl(payload.faceUrl);
     setAiModel(payload.aiModel);
     setAspectRatio(payload.aspectRatio);
@@ -258,7 +269,7 @@ export default function FaceSwapPage() {
         const nextUrls = Array.isArray(data.result_urls) ? data.result_urls : [];
         const nextResultCount = nextUrls.filter(Boolean).length;
         const roundedProgress = Math.min(Math.max(Math.round(nextProgress), 0), 100);
-        const inputThumbnails = [sourceUrl, faceUrl].filter(Boolean);
+        const inputThumbnails = [...sourceUrls, faceUrl].filter(Boolean);
         setProgress(roundedProgress);
         if (nextUrls.length) setResultUrls(nextUrls);
 
@@ -306,17 +317,17 @@ export default function FaceSwapPage() {
         setError(message);
         const failedTask = taskQueue.markFailed(id, message, {
           expectedCount: requestedFaceSwapCount,
-          inputThumbnails: [sourceUrl, faceUrl].filter(Boolean),
+          inputThumbnails: [...sourceUrls, faceUrl].filter(Boolean),
         });
         setActiveQueueTask(failedTask);
       }
     };
     if (immediate) void run();
     else pollTimerRef.current = setTimeout(run, 2200);
-  }, [clearPolling, faceUrl, progress, requestedFaceSwapCount, sourceUrl, taskQueue, textureEnhance]);
+  }, [clearPolling, faceUrl, progress, requestedFaceSwapCount, sourceUrls, taskQueue, textureEnhance]);
 
   useEffect(() => {
-    if (!isAuthenticated || status !== "idle" || generationId || sourceUrl || faceUrl) return;
+    if (!isAuthenticated || status !== "idle" || generationId || sourceUrls.length > 0 || faceUrl) return;
     if (skipActiveRestoreRef.current) return;
     if (historyApplyConsumedRef.current) return;
     if (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("apply")) return;
@@ -329,8 +340,11 @@ export default function FaceSwapPage() {
         if (!res.ok || cancelled || !data.job?.generationId) return;
 
         const job = data.job;
+        const jobSourceUrls = Array.isArray(job.sourceUrls) && job.sourceUrls.length > 0
+          ? job.sourceUrls
+          : job.sourceUrl ? [job.sourceUrl] : [];
         if (
-          isLegacyRemoteAssetUrl(job.sourceUrl) ||
+          jobSourceUrls.some(isLegacyRemoteAssetUrl) ||
           isLegacyRemoteAssetUrl(job.faceUrl) ||
           (job.resultUrls || []).some(isLegacyRemoteAssetUrl)
         ) {
@@ -338,7 +352,7 @@ export default function FaceSwapPage() {
         }
 
         setGenerationId(job.generationId);
-        setSourceUrl(job.sourceUrl);
+        setSourceUrls(jobSourceUrls);
         setFaceUrl(job.faceUrl);
         setResultUrls(job.resultUrls || []);
         setProgress(job.progress || 0);
@@ -354,29 +368,39 @@ export default function FaceSwapPage() {
     return () => {
       cancelled = true;
     };
-  }, [faceUrl, generationId, isAuthenticated, pollGeneration, sourceUrl, status]);
+  }, [faceUrl, generationId, isAuthenticated, pollGeneration, sourceUrls, status]);
 
   useEffect(() => () => clearPolling(), [clearPolling]);
 
-  async function handleUpload(file: File | undefined, kind: "source" | "face") {
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("请上传 PNG / JPG / WebP 图片");
-      return;
-    }
-    if (file.size > MAX_FILE_SIZE) {
-      toast.error(`图片不能超过 ${MAX_FILE_SIZE_MB}MB`);
-      return;
-    }
+  async function handleUpload(files: File[], kind: "source" | "face") {
+    const validFiles = files.filter((file) => {
+      if (!file.type.startsWith("image/")) {
+        toast.error(`"${file.name}" 不是图片格式`);
+        return false;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`"${file.name}" 超过 ${MAX_FILE_SIZE_MB}MB`);
+        return false;
+      }
+      return true;
+    });
+    if (validFiles.length === 0) return;
 
     const setUploading = kind === "source" ? setIsUploadingOriginal : setIsUploadingFace;
     setUploading(true);
     try {
-      const uploaded = await uploadImage(file);
-      if (kind === "source") setSourceUrl(uploaded.url);
-      else setFaceUrl(uploaded.url);
+      const uploads = await Promise.all(validFiles.map((file) => uploadImage(file)));
+      if (kind === "source") {
+        setSourceUrls((prev) => {
+          const merged = [...prev, ...uploads.map((u) => u.url)];
+          return merged.slice(0, MAX_FACE_SWAP_SOURCE_IMAGES);
+        });
+        toast.success(`已上传 ${uploads.length} 张原始模特图`);
+      } else {
+        setFaceUrl(uploads[0].url);
+        toast.success("目标脸图已上传");
+      }
       resetGenerationForInputChange();
-      toast.success(kind === "source" ? "原始模特图已上传" : "目标脸图已上传");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "上传失败，请重试");
     } finally {
@@ -390,7 +414,7 @@ export default function FaceSwapPage() {
       router.push("/login");
       return;
     }
-    if (!sourceUrl) {
+    if (sourceUrls.length === 0) {
       toast.error("请先上传或选择原始模特图");
       return;
     }
@@ -398,7 +422,7 @@ export default function FaceSwapPage() {
       toast.error("请先选择目标模特脸");
       return;
     }
-    if (sourceUrl === faceUrl) {
+    if (sourceUrls.includes(faceUrl)) {
       toast.error("原始模特图和目标脸图不能是同一张");
       return;
     }
@@ -414,7 +438,7 @@ export default function FaceSwapPage() {
     setProgress(1);
     setResultUrls([]);
     setError("");
-    const taskInputThumbnails = [sourceUrl, faceUrl].filter(Boolean);
+    const taskInputThumbnails = [...sourceUrls, faceUrl].filter(Boolean);
     const provisionalTask = taskQueue.startTask({
       expectedCount: requestedFaceSwapCount,
       inputThumbnails: taskInputThumbnails,
@@ -428,7 +452,7 @@ export default function FaceSwapPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          source_url: sourceUrl,
+          source_urls: sourceUrls,
           face_url: faceUrl,
           ai_model: aiModel,
           aspect_ratio: aspectRatio,
@@ -488,7 +512,7 @@ export default function FaceSwapPage() {
   function clearAll() {
     skipActiveRestoreRef.current = true;
     clearPolling();
-    setSourceUrl("");
+    setSourceUrls([]);
     setFaceUrl("");
     setPrompt("");
     setTextureEnhance(DEFAULT_FACE_SWAP_TEXTURE_ENHANCE);
@@ -539,7 +563,7 @@ export default function FaceSwapPage() {
   const faceSwapInputThumbnails = (
     safeTaskQueueUrls(activeQueueTask?.inputThumbnails).length
       ? safeTaskQueueUrls(activeQueueTask?.inputThumbnails)
-      : [sourceUrl, faceUrl]
+      : [...sourceUrls, faceUrl]
   ).filter(Boolean);
   const faceSwapExpectedCount = activeQueueTask
     ? clampTaskExpectedCount(activeQueueTask, 1, 4, genCount)
@@ -568,37 +592,108 @@ export default function FaceSwapPage() {
           <StudioUploadSection
             title="原始模特图"
             inputRef={originalInputRef}
-            onFiles={(files) => handleUpload(files[0], "source")}
+            multiple
+            onFiles={(files) => handleUpload(files, "source")}
           >
             {(openFileDialog, dragContext) => (
               <>
-                <StudioUploadTile
-                  title="上传需要处理的原图"
-                  description="图1作为身体、服装和构图基础，建议主体完整、画面清晰。"
-                  imageUrl={sourceUrl || null}
-                  imageAlt="已上传的原始模特图"
-                  loading={isUploadingOriginal}
-                  onUploadClick={openFileDialog}
-                  onLibraryClick={() => toast.info("作品库选择即将接入")}
-                  onPreview={sourceUrl ? () => openLightbox(sourceUrl, "原始模特图：保留身体、服装、姿势和场景") : undefined}
-                  onRemove={sourceUrl ? () => {
-                    setSourceUrl("");
-                    resetGenerationForInputChange();
-                  } : undefined}
-                  onDropFile={(file) => handleUpload(file, "source")}
-                  dragContext={dragContext}
-                  uploadLabel="从本地上传"
-                  libraryLabel="从作品选择"
-                  footnote="主体完整、脸部清晰时最稳；换脸会保留原图身体、服装、姿势和场景。"
-                  examples={{
-                    label: "试一试",
-                    images: FACE_SWAP_SAMPLE_IMAGES.map((sample) => ({ url: sample.url, title: `示例图 ${sample.id}` })),
-                    onSelect: (image) => {
-                      setSourceUrl(image.url);
-                      resetGenerationForInputChange();
+                {sourceUrls.length === 0 ? (
+                  <StudioUploadTile
+                    title="上传需要处理的原图"
+                    description="图1作为身体、服装和构图基础，建议主体完整、画面清晰。"
+                    imageUrl={null}
+                    imageAlt="已上传的原始模特图"
+                    loading={isUploadingOriginal}
+                    onUploadClick={openFileDialog}
+                    onLibraryClick={() => toast.info("作品库选择即将接入")}
+                    onDropFile={(file) => file && handleUpload([file], "source")}
+                    dragContext={dragContext}
+                    uploadLabel="从本地上传"
+                    libraryLabel="从作品选择"
+                    footnote={`支持同时上传多张原图（最多 ${MAX_FACE_SWAP_SOURCE_IMAGES} 张），每张原图×生成数量。主体完整、脸部清晰时最稳。`}
+                    examples={{
+                      label: "试一试",
+                      images: FACE_SWAP_SAMPLE_IMAGES.map((sample) => ({ url: sample.url, title: `示例图 ${sample.id}` })),
+                      onSelect: (image) => {
+                        setSourceUrls([image.url]);
+                        resetGenerationForInputChange();
+                      },
+                    }}
+                  />
+                ) : (
+                  <div className="studio-upload-tile" {...(dragContext ? {
+                    onDragEnter: (e: React.DragEvent) => { e.preventDefault(); },
+                    onDragOver: (e: React.DragEvent) => { e.preventDefault(); },
+                    onDrop: (e: React.DragEvent) => {
+                      e.preventDefault();
+                      const file = e.dataTransfer.files?.[0];
+                      if (file) handleUpload([file], "source");
                     },
-                  }}
-                />
+                  } : {})}>
+                    <div className="studio-upload-tile-panel">
+                      <div className="grid grid-cols-2 gap-2 p-2 sm:grid-cols-3">
+                        {sourceUrls.map((url, index) => (
+                          <div key={url} className="group relative aspect-square overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50">
+                            <img src={getImageVariantUrl(url, "card")} alt={`原图 ${index + 1}`} className="h-full w-full object-contain" />
+                            <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/60 to-transparent p-1.5 pt-4">
+                              <span className="text-xs font-bold text-white">图{index + 1}</span>
+                              <div className="flex gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => openLightbox(url, `原始模特图 ${index + 1}`)}
+                                  className="flex h-5 w-5 items-center justify-center rounded-full bg-white/80 text-slate-700 hover:bg-white"
+                                  title="预览"
+                                >
+                                  <ZoomIn className="h-3 w-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSourceUrls((prev) => prev.filter((_, i) => i !== index));
+                                    resetGenerationForInputChange();
+                                  }}
+                                  className="flex h-5 w-5 items-center justify-center rounded-full bg-white/80 text-red-600 hover:bg-white"
+                                  title="移除"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        {sourceUrls.length < MAX_FACE_SWAP_SOURCE_IMAGES && (
+                          <button
+                            type="button"
+                            onClick={openFileDialog}
+                            disabled={isUploadingOriginal}
+                            className="flex aspect-square flex-col items-center justify-center rounded-xl border-2 border-dashed border-neutral-300 bg-neutral-50 text-neutral-400 transition hover:border-[var(--codex-accent)] hover:text-[var(--codex-accent)]"
+                          >
+                            {isUploadingOriginal ? (
+                              <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : (
+                              <>
+                                <CirclePlus className="h-5 w-5" />
+                                <span className="mt-1 text-xs font-bold">添加</span>
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between border-t border-neutral-100 px-3 py-2">
+                        <span className="text-xs text-slate-500">
+                          {sourceUrls.length}/{MAX_FACE_SWAP_SOURCE_IMAGES} 张原图 · 共生成 {sourceUrls.length * normalizeFaceSwapCount(genCount)} 张
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => { setSourceUrls([]); resetGenerationForInputChange(); }}
+                          className="text-xs font-bold text-slate-500 hover:text-red-600"
+                        >
+                          清空
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </StudioUploadSection>
@@ -611,7 +706,7 @@ export default function FaceSwapPage() {
               </span>
             )}
             inputRef={faceInputRef}
-            onFiles={(files) => handleUpload(files[0], "face")}
+            onFiles={(files) => handleUpload(files.slice(0, 1), "face")}
             actions={(
               <button type="button" onClick={() => setDrawerOpen(true)} className="studio-upload-rule-button">
                 模特脸库 <ChevronRight className="h-3 w-3" />
@@ -632,7 +727,7 @@ export default function FaceSwapPage() {
                   setFaceUrl("");
                   resetGenerationForInputChange();
                 } : undefined}
-                onDropFile={(file) => handleUpload(file, "face")}
+                onDropFile={(file) => file && handleUpload([file], "face")}
                 dragContext={dragContext}
                 uploadLabel="上传脸图"
                 libraryLabel="选择官方脸"
@@ -726,7 +821,7 @@ export default function FaceSwapPage() {
         </div>
 
         <StudioRunBar
-          summary={`${genCount} 张 · ${imageSizeValue} · ${aspectRatio}`}
+          summary={sourceUrls.length > 1 ? `${sourceUrls.length} 张原图 × ${genCount} · ${imageSizeValue} · ${aspectRatio}` : `${genCount} 张 · ${imageSizeValue} · ${aspectRatio}`}
           costLabel={authIsAnonymous ? "登录后查看灵点" : `消耗 ${totalCost} · 余额 ${credits ?? "-"}`}
           disabled={!canGenerate}
           disabledReason={validationHint}
@@ -752,7 +847,7 @@ export default function FaceSwapPage() {
               expectedCount={faceSwapExpectedCount}
               task={activeQueueTask}
               inputThumbnails={faceSwapInputThumbnails}
-              sourceUrl={sourceUrl}
+              sourceUrls={sourceUrls}
               faceUrl={faceUrl}
               prompt={prompt}
               aiModel={aiModel}
@@ -760,9 +855,9 @@ export default function FaceSwapPage() {
               imageSize={imageSizeValue}
               textureEnhance={textureEnhance}
               onUseAsSource={(url) => {
-                setSourceUrl(url);
+                setSourceUrls((prev) => [url, ...prev.filter((u) => u !== url)].slice(0, MAX_FACE_SWAP_SOURCE_IMAGES));
                 resetGenerationForInputChange();
-                toast.success("已设为原始模特图");
+                toast.success("已添加为原始模特图");
               }}
               onUseAsFace={(url) => {
                 setFaceUrl(url);
@@ -909,7 +1004,7 @@ function ResultsPanel({
   onRegenerate,
   task,
   inputThumbnails,
-  sourceUrl,
+  sourceUrls,
   faceUrl,
   prompt,
   aiModel,
@@ -922,7 +1017,7 @@ function ResultsPanel({
   isGenerating: boolean;
   task?: TaskQueueItem | null;
   inputThumbnails: string[];
-  sourceUrl: string;
+  sourceUrls: string[];
   faceUrl: string;
   prompt: string;
   aiModel: LingyaModel;
@@ -943,7 +1038,7 @@ function ResultsPanel({
     statusGroup: failed ? "failed" : isGenerating ? "running" : task?.statusGroup,
     taskId: task?.id,
     createdAt: task?.createdAt,
-    sourceUrl,
+    sourceUrl: sourceUrls[0] || "",
     faceUrl,
     promptText: prompt,
     metaItems: [
@@ -986,7 +1081,7 @@ function ResultsPanel({
                   <Copy className="h-3.5 w-3.5" /> 复制链接
                 </button>
                 <button type="button" onClick={() => onUseAsSource(url)} className="studio-button studio-button-compact">
-                  <Brush className="h-3.5 w-3.5" /> 设为原图
+                  <Brush className="h-3.5 w-3.5" /> 加为原图
                 </button>
                 <button type="button" onClick={() => onUseAsFace(url)} className="studio-button studio-button-compact">
                   <UserRoundCheck className="h-3.5 w-3.5" /> 设为脸图

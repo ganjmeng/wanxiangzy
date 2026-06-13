@@ -413,6 +413,7 @@ function extractGenerationInputThumbnails(row: TaskQueueGenerationSourceRow): st
       referenceUrl: stringValue(payload.referenceUrl) || row.reference_url,
       referenceUrls: arrayOfStrings(payload.referenceUrls),
       modelFaceUrl: stringValue(payload.modelFaceUrl) || row.model_face_url,
+      garmentDetailUrls: arrayOfStrings(payload.garmentDetailUrls),
     });
   }
 
@@ -423,6 +424,7 @@ function extractGenerationInputThumbnails(row: TaskQueueGenerationSourceRow): st
     ...arrayOfStrings(payload.clothingUrls),
     ...arrayOfStrings(payload.productImageUrls),
     ...arrayOfStrings(payload.referenceUrls),
+    ...arrayOfStrings(payload.garmentDetailUrls),
     ...arrayOfStrings(payload.referenceImageUrls),
     ...arrayOfStrings(payload.sceneImages),
     ...arrayOfStrings(payload.inputUrls),

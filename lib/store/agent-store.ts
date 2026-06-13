@@ -2136,6 +2136,7 @@ function getRepairKind(module: string): RepairKind {
   if (module === "model") return "model";
   if (module === "garment_3d") return "garment3d";
   if (module === "model_background") return "modelBackground";
+  if (module === "material_enhancement" || module === "materialEnhancement") return "materialEnhancement";
   if (module === "tryon") return "tryon";
   return "general";
 }

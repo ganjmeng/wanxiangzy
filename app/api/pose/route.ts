@@ -13,6 +13,7 @@ import { normalizePoseVisualAnalysis } from "@/lib/pose-analysis";
 import { normalizePosePlan } from "@/lib/pose-plan";
 import { normalizePoseSeriesStyle } from "@/lib/module-style-presets";
 import { checkRateLimit, rateLimitResponse } from "@/lib/api/rate-limit";
+import { MAX_GARMENT_DETAIL_IMAGES, normalizeGarmentDetailUrls } from "@/lib/garment-detail-references";
 
 export const maxDuration = 60;
 
@@ -30,11 +31,23 @@ export async function POST(request: NextRequest) {
     try { body = await request.json(); }
     catch { return NextResponse.json({ error: "请求格式无效" }, { status: 400 }); }
     const { main_image_url, ai_model, image_size, prompt, pose_style } = body;
+    const garmentDetailInput = body.garment_detail_urls ?? body.garmentDetailUrls;
     const requestedOutputMode = body.output_mode ?? body.outputMode;
     const outputMode: PoseOutputMode = requestedOutputMode === "grid" ? "grid" : "separate";
     const genCount = outputMode === "separate" ? normalizePoseCount(body.gen_count ?? body.count ?? 4) : 1;
     if (!main_image_url || typeof main_image_url !== "string") return NextResponse.json({ error: "缺少主图" }, { status: 400 });
     if (!prompt?.trim()) return NextResponse.json({ error: "缺少提示词" }, { status: 400 });
+    if (
+      garmentDetailInput !== undefined &&
+      (
+        !Array.isArray(garmentDetailInput) ||
+        garmentDetailInput.length > MAX_GARMENT_DETAIL_IMAGES ||
+        garmentDetailInput.some((url) => typeof url !== "string")
+      )
+    ) {
+      return NextResponse.json({ error: `服装细节图最多 ${MAX_GARMENT_DETAIL_IMAGES} 张` }, { status: 400 });
+    }
+    const garmentDetailUrls = normalizeGarmentDetailUrls(garmentDetailInput);
 
     const model: LingyaModel = normalizeLingyaModel(ai_model);
     const aspectRatio: AspectRatio = normalizeAspectRatio(body.aspect_ratio || body.aspectRatio || "auto", "auto");
@@ -66,17 +79,18 @@ export async function POST(request: NextRequest) {
       genCount,
       poseAnalysis,
       posePlan,
+      garmentDetailUrls,
     };
 
     const debit = await createDebitedGeneration(supabase, {
       userId: user.id,
-      clothingUrls: [main_image_url],
+      clothingUrls: [main_image_url, ...garmentDetailUrls],
       modelFaceUrl: null,
       referenceUrl: null,
       creditsCost: totalCost,
       aiModel: model,
       imageSize: size,
-      reason: `姿势裂变${outputMode === "separate" ? " · 每姿势一张" : ""} (${model}, ${size})`,
+      reason: `姿势裂变${outputMode === "separate" ? " · 每姿势一张" : ""}${garmentDetailUrls.length ? ` · ${garmentDetailUrls.length} 张服装细节` : ""} (${model}, ${size})`,
       jobPayload,
     });
 

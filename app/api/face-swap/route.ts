@@ -19,7 +19,9 @@ import {
   buildFaceSwapPrompt,
   enforceFaceSwapPromptRequirements,
   getFaceSwapUserPromptFromPayload,
+  MAX_FACE_SWAP_SOURCE_IMAGES,
   normalizeFaceSwapCount,
+  normalizeFaceSwapSourceUrls,
   normalizeFaceSwapTextureEnhance,
 } from "@/lib/face-swap";
 
@@ -42,15 +44,20 @@ export async function POST(request: NextRequest) {
     }
 
     const sourceUrl = typeof body.source_url === "string" ? body.source_url.trim() : "";
+    const sourceUrls = normalizeFaceSwapSourceUrls(body.source_urls, sourceUrl);
     const faceUrl = typeof body.face_url === "string" ? body.face_url.trim() : "";
-    if (!sourceUrl) return NextResponse.json({ error: "请先上传或选择原始模特图" }, { status: 400 });
+    if (!sourceUrls.length) return NextResponse.json({ error: "请先上传或选择原始模特图" }, { status: 400 });
+    if (Array.isArray(body.source_urls) && body.source_urls.length > MAX_FACE_SWAP_SOURCE_IMAGES) {
+      return NextResponse.json({ error: `原始模特图最多 ${MAX_FACE_SWAP_SOURCE_IMAGES} 张` }, { status: 400 });
+    }
     if (!faceUrl) return NextResponse.json({ error: "请先上传或选择目标脸图" }, { status: 400 });
-    if (sourceUrl === faceUrl) return NextResponse.json({ error: "原始模特图和目标脸图不能是同一张" }, { status: 400 });
+    if (sourceUrls.includes(faceUrl)) return NextResponse.json({ error: "原始模特图和目标脸图不能是同一张" }, { status: 400 });
 
     const model: LingyaModel = normalizeLingyaModel(body.ai_model);
     const aspectRatio: AspectRatio = normalizeAspectRatio(body.aspect_ratio, "auto");
     const imageSize: ImageSize = normalizeImageSize(model, body.image_size as ImageSize | undefined, aspectRatio);
     const genCount = normalizeFaceSwapCount(body.gen_count);
+    const expectedCount = sourceUrls.length * genCount;
     const textureEnhance = normalizeFaceSwapTextureEnhance(body.texture_enhance);
     const userPrompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
     const prompt = enforceFaceSwapPromptRequirements(buildFaceSwapPrompt(
@@ -58,12 +65,13 @@ export async function POST(request: NextRequest) {
       textureEnhance,
     ));
     const costPerImage = getCreditCost(model, imageSize, aspectRatio);
-    const totalCost = costPerImage * genCount;
+    const totalCost = costPerImage * expectedCount;
 
     const jobPayload: GenerationJobPayload = {
       kind: "faceSwap",
       publicBaseUrl: getPublicBaseUrlFromRequest(request),
-      sourceUrl,
+      sourceUrl: sourceUrls[0],
+      sourceUrls,
       faceUrl,
       aiModel: model,
       aspectRatio,
@@ -76,13 +84,13 @@ export async function POST(request: NextRequest) {
 
     const debit = await createDebitedGeneration(supabase, {
       userId: user.id,
-      clothingUrls: [sourceUrl],
+      clothingUrls: sourceUrls,
       modelFaceUrl: faceUrl,
       referenceUrl: null,
       creditsCost: totalCost,
       aiModel: model,
       imageSize,
-      reason: `AI 换脸 ${genCount} 张 (${model}, ${imageSize})`,
+      reason: `AI 换脸 ${sourceUrls.length} 张原图 × ${genCount} (${model}, ${imageSize})`,
       jobPayload,
     });
 
@@ -91,6 +99,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       generation_id: debit.generationId,
       credits_cost: totalCost,
+      expected_count: expectedCount,
       credits_remaining: debit.creditsRemaining,
       status: "processing_tryon",
     });
@@ -150,6 +159,7 @@ async function handleActiveFaceSwapGet() {
         progress: state.progress,
         error: data.error_message,
         sourceUrl: typeof payload?.sourceUrl === "string" ? payload.sourceUrl : "",
+        sourceUrls: normalizeFaceSwapSourceUrls(payload?.sourceUrls, payload?.sourceUrl),
         faceUrl: typeof payload?.faceUrl === "string" ? payload.faceUrl : "",
         userPrompt: getFaceSwapUserPromptFromPayload(payload || {}),
         textureEnhance: payload?.textureEnhance === true,

@@ -1,4 +1,4 @@
-export type RepairKind = "tryon" | "grass" | "pose" | "model" | "garment3d" | "modelBackground" | "general";
+export type RepairKind = "tryon" | "grass" | "pose" | "model" | "garment3d" | "modelBackground" | "materialEnhancement" | "general";
 
 export type RepairPreset = {
   value: string;
@@ -119,6 +119,29 @@ export const REPAIR_PRESETS: Record<RepairKind, RepairPreset[]> = {
       desc: "糊、噪点、细节少",
       prompt:
         "重点修复画质：提升服装边缘、面料纹理、图案文字、肤色层次和整体清晰度；保持自然摄影质感，避免噪点、糊边、过曝和过度锐化。",
+    },
+  ],
+  materialEnhancement: [
+    {
+      value: "detail_only",
+      label: "只改细节",
+      desc: "人物、背景、构图被改动",
+      prompt:
+        "重点修复材质增强边界：只允许增强图1可见服装区域的面料纹理、织纹层次、缝线、压线、纽扣、拉链、五金、刺绣、logo边缘和已有褶皱可见度；人物身份、五官、发型、肤色、身体比例、姿势、手脚、背景、构图、镜头距离、画幅、透视、光线方向、曝光、阴影和景深必须完全不变。",
+    },
+    {
+      value: "style_shape_restore",
+      label: "款式还原",
+      desc: "服装版型或颜色被改",
+      prompt:
+        "重点修复服装保真：保持图1服装款式、版型、轮廓、长度、穿着位置、固有颜色、图案位置、logo形状和位置不变；图2只能补充材质细节，不能把图1重绘成另一件商品，也不能新增口袋、纽扣、拉链、文字、装饰或图案。",
+    },
+    {
+      value: "natural_texture",
+      label: "材质自然",
+      desc: "锐化、纹理或高频细节太假",
+      prompt:
+        "重点修复材质自然度：材质增强要像真实相机下的局部细节恢复，避免全图锐化、HDR、强局部反差、塑料感、油画感、AI渲染感、摩尔纹、波纹、水波纹、频闪条纹、振荡线、假纤维和不存在的面料纹理。",
     },
   ],
   pose: [

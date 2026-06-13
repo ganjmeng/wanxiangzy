@@ -19,6 +19,7 @@ import { normalizeAutoDesignSettings, normalizeSceneMode } from "@/lib/tryon-sce
 import { normalizeTryOnClothingAnalysis } from "@/lib/tryon-reference-config";
 import { alignTryOnReferenceAnalyses } from "@/lib/tryon-reference-analysis";
 import { normalizeTryOnClothingMode, normalizeTryOnClothingRole } from "@/lib/tryon-upload-rules";
+import { MAX_GARMENT_DETAIL_IMAGES, normalizeGarmentDetailUrls } from "@/lib/garment-detail-references";
 import {
   TRYON_GARMENT_CATEGORY_LABELS,
   normalizeTryOnAgeGroup,
@@ -41,6 +42,7 @@ export async function POST(request: NextRequest) {
     catch { return NextResponse.json({ error: "请求格式无效" }, { status: 400 }); }
     const {
       clothing_urls, model_face_url, reference_url, reference_urls,
+      garment_detail_urls,
       ai_model, aspect_ratio, image_size, style, gen_count, raw_prompt, scene_mode, auto_design,
       clothing_mode, clothing_roles, clothing_analysis, reference_analyses, garment_audience, age_group, garment_category, is_intimate_garment,
     } = body;
@@ -64,6 +66,17 @@ export async function POST(request: NextRequest) {
     if (requestedReferenceUrls.some((url) => typeof url !== "string")) {
       return NextResponse.json({ error: "图片参数无效" }, { status: 400 });
     }
+    if (
+      garment_detail_urls !== undefined &&
+      (
+        !Array.isArray(garment_detail_urls) ||
+        garment_detail_urls.length > MAX_GARMENT_DETAIL_IMAGES ||
+        garment_detail_urls.some((url) => typeof url !== "string")
+      )
+    ) {
+      return NextResponse.json({ error: `服装细节图最多 ${MAX_GARMENT_DETAIL_IMAGES} 张` }, { status: 400 });
+    }
+    const garmentDetailUrls = normalizeGarmentDetailUrls(garment_detail_urls);
 
     const hasExplicitAiModel = typeof ai_model === "string" && ai_model.trim().length > 0;
     const model: LingyaModel = model_face_url && !hasExplicitAiModel
@@ -111,6 +124,7 @@ export async function POST(request: NextRequest) {
       clothingMode,
       clothingRoles,
       clothingAnalysis,
+      garmentDetailUrls,
       garmentAudience,
       ageGroup,
       garmentCategory,
@@ -136,7 +150,7 @@ export async function POST(request: NextRequest) {
       creditsCost: totalCost,
       aiModel: model,
       imageSize: size,
-      reason: `生成 ${expectedCount} 张，输入 ${clothing_urls.length} 件服装、${effectiveReferenceUrls.length || 1} 组参考 (${model}, ${size}, ${TRYON_GARMENT_CATEGORY_LABELS[garmentCategory]})`,
+      reason: `生成 ${expectedCount} 张，输入 ${clothing_urls.length} 件服装、${effectiveReferenceUrls.length || 1} 组参考${garmentDetailUrls.length ? `、${garmentDetailUrls.length} 张细节` : ""} (${model}, ${size}, ${TRYON_GARMENT_CATEGORY_LABELS[garmentCategory]})`,
       jobPayload,
     });
 

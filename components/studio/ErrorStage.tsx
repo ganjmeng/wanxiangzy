@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { RepairPromptPanel } from "@/components/RepairPromptPanel";
+import type { RepairKind } from "@/lib/generation-repair";
 
 type ErrorStageProps = {
   error: string;
@@ -10,7 +11,7 @@ type ErrorStageProps = {
   isGenerating: boolean;
   retryDisabled?: boolean;
   retryLabel?: string;
-  repairKind: "tryon" | "model" | "pose" | "garment3d" | "grass" | "modelBackground" | "general";
+  repairKind: RepairKind;
 };
 
 export function ErrorStage({

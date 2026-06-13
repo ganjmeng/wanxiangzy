@@ -62,6 +62,8 @@ describe("compileImagePromptForModel", () => {
     expect(result).toContain("材质增强");
     expect(result).toContain("图1是最终画面原图");
     expect(result).toContain("只处理图1目标服装可见区域");
+    expect(result).toContain("只允许改变图1可见目标服装区域的材质细节表现");
+    expect(result).toContain("原图其他内容必须完全不变");
     expect(result).toContain("图2只用于补足面料织法");
     expect(result).toContain("不要换脸");
     expect(result.length).toBeLessThanOrEqual(2300);

@@ -59,4 +59,24 @@ describe("tryon input reference snapshots", () => {
     expect(references).toHaveLength(10);
     expect(references.at(-1)).toEqual({ url: "model.png", label: "模特" });
   });
+
+  it("appends garment detail references after existing try-on inputs", () => {
+    const references = buildTryOnInputReferences({
+      clothingUrls: ["upper.png", "lower.png"],
+      clothingMode: "multi",
+      clothingRoles: ["upper", "lower"],
+      referenceUrl: "scene.png",
+      modelFaceUrl: "model.png",
+      garmentDetailUrls: ["fabric.png", "pocket.png"],
+    });
+
+    expect(references).toEqual([
+      { url: "upper.png", label: "上装" },
+      { url: "lower.png", label: "下装" },
+      { url: "scene.png", label: "参考图" },
+      { url: "model.png", label: "模特" },
+      { url: "fabric.png", label: "服装细节1" },
+      { url: "pocket.png", label: "服装细节2" },
+    ]);
+  });
 });

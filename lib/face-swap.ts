@@ -40,6 +40,8 @@ export const FACE_SWAP_NOTE =
   "Swap Face only changes facial features. It does not change the model's skin tone or hairstyle.";
 
 export const DEFAULT_FACE_SWAP_TEXTURE_ENHANCE = false;
+export const MAX_FACE_SWAP_SOURCE_IMAGES = 8;
+export const MAX_FACE_SWAP_RESULT_IMAGES = MAX_FACE_SWAP_SOURCE_IMAGES * 4;
 
 export const DEFAULT_FACE_SWAP_PROMPT = [
   "Use image 1 as the fixed base photo. Only perform a local facial-identity edit; do not recreate, reframe, beautify, or generate a new photo.",
@@ -141,8 +143,27 @@ export function normalizeFaceSwapCount(value: unknown) {
   return Math.min(Math.max(Math.floor(count), 1), 4);
 }
 
+export function normalizeFaceSwapSourceUrls(value: unknown, fallback?: unknown) {
+  const values = Array.isArray(value) ? value : [];
+  const allValues = values.length ? values : fallback !== undefined ? [fallback] : [];
+  const seen = new Set<string>();
+  const urls: string[] = [];
+
+  for (const item of allValues) {
+    if (typeof item !== "string") continue;
+    const url = item.trim();
+    if (!url || seen.has(url)) continue;
+    seen.add(url);
+    urls.push(url);
+    if (urls.length >= MAX_FACE_SWAP_SOURCE_IMAGES) break;
+  }
+
+  return urls;
+}
+
 export type FaceSwapApiPayload = {
   sourceUrl: string;
+  sourceUrls?: string[];
   faceUrl: string;
   aiModel: LingyaModel;
   aspectRatio: AspectRatio;

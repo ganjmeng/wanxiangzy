@@ -11,7 +11,7 @@ export type TryOnInputReference = {
   label: string;
 };
 
-export const TRYON_INPUT_REFERENCE_LIMIT = 14;
+export const TRYON_INPUT_REFERENCE_LIMIT = 19;
 
 type TryOnInputReferenceParams = {
   clothingUrls?: unknown;
@@ -20,6 +20,7 @@ type TryOnInputReferenceParams = {
   referenceUrl?: unknown;
   referenceUrls?: unknown;
   modelFaceUrl?: unknown;
+  garmentDetailUrls?: unknown;
 };
 
 export function buildTryOnInputReferences(params: TryOnInputReferenceParams): TryOnInputReference[] {
@@ -48,6 +49,10 @@ export function buildTryOnInputReferences(params: TryOnInputReferenceParams): Tr
   if (modelFaceUrl) {
     references.push({ url: modelFaceUrl, label: "模特" });
   }
+
+  stringArray(params.garmentDetailUrls).forEach((url, index) => {
+    references.push({ url, label: `服装细节${index + 1}` });
+  });
 
   return uniqueReferences(references).slice(0, TRYON_INPUT_REFERENCE_LIMIT);
 }

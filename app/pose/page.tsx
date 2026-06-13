@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { CheckCircle2, ChevronRight, Loader2, PenLine, Sparkles, X, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { setCachedProfileCredits } from "@/lib/supabase/client";
-import { MAX_FILE_SIZE, MAX_FILE_SIZE_MB, uploadImage } from "@/lib/utils";
+import { isLikelyImageFile, MAX_FILE_SIZE, MAX_FILE_SIZE_MB, uploadImage } from "@/lib/utils";
 import { getCreditCost, getSupportedImageSizes, type AspectRatio, type ImageSize, type LingyaModel } from "@/lib/api/lingya";
 import { FeatureTabs } from "@/components/FeatureTabs";
 import { RepairPromptPanel } from "@/components/RepairPromptPanel";
@@ -35,6 +35,7 @@ import { ResultImageGrid } from "@/components/ResultImageGrid";
 import { StudioImagePreviewDialog } from "@/components/studio/StudioImagePreviewDialog";
 import { StudioModelSelector, StudioOptionGrid, StudioPromptTextarea } from "@/components/studio/StudioFormControls";
 import { StudioRunBar } from "@/components/studio/StudioRunBar";
+import { StudioUploadSection } from "@/components/studio/StudioUploadSection";
 import { StudioUploadTile } from "@/components/studio/StudioUploadTile";
 import { useStableFileDrag } from "@/components/studio/useStableFileDrag";
 import { useTaskQueueGeneration } from "@/components/studio/useTaskQueueGeneration";
@@ -52,6 +53,12 @@ import {
   type PoseSeriesStyle,
 } from "@/lib/module-style-presets";
 import { POSE_UPLOAD_RULE, type PoseRuleDemo } from "@/lib/pose-upload-rules";
+import {
+  GARMENT_DETAIL_SWITCH_DESCRIPTION,
+  GARMENT_DETAIL_UPLOAD_FOOTNOTE,
+  MAX_GARMENT_DETAIL_IMAGES,
+  normalizeGarmentDetailUrls,
+} from "@/lib/garment-detail-references";
 
 const MODELS: { value: LingyaModel; label: string; desc: string; badge?: string; icon: string }[] = [
   { value: "nano-banana-2", label: "Nano-Banana-2", desc: "最高4K", badge: "推荐", icon: "https://vastweargen-images.oss-cn-hongkong.aliyuncs.com/site-assets/original/model-icons/gemini.png" },
@@ -166,6 +173,7 @@ class PoseGenerationPollTimeoutError extends Error {
 export default function PosePage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const garmentDetailInputRef = useRef<HTMLInputElement>(null);
   const rulesButtonRef = useRef<HTMLButtonElement>(null);
   const rulesHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const generationRunRef = useRef(0);
@@ -199,6 +207,10 @@ export default function PosePage() {
   const [customCamera, setCustomCamera] = useState(USER_CUSTOM_POSE_DEFAULT.camera);
   const [customPoses, setCustomPoses] = useState([...USER_CUSTOM_POSE_DEFAULT.poses]);
   const [isDragging, setIsDragging] = useState(false);
+  const [isDraggingGarmentDetails, setIsDraggingGarmentDetails] = useState(false);
+  const [garmentDetailEnabled, setGarmentDetailEnabled] = useState(false);
+  const [garmentDetailUrls, setGarmentDetailUrls] = useState<string[]>([]);
+  const [isUploadingGarmentDetails, setIsUploadingGarmentDetails] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzingPose, setIsAnalyzingPose] = useState(false);
   const [poseAnalysis, setPoseAnalysis] = useState<PoseVisualAnalysis | null>(null);
@@ -235,6 +247,10 @@ export default function PosePage() {
   const unitCost = getCreditCost(aiModel, imageSize, aspectRatio);
   const poseExpectedCount = outputMode === "separate" ? 4 : 1;
   const cost = unitCost * poseExpectedCount;
+  const activeGarmentDetailUrls = useMemo(
+    () => garmentDetailEnabled ? normalizeGarmentDetailUrls(garmentDetailUrls) : [],
+    [garmentDetailEnabled, garmentDetailUrls]
+  );
   const taskQueue = useTaskQueueGeneration({
     module: "pose",
     title: "姿势裂变",
@@ -251,13 +267,15 @@ export default function PosePage() {
     ? "请先上传主图"
     : isUploading
       ? "主图上传中，请稍候"
-      : isPoseAnalysisPending
-        ? "主图正在识别，请稍候。"
-        : posePlanMode === "ai" && isPlanningPose
-          ? "AI 姿势计划生成中，也可切回预设计划立即生成。"
-          : credits !== null && credits < cost
-            ? `灵点不足，生成需要 ${cost} 灵点`
-            : undefined;
+      : isUploadingGarmentDetails
+        ? "服装细节图正在上传，请稍候"
+        : isPoseAnalysisPending
+          ? "主图正在识别，请稍候。"
+          : posePlanMode === "ai" && isPlanningPose
+            ? "AI 姿势计划生成中，也可切回预设计划立即生成。"
+            : credits !== null && credits < cost
+              ? `灵点不足，生成需要 ${cost} 灵点`
+              : undefined;
   const poseStyleLabel = POSE_SERIES_STYLES.find((item) => item.value === poseStyle)?.label || poseStyle;
   const previewPosePlan = getActivePosePlan();
   const previewPosePlanText = [
@@ -272,7 +290,10 @@ export default function PosePage() {
       expectedCount: isGenerating ? runningExpectedCount || poseExpectedCount : Math.max(resultUrls.length, 1),
       isGenerating,
       statusGroup: isGenerating ? "running" : undefined,
-      references: mainImage ? [{ url: mainImage, label: "主图", role: "source" as const }] : [],
+      references: [
+        ...(mainImage ? [{ url: mainImage, label: "主图", role: "source" as const }] : []),
+        ...activeGarmentDetailUrls.map((url, index) => ({ url, label: `服装细节${index + 1}`, role: "reference" as const })),
+      ],
       promptText: previewPosePlanText,
       metaItems: [
         { label: "输出方式", value: outputMode === "separate" ? "每姿势一张" : "四宫格" },
@@ -286,7 +307,7 @@ export default function PosePage() {
       resultTitlePrefix: outputMode === "separate" ? "姿势结果" : "姿势四宫格",
       aspectRatio: aspectRatio === "auto" ? undefined : aspectRatio,
     }),
-    [aiModel, aspectRatio, imageSize, isGenerating, mainImage, outputMode, poseExpectedCount, posePlanMode, posePlanSource, poseStyleLabel, previewPosePlanText, resultUrls, runningExpectedCount]
+    [activeGarmentDetailUrls, aiModel, aspectRatio, imageSize, isGenerating, mainImage, outputMode, poseExpectedCount, posePlanMode, posePlanSource, poseStyleLabel, previewPosePlanText, resultUrls, runningExpectedCount]
   );
   const cancelRulesHide = () => {
     if (rulesHideTimerRef.current) {
@@ -724,6 +745,9 @@ export default function PosePage() {
     const nextPosePlanMode = resolvePosePlanModeFromPayload(payload);
     setPosePlanMode(nextPosePlanMode);
     setMainImage(payload.mainImageUrl);
+    const historyGarmentDetailUrls = normalizeGarmentDetailUrls(payload.garmentDetailUrls);
+    setGarmentDetailUrls(historyGarmentDetailUrls);
+    setGarmentDetailEnabled(historyGarmentDetailUrls.length > 0);
     applyPoseAnalysisSnapshot(payload.mainImageUrl, payload.poseAnalysis);
     applyPosePlanSnapshot(payload);
     setAiModel(payload.aiModel);
@@ -781,6 +805,60 @@ export default function PosePage() {
     } finally {
       setIsUploading(false);
     }
+  }
+
+  function toggleGarmentDetails() {
+    setGarmentDetailEnabled((value) => !value);
+  }
+
+  async function handleGarmentDetailFiles(files?: FileList | File[]) {
+    if (isUploadingGarmentDetails) {
+      toast.info("服装细节图上传中，请稍候");
+      return;
+    }
+    const arr = Array.from(files || []);
+    if (!arr.length) return;
+    const remaining = MAX_GARMENT_DETAIL_IMAGES - garmentDetailUrls.length;
+    if (remaining <= 0) {
+      toast.info(`服装细节图最多 ${MAX_GARMENT_DETAIL_IMAGES} 张`);
+      return;
+    }
+    const limited = arr.slice(0, remaining);
+    if (arr.length > limited.length) {
+      toast.info(`最多还能添加 ${remaining} 张细节图，已自动截取`);
+    }
+    const validFiles: File[] = [];
+    for (const file of limited) {
+      if (!isLikelyImageFile(file)) { toast.error(`${file.name} 不是图片`); continue; }
+      if (file.size > MAX_FILE_SIZE) { toast.error(`${file.name} 超过 ${MAX_FILE_SIZE_MB}MB`); continue; }
+      validFiles.push(file);
+    }
+    if (!validFiles.length) return;
+
+    setIsUploadingGarmentDetails(true);
+    toast.info(`正在上传 ${validFiles.length} 张服装细节图...`);
+    try {
+      const results = await Promise.allSettled(validFiles.map((file) => uploadImage(file)));
+      const uploadedUrls: string[] = [];
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          uploadedUrls.push(result.value.url);
+        } else {
+          const message = result.reason instanceof Error ? result.reason.message : "上传失败";
+          toast.error(`${validFiles[index].name} 上传失败：${message}`);
+        }
+      });
+      if (uploadedUrls.length) {
+        setGarmentDetailUrls((prev) => normalizeGarmentDetailUrls([...prev, ...uploadedUrls]));
+        toast.success(`已添加 ${uploadedUrls.length} 张服装细节图`);
+      }
+    } finally {
+      setIsUploadingGarmentDetails(false);
+    }
+  }
+
+  function removeGarmentDetail(url: string) {
+    setGarmentDetailUrls((prev) => prev.filter((item) => item !== url));
   }
 
   async function optimizePrompt() {
@@ -850,6 +928,10 @@ export default function PosePage() {
       toast.error("请先上传主图");
       return;
     }
+    if (isUploadingGarmentDetails) {
+      toast.info("服装细节图正在上传，请稍候");
+      return;
+    }
     const activePoseAnalysis = getActivePoseAnalysis();
     const activePoseAnalysisError = getActivePoseAnalysisError();
     const poseAnalysisPending = isAnalyzingPose || (!activePoseAnalysis && !activePoseAnalysisError);
@@ -871,7 +953,7 @@ export default function PosePage() {
     setProgress(10);
     setError("");
     setResultUrls([]);
-    const taskInputThumbnails = mainImage ? [mainImage] : [];
+    const taskInputThumbnails = mainImage ? [mainImage, ...activeGarmentDetailUrls] : [];
     const activePosePlan = getActivePosePlan();
     const provisionalTask = taskQueue.startTask({
       expectedCount: poseExpectedCount,
@@ -904,6 +986,7 @@ export default function PosePage() {
           gen_count: poseExpectedCount,
           pose_analysis: activePoseAnalysis,
           pose_plan: activePosePlan,
+          garment_detail_urls: activeGarmentDetailUrls,
         }),
       });
       const data = await res.json();
@@ -1068,6 +1151,10 @@ export default function PosePage() {
     setAspectRatio("auto");
     setImageSize("1K");
     setMainImage("");
+    setGarmentDetailEnabled(false);
+    setGarmentDetailUrls([]);
+    setIsDraggingGarmentDetails(false);
+    setIsUploadingGarmentDetails(false);
     lastPoseAnalysisKeyRef.current = "";
     poseAnalysisSeqRef.current += 1;
     setPoseAnalysisEntry(null);
@@ -1093,6 +1180,7 @@ export default function PosePage() {
     setShowPoseRules(false);
     setRulesPopoverStyle(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (garmentDetailInputRef.current) garmentDetailInputRef.current.value = "";
   }
 
   const activePoseAnalysis = getActivePoseAnalysis();
@@ -1228,6 +1316,109 @@ export default function PosePage() {
                   </div>
                 )}
               </div>
+            )}
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="font-bold text-sm">服装细节</h3>
+            <button
+              type="button"
+              onClick={toggleGarmentDetails}
+              className={`flex w-full items-center justify-between rounded-2xl border p-3 text-left transition-all ${
+                garmentDetailEnabled
+                  ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                  : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300"
+              }`}
+            >
+              <span className="min-w-0">
+                <span className="block text-sm font-black">服装细节参考</span>
+                <span className="mt-1 block text-xs leading-relaxed text-slate-500">
+                  {GARMENT_DETAIL_SWITCH_DESCRIPTION}
+                </span>
+              </span>
+              <span className={`ml-3 flex h-7 w-12 shrink-0 items-center rounded-full p-1 transition ${garmentDetailEnabled ? "bg-emerald-600" : "bg-neutral-200"}`}>
+                <span className={`h-5 w-5 rounded-full bg-white shadow transition ${garmentDetailEnabled ? "translate-x-5" : "translate-x-0"}`} />
+              </span>
+            </button>
+
+            {garmentDetailEnabled && (
+              <StudioUploadSection
+                title={(
+                  <span className="flex items-center gap-2">
+                    服装细节图
+                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">
+                      {garmentDetailUrls.length}/{MAX_GARMENT_DETAIL_IMAGES}
+                    </span>
+                  </span>
+                )}
+                inputRef={garmentDetailInputRef}
+                onFiles={handleGarmentDetailFiles}
+                multiple
+                isDragging={isDraggingGarmentDetails}
+                setDragging={setIsDraggingGarmentDetails}
+                className="rounded-2xl border border-emerald-100 bg-emerald-50/35 p-3"
+              >
+                {(openFileDialog) => (
+                  garmentDetailUrls.length === 0 ? (
+                    <StudioUploadTile
+                      title="上传 / 拖拽服装细节"
+                      description="面料、领口、口袋、背面、侧面、袖口、拉链、纽扣、logo 或局部特写。"
+                      imageAlt="服装细节图"
+                      isDragging={isDraggingGarmentDetails}
+                      disabled={isUploadingGarmentDetails}
+                      loading={isUploadingGarmentDetails}
+                      supportBadge={`最多 ${MAX_GARMENT_DETAIL_IMAGES} 张`}
+                      onUploadClick={openFileDialog}
+                      uploadLabel="上传细节图"
+                      loadingLabel="上传细节图..."
+                      footnote={GARMENT_DETAIL_UPLOAD_FOOTNOTE}
+                    />
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-3 gap-2">
+                        {garmentDetailUrls.map((url, index) => (
+                          <div key={url} className="group relative overflow-hidden rounded-lg border-2 border-emerald-300 bg-white shadow-sm">
+                            <button
+                              type="button"
+                              onClick={() => setLightboxSrc(url)}
+                              className="block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+                              aria-label={`预览服装细节图${index + 1}`}
+                            >
+                              <img src={url} alt={`服装细节图${index + 1}`} className="aspect-[3/4] w-full object-cover" />
+                              <span className="absolute bottom-1 left-1 rounded-full bg-white/90 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                                细节{index + 1}
+                              </span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeGarmentDetail(url)}
+                              className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/88 text-slate-500 shadow-sm transition hover:text-red-500"
+                              aria-label={`移除服装细节图${index + 1}`}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                        {garmentDetailUrls.length < MAX_GARMENT_DETAIL_IMAGES && (
+                          <button
+                            type="button"
+                            onClick={openFileDialog}
+                            disabled={isUploadingGarmentDetails}
+                            className={`flex aspect-[3/4] flex-col items-center justify-center rounded-lg border-2 border-dashed bg-white text-emerald-500 transition hover:border-emerald-400 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 ${isDraggingGarmentDetails ? "border-emerald-400 bg-emerald-50" : "border-emerald-200"}`}
+                            aria-label="添加服装细节图"
+                          >
+                            {isUploadingGarmentDetails ? <Loader2 className="mb-1 h-5 w-5 animate-spin" /> : <Sparkles className="mb-1 h-5 w-5" />}
+                            <span className="text-xs font-semibold">添加</span>
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-[11px] leading-relaxed text-emerald-700/85">
+                        {GARMENT_DETAIL_UPLOAD_FOOTNOTE}
+                      </p>
+                    </div>
+                  )
+                )}
+              </StudioUploadSection>
             )}
           </section>
 
@@ -1507,7 +1698,7 @@ export default function PosePage() {
         </div>
 
         <StudioRunBar
-          summary={outputMode === "separate" ? "每姿势一张 · 4 张结果" : "四宫格 · 单张结果"}
+          summary={`${outputMode === "separate" ? "每姿势一张 · 4 张结果" : "四宫格 · 单张结果"}${activeGarmentDetailUrls.length ? ` · ${activeGarmentDetailUrls.length} 张服装细节` : ""}`}
           costLabel={authIsAnonymous ? "登录后查看灵点" : `消耗 ${cost} · 余额 ${credits ?? "-"}`}
           disabled={isSubmitting || Boolean(runDisabledReason)}
           disabledReason={runDisabledReason}
@@ -1549,7 +1740,7 @@ export default function PosePage() {
                 onOpen={(_, index) => setPreviewIndex(index)}
                 expectedCount={isGenerating ? runningExpectedCount || poseExpectedCount : undefined}
                 isGenerating={isGenerating}
-                inputThumbnails={mainImage ? [mainImage] : []}
+                inputThumbnails={mainImage ? [mainImage, ...activeGarmentDetailUrls] : []}
                 statusGroup={isGenerating ? "running" : undefined}
                 variant="task"
               />

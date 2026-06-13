@@ -886,6 +886,7 @@ function getInputThumbnails(row: QueueRow, payload: Record<string, unknown>) {
       referenceUrl: stringValue(payload.referenceUrl) || row.reference_url,
       referenceUrls: stringArray(payload.referenceUrls),
       modelFaceUrl: stringValue(payload.modelFaceUrl) || row.model_face_url,
+      garmentDetailUrls: stringArray(payload.garmentDetailUrls),
     }).slice(0, TRYON_INPUT_REFERENCE_LIMIT);
   }
   return Array.from(new Set([
@@ -895,6 +896,7 @@ function getInputThumbnails(row: QueueRow, payload: Record<string, unknown>) {
     stringValue(payload.sourceUrl),
     stringValue(payload.faceUrl),
     stringValue(payload.mainImageUrl),
+    ...stringArray(payload.garmentDetailUrls),
     stringValue(payload.garmentUrl),
     stringValue(payload.referenceUrl),
     stringValue(payload.modelFaceUrl),
