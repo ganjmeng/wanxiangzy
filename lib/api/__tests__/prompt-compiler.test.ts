@@ -342,4 +342,55 @@ describe("prompt compiler hard rule leading", () => {
     const headSlice = result.slice(0, 500);
     expect(headSlice).toContain("【HARD 硬规则");
   });
+
+  it("production-shape pose separate input compiles to a prompt containing Target pose (validator passes)", () => {
+    // End-to-end: simulate what generation-jobs.ts pose path now produces:
+    // fallbackPrompt = [enforceResult, hardRule]; slot prompt via
+    // buildSeparatePosePrompt is then joined with roleBased + userIntent.
+    // We feed the joined posePrompt here as the input to compileImagePrompt
+    // and assert the validator doesn't throw "missing Target pose".
+    const poseSlotPrompt = buildSeparatePosePrompt("", 1, "ecommerce_clean", "用户补充", null, null);
+    // Append the hard-rule (the post-fix shape)
+    const hardRule = "【HARD 硬规则 · 姿势身份模式 pose_burst_full_subject】\n1) 仅改变姿势：禁止换脸。";
+    const fullPosePrompt = [
+      "【Role】: 用户想要不同姿势。",
+      poseSlotPrompt,
+      hardRule,
+    ].filter(Boolean).join("\n");
+
+    expect(() =>
+      compileImagePromptForModel({
+        kind: "pose",
+        model: "nano-banana-2",
+        prompt: fullPosePrompt,
+      })
+    ).not.toThrow(/missing Target pose/);
+  });
+
+  it("preserves 'Target pose:' even when limitPrompt truncation would otherwise drop it", () => {
+    // Build a fat prompt so limitPrompt must truncate. Pose markers
+    // (Use the source image only..., Target pose:, Camera:, etc.) all
+    // present so we go through the fast-path. Without MUST_KEEP_MARKERS,
+    // truncation would drop Target pose: and validator would throw.
+    const slotPrompt = buildSeparatePosePrompt("", 1, "ecommerce_clean", "用户补充", null, null);
+    const padding = "补充要求：保持图1人物细节自然真实。\n".repeat(80);
+    const fatPrompt = [
+      slotPrompt,
+      padding,
+      "Use the source image only to preserve: same person, same outfit.",
+      "Image 1 is the original model photo and the target canvas.",
+      "Generate one standalone source-matched pose variation photo, not a beautified or regraded fashion editorial.",
+      "Keep the outfit readable: neckline, shoulder line, sleeves, waistline, hem.",
+      "Camera: auto choose source-matched model framing.",
+      "Target pose:\nPose 1: standing front.\nPriority: execute clearly.",
+    ].join("\n");
+
+    expect(() =>
+      compileImagePromptForModel({
+        kind: "pose",
+        model: "nano-banana-2",
+        prompt: fatPrompt,
+      })
+    ).not.toThrow(/missing Target pose/);
+  });
 });

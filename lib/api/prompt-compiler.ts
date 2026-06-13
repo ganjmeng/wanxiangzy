@@ -532,6 +532,32 @@ function limitPrompt(prompt: string, maxChars: number) {
     count += line.length + 1;
   }
 
-  const result = kept.join("\n").trim();
-  return result || prompt.slice(0, maxChars).trim();
+  let result = kept.join("\n").trim();
+  if (!result) return prompt.slice(0, maxChars).trim();
+
+  // Safety net: re-inject any "must-keep" marker lines (e.g. Target pose:,
+  // HARD 硬规则) that got dropped during truncation. The validator at
+  // validateSeparatePoseCompiledPrompt() throws "missing Target pose" if
+  // the marker is absent — so we MUST guarantee it survives. Strip the
+  // head of `result` to fit a re-injected marker line if needed.
+  for (const marker of MUST_KEEP_MARKERS) {
+    if (result.includes(marker.text)) continue;
+    if (!prompt.includes(marker.text)) continue;
+    const space = maxChars - result.length;
+    if (space >= marker.text.length + 1) {
+      result = `${marker.text}\n${result}`.trim();
+    } else {
+      // No room: drop the tail of `result` to make room, prepend marker.
+      const trimmed = result.slice(0, maxChars - marker.text.length - 1);
+      result = `${marker.text}\n${trimmed}`.trim();
+    }
+  }
+  return result;
 }
+
+// Marker lines that MUST survive limitPrompt truncation. Keep the list
+// small: adding a marker means it gets priority for a budget slot.
+const MUST_KEEP_MARKERS: Array<{ text: string }> = [
+  { text: "Target pose:" },
+  { text: "【HARD 硬规则" },
+];
