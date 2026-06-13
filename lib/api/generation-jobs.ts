@@ -1374,12 +1374,15 @@ async function executePayload(
       detailCount,
       poseCount: getPoseGenerationCount(payload),
     });
-    const fallbackPrompt = enforcePosePromptRequirements(applyPoseSeriesStylePrompt(payload.prompt, poseStyle), {
-      poseStyle,
-      outputMode,
-      poseAnalysis,
-      posePlan,
-    });
+    const fallbackPrompt = [
+      enforcePosePromptRequirements(applyPoseSeriesStylePrompt(payload.prompt, poseStyle), {
+        poseStyle,
+        outputMode,
+        poseAnalysis,
+        posePlan,
+      }),
+      hardRule,
+    ].filter(Boolean).join("\n");
     const garmentDetailDirective = buildGarmentDetailReferencePrompt(detailCount);
     const userIntent = (payload.prompt || "").trim();
 
@@ -1393,7 +1396,6 @@ async function executePayload(
         promptKind: "pose",
         run: async (index, onTaskProgress) => {
           const posePrompt = [
-            hardRule,
             roleBasedPrompt,
             userIntent ? `用户补充：${userIntent}` : "",
             buildSeparatePosePrompt(fallbackPrompt, index + 1, poseStyle, payload.prompt, poseAnalysis, posePlan),

@@ -355,7 +355,24 @@ describe("buildPoseHardRule", () => {
 
   it("keeps the rule short and single-branch (no if/then language)", () => {
     const rule = buildPoseHardRule({ poseMode: "pose_burst_full_subject", outputMode: "grid" });
-    expect(rule).not.toMatch(/如果|如果图/);
+    expect(rule).not.toMatch(/如果/);
+    expect(rule).not.toMatch(/如果图/);
     expect(rule.length).toBeLessThan(700);
+  });
+});
+
+describe("pose prompt end-to-end: hard rule must not break Target pose detection", () => {
+  it("buildSeparatePosePrompt output still contains 'Target pose:' when hard rule is appended to fallback", () => {
+    const posePlan = buildFallbackPosePlan({
+      poseStyle: "ecommerce_clean",
+      outputMode: "separate",
+    });
+    const hardRule = buildPoseHardRule({ poseMode: "pose_burst_full_subject", outputMode: "separate" });
+    const fallbackPrompt = [
+      enforcePosePromptRequirements("", { poseStyle: "ecommerce_clean", outputMode: "separate", posePlan }),
+      hardRule,
+    ].filter(Boolean).join("\n");
+    const slotPrompt = buildSeparatePosePrompt(fallbackPrompt, 1, "ecommerce_clean", "", null, posePlan);
+    expect(slotPrompt).toContain("Target pose:");
   });
 });
