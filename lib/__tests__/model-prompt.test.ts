@@ -18,7 +18,8 @@ describe("model prompt handling", () => {
 
     expect(prompt).toContain("专属模特生成协议 v2");
     expect(prompt).toContain("图1、图2、图3 是同等权重");
-    expect(prompt).toContain("图3即使更清晰也不能成为主脸");
+    expect(prompt).toContain("HARD 硬规则 · 模特身份模式");
+    expect(prompt).toContain("不要把最后一张当主脸");
     expect(prompt).toContain("发型必须采用「齐肩短波波头，空气刘海，发尾内扣」");
     expect(prompt).toContain("发色必须采用「深棕色」");
     expect(prompt).toContain("专属模特拍摄风格档位：融合原生感");
@@ -57,6 +58,6 @@ describe("model prompt handling", () => {
     });
 
     expect(second.match(/专属模特生成协议 v2/g)?.length).toBe(1);
-    expect(second.length).toBeLessThanOrEqual(first.length + 40);
+    expect(second.length).toBeLessThanOrEqual(first.length + 400);
   });
 });

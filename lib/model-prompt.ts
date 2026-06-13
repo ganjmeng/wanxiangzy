@@ -2,6 +2,8 @@ const MODEL_QUALITY =
   "photorealistic, 8K ultra-detailed, commercial portrait quality, cinematic color grade, sharp facial details, sharp hair details, RAW photo quality";
 const MODEL_PROMPT_MARKER = "专属模特生成协议 v2";
 
+// 7 rules kept as exports because the vision-LLM analyze route composes them
+// directly into its prompt. They are NOT dead. See app/api/model/analyze/route.ts.
 export const MODEL_FACE_STYLE_RULE =
   "人脸风格规则：参考图不仅用于五官融合，也用于定义最终模特的长相风格、审美方向和气质标签。必须提取参考图中最明显的脸部审美特征、年龄感、眼神气质、面部氛围、镜头表现力和整体模特感，让生成结果看起来像同一类风格的专属模特，而不是普通随机人脸。";
 
@@ -22,6 +24,15 @@ export const MODEL_FEATURE_IDENTITY_RULE =
 
 export const MODEL_AGE_TEXTURE_RULE =
   "年龄感和肤质规则：保留参考图的年龄感、成熟度、面部软组织状态、眼下细纹、法令纹、皮肤微纹理、真实皮肤反光和局部瑕疵；不要统一少女化，不要磨成无纹理蜡像皮。";
+
+// Hard rules (single-branch, ~250 chars) lead every model prompt.
+// Compresses 7 long rules into 3 imperative lines + 1 marker.
+const MODEL_HARD_FACE_RULE =
+  "1) 脸型骨相 + 五官比例 + 肤色冷暖 + 妆感 + 年龄感：严格提取自人脸参考图；不要标准化成鹅蛋脸/小V脸/尖下巴/大眼高鼻网红审美。";
+const MODEL_HARD_FUSION_RULE =
+  "2) 多参考融合：每张人脸参考图都贡献等权重的脸型优势、五官比例、眼神气质、肤色和真实质感；不要照搬任一张，不要把最后一张当主脸。";
+const MODEL_HARD_AGE_TEXTURE_RULE =
+  "3) 年龄感 + 肤质：保留参考图的成熟度、眼下细纹、法令纹、皮肤微纹理、局部瑕疵和真实反光；不要统一少女化，不要磨成无纹理蜡像皮。";
 
 export function getModelQualityPrompt() {
   return MODEL_QUALITY;
@@ -67,23 +78,34 @@ export function enforceModelPromptRequirements(params: {
     hairColorReferenceIndex: params.hairColorReferenceIndex,
   });
 
+  // 6 段结构（v3）：marker → 角色 → 硬规则（脸）→ 发型硬约束 + 核心任务 → 商业输出 → 质量/负面
   return [
     `【${MODEL_PROMPT_MARKER}】`,
     roleStatement,
-    buildModelCoreTask(params.gender),
-    buildModelFusionMethod(referenceCount),
-    buildModelHairRule({
+    buildModelHardRule(referenceCount),
+    `${buildModelHairRule({
       hairStyle: params.hairStyle,
       hairColor: params.hairColor,
       hairReferenceIndex: params.hairReferenceIndex,
       hairColorReferenceIndex: params.hairColorReferenceIndex,
-    }),
-    "商业输出：单人半身头像/模特卡照片，白色基础上衣，干净浅灰或白色棚拍背景，柔和商业摄影布光；皮肤保留自然纹理、毛孔和轻微瑕疵，发丝边缘清晰真实。",
+    })} ${buildModelCoreTask(params.gender)} 商业输出：单人半身头像/模特卡照片，白色基础上衣，干净浅灰或白色棚拍背景，柔和商业摄影布光；皮肤保留自然纹理、毛孔和轻微瑕疵，发丝边缘清晰真实。`,
     fragments.styleLine,
     fragments.userIntent ? `用户补充/视觉分析：${fragments.userIntent}` : "",
     `图像质量：${MODEL_QUALITY}`,
     "负面审美约束：不要多个人，不要随机陌生脸，不要只像单张参考图，不要让最后一张参考图主导，不要默认美白、雪白皮或冷白皮，不要标准鹅蛋脸、小V脸、尖下巴、大眼高鼻网红审美，不要忽略发型/发色硬约束，不要过度磨皮、塑料皮肤、蜡像感、畸形五官、文字水印。",
   ].filter(Boolean).join("\n");
+}
+
+function buildModelHardRule(referenceCount: number) {
+  const lines = [
+    "【HARD 硬规则 · 模特身份模式】",
+    MODEL_HARD_FACE_RULE,
+  ];
+  if (referenceCount > 1) {
+    lines.push(MODEL_HARD_FUSION_RULE);
+  }
+  lines.push(MODEL_HARD_AGE_TEXTURE_RULE);
+  return lines.join("\n");
 }
 
 function normalizeReferenceCount(referenceCount: number) {
