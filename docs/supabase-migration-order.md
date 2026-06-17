@@ -21,6 +21,7 @@
 14. supabase/tryon-reference-favorites.sql
 15. supabase/tryon-reference-templates.sql
 16. supabase/product-set-favorite-plans.sql
+17. supabase/infinite-canvas.sql
 ```
 
 关键依赖：
@@ -95,6 +96,7 @@ psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/tryon-reference-config.sq
 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/tryon-reference-favorites.sql
 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/tryon-reference-templates.sql
 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/product-set-favorite-plans.sql
+psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/infinite-canvas.sql
 ```
 
 ## 执行后验证
@@ -108,7 +110,8 @@ SELECT
   to_regclass('public.agent_workflows') AS agent_workflows,
   to_regclass('public.admin_members') AS admin_members,
   to_regclass('public.billing_products') AS billing_products,
-  to_regclass('public.tryon_reference_scenes') AS tryon_reference_scenes;
+  to_regclass('public.tryon_reference_scenes') AS tryon_reference_scenes,
+  to_regclass('public.canvas_projects') AS canvas_projects;
 ```
 
 ```sql

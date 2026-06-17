@@ -9,6 +9,7 @@ import {
   Home,
   Images,
   ImagePlus,
+  Infinity as InfinityIcon,
   PackageSearch,
   PersonStanding,
   PlaySquare,
@@ -19,7 +20,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-export type AppModuleKey = "home" | "aiShoots" | "assistant" | "tools" | "aiVideo" | "works";
+export type AppModuleKey = "home" | "aiShoots" | "assistant" | "tools" | "canvas" | "aiVideo" | "works";
 
 export type FeatureKey =
   | "home"
@@ -41,6 +42,7 @@ export type FeatureKey =
   | "generalImage"
   | "textToImage"
   | "imageToImage"
+  | "infiniteCanvas"
   | "apiTest"
   | "history";
 
@@ -73,6 +75,7 @@ export const TOP_MODULES: TopModuleNavItem[] = [
   { key: "aiShoots", href: "/create", label: "模特图", icon: Camera },
   { key: "assistant", href: "/agent", label: "工作流助手", icon: Bot },
   { key: "tools", href: "/general-image", label: "素材生成", icon: Images },
+  { key: "canvas", href: "/infinite-canvas", label: "无限画布", icon: InfinityIcon },
   { key: "aiVideo", href: "/video", label: "AI视频", icon: Clapperboard, badge: "NEW" },
   { key: "works", href: "/history", label: "作品库", icon: GalleryHorizontalEnd },
 ];
@@ -242,6 +245,15 @@ export const FEATURE_ITEMS: FeatureNavItem[] = [
     shortLabel: "图生图",
     description: "多张参考图结合提示词生成图片",
     icon: Images,
+  },
+  {
+    key: "infiniteCanvas",
+    module: "canvas",
+    href: "/infinite-canvas",
+    label: "无限画布",
+    shortLabel: "画布",
+    description: "基于开源 infinite-canvas 的图片创作编排工作台",
+    icon: InfinityIcon,
   },
   {
     key: "apiTest",

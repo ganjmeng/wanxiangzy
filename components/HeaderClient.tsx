@@ -62,6 +62,10 @@ export function HeaderClient() {
     return null;
   }
 
+  if (pathname.startsWith("/infinite-canvas/")) {
+    return null;
+  }
+
   if (pathname === "/") {
     return <MarketingHeaderWithAccount overlay />;
   }

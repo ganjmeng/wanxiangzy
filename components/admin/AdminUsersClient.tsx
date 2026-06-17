@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Alert, Button, Card, Input, Space, Statistic, Table, Tag, Typography } from "@/components/ui/shadcn-compat";
 import type { ColumnsType } from "@/components/ui/shadcn-compat";
-import { AuditOutlined, SearchOutlined } from "@/components/ui/ant-icons-compat";
+import { AuditOutlined, SearchOutlined } from "@/components/ui/lucide-icons-compat";
 import type { AdminUserList, AdminUserListItem } from "@/lib/admin/data";
 
 type AdminUsersClientProps = {

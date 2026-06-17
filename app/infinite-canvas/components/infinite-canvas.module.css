@@ -1,0 +1,34 @@
+.canvas {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    cursor: grab;
+    user-select: none;
+    overscroll-behavior: none;
+    touch-action: none;
+    contain: layout style paint;
+    isolation: isolate;
+}
+
+.canvas :global(img),
+.canvas :global(video),
+.canvas :global(canvas),
+.canvas :global(svg) {
+    max-width: none;
+}
+
+.world {
+    position: absolute;
+    transform-origin: top left;
+    will-change: transform;
+    contain: layout style;
+}
+
+.grid {
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    opacity: 0.4;
+    contain: strict;
+}

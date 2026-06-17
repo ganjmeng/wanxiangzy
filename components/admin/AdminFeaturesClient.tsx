@@ -15,10 +15,10 @@ import {
   Table,
   Tag,
   Typography,
-  App as AntdApp,
+  App as ShadcnApp,
 } from "@/components/ui/shadcn-compat";
 import type { ColumnsType } from "@/components/ui/shadcn-compat";
-import { DeleteOutlined, EditOutlined, PlusOutlined } from "@/components/ui/ant-icons-compat";
+import { DeleteOutlined, EditOutlined, PlusOutlined } from "@/components/ui/lucide-icons-compat";
 import type { AdminFeatureConfig, AdminFeatureRegistry } from "@/lib/admin/features";
 
 type AdminFeaturesClientProps = {
@@ -46,7 +46,7 @@ const statusOptions = [
 
 export function AdminFeaturesClient({ registry }: AdminFeaturesClientProps) {
   const router = useRouter();
-  const { message, modal } = AntdApp.useApp();
+  const { message, modal } = ShadcnApp.useApp();
   const [form] = Form.useForm<FeatureFormValue>();
   const [editing, setEditing] = useState<AdminFeatureConfig | null>(null);
   const [open, setOpen] = useState(false);

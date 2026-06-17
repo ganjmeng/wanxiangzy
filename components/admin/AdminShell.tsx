@@ -28,7 +28,7 @@ import {
   TeamOutlined,
   ToolOutlined,
   UserOutlined,
-} from "@/components/ui/ant-icons-compat";
+} from "@/components/ui/lucide-icons-compat";
 import { Avatar, Breadcrumb, Button, Drawer, Layout, Menu, Space, Spin, Tag, Typography, type MenuProps } from "@/components/ui/shadcn-compat";
 import type { AdminRole } from "@/lib/admin/permissions";
 

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Alert, Button, Card, Checkbox, Input, Progress, Select, Space, Statistic, Table, Tag, Tooltip, Typography } from "@/components/ui/shadcn-compat";
 import type { ColumnsType } from "@/components/ui/shadcn-compat";
-import { ApiOutlined, SearchOutlined } from "@/components/ui/ant-icons-compat";
+import { ApiOutlined, SearchOutlined } from "@/components/ui/lucide-icons-compat";
 import { AdminImagePreview } from "@/components/admin/AdminImagePreview";
 import { AdminTaskActions } from "@/components/admin/AdminTaskActions";
 import type { AdminTaskList, AdminTaskListItem } from "@/lib/admin/data";

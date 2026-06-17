@@ -7,7 +7,10 @@ const config: Config = {
   content: [
     "./app/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
+    "./constant/**/*.{ts,tsx}",
     "./lib/**/*.{ts,tsx}",
+    "./services/**/*.{ts,tsx}",
+    "./stores/**/*.{ts,tsx}",
   ],
   theme: {
     extend: {

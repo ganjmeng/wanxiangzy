@@ -4,7 +4,7 @@ export const GENERATION_RUNNING_STATUS_FILTERS = [
   ...GENERATION_PENDING_STATUS_FILTERS,
   ...GENERATION_PROCESSING_STATUS_FILTERS,
 ] as const;
-export const GENERATION_COMPLETED_STATUS_FILTERS = ["completed", "succeeded", "success"] as const;
+export const GENERATION_COMPLETED_STATUS_FILTERS = ["completed", "complete", "succeeded", "success", "done", "finished"] as const;
 export const GENERATION_FAILED_STATUS_FILTERS = ["failed", "error", "cancelled", "canceled"] as const;
 
 export function normalizeGenerationStatus(status?: string | null) {

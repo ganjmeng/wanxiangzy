@@ -23,6 +23,7 @@ const config = [
       "next-env.d.ts",
       "node_modules/**",
       "test-results/**",
+      "tmp/**",
       "tmp-*.txt",
       "*.log",
       "*.json",

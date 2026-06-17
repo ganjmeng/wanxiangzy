@@ -39,7 +39,11 @@ export function getLlmProvider(): LlmProvider {
     : "xiaomi";
 }
 
-export function getChatCompletionsUrl(config: LlmConfig): string {
+type ChatCompletionsConfig =
+  | Pick<LlmConfig, "baseUrl">
+  | { baseUrl: string; provider?: unknown; apiKey?: unknown; model?: unknown };
+
+export function getChatCompletionsUrl(config: ChatCompletionsConfig): string {
   return `${config.baseUrl}/chat/completions`;
 }
 

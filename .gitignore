@@ -24,6 +24,7 @@ Thumbs.db
 .output/
 output/
 outputs/
+tmp/
 .oss-site-assets-manifest*.json
 .qwen-edits-test-results.json
 old-references-contact.jpg
