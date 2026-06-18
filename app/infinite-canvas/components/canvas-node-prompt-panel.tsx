@@ -41,8 +41,9 @@ export function CanvasNodePromptPanel({ node, isRunning, onPromptChange, onConfi
     const hasImageContent = node.type === CanvasNodeType.Image && Boolean(node.metadata?.content);
     const isEditingExistingContent = hasTextContent || hasImageContent;
     const [prompt, setPrompt] = useState(isEditingExistingContent ? "" : node.metadata?.prompt || "");
+    const count = Math.max(1, Math.min(15, Math.floor(Math.abs(Number(config.count)) || 1)));
     const credits = mode === "image"
-        ? getCanvasImageCreditCost({ model: config.model, quality: config.quality, count: config.count })
+        ? getCanvasImageCreditCost({ model: config.model, quality: config.quality, count })
         : 0;
 
     useEffect(() => {

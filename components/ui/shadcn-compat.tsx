@@ -1314,27 +1314,29 @@ type DropdownItem = {
   onClick?: () => void;
 };
 
-export function Dropdown({ children, menu, overlayStyle }: { children?: ReactNode; trigger?: string[]; getPopupContainer?: () => HTMLElement; overlayStyle?: CSSProperties; menu?: { items?: DropdownItem[] } }) {
+export function Dropdown({ children, menu, overlayStyle, dropdownRender }: { children?: ReactNode; trigger?: string[]; getPopupContainer?: () => HTMLElement; overlayStyle?: CSSProperties; menu?: { items?: DropdownItem[] }; dropdownRender?: (menu: ReactNode) => ReactNode }) {
+  const items = (menu?.items || []).map((item, index) =>
+    item.type === "divider" ? (
+      <DropdownMenuSeparator key={`divider-${index}`} />
+    ) : (
+      <DropdownMenuItem
+        key={item.key || index}
+        disabled={item.disabled}
+        variant={item.danger ? "destructive" : "default"}
+        onClick={() => item.onClick?.()}
+        className="gap-2"
+      >
+        {item.icon}
+        <span className="min-w-0 flex-1">{item.label}</span>
+      </DropdownMenuItem>
+    ),
+  );
+  const content = dropdownRender ? dropdownRender(items) : items;
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>{children as ReactElement}</DropdownMenuTrigger>
       <DropdownMenuContent className="z-[1200] min-w-44" style={overlayStyle}>
-        {(menu?.items || []).map((item, index) =>
-          item.type === "divider" ? (
-            <DropdownMenuSeparator key={`divider-${index}`} />
-          ) : (
-            <DropdownMenuItem
-              key={item.key || index}
-              disabled={item.disabled}
-              variant={item.danger ? "destructive" : "default"}
-              onClick={() => item.onClick?.()}
-              className="gap-2"
-            >
-              {item.icon}
-              <span className="min-w-0 flex-1">{item.label}</span>
-            </DropdownMenuItem>
-          ),
-        )}
+        {content}
       </DropdownMenuContent>
     </DropdownMenu>
   );
