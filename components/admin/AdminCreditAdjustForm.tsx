@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { App, Button, Form, Input, InputNumber } from "@/components/ui/shadcn-compat";
-import { FileAddOutlined, PlusCircleOutlined } from "@/components/ui/lucide-icons-compat";
+import { FileAddOutlined, PlusCircleOutlined } from "@/components/ui/ant-icons-compat";
 import { AdminUserPicker } from "@/components/admin/AdminUserPicker";
 
 type CreditAdjustValue = {

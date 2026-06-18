@@ -7,8 +7,7 @@ const result = spawnSync(process.execPath, [nextCli, "build"], {
   cwd: root,
   env: {
     ...process.env,
-    // The worker path can crash the native compiler on Windows with large app trees.
-    NEXT_PRIVATE_BUILD_WORKER: process.env.NEXT_PRIVATE_BUILD_WORKER || "0",
+    NEXT_PRIVATE_BUILD_WORKER: process.env.NEXT_PRIVATE_BUILD_WORKER || "1",
   },
   stdio: "inherit",
 });

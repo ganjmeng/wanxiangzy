@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Alert, Button, Card, Image, Input, Select, Space, Table, Tag, Typography } from "@/components/ui/shadcn-compat";
 import type { ColumnsType } from "@/components/ui/shadcn-compat";
-import { DatabaseOutlined, SearchOutlined } from "@/components/ui/lucide-icons-compat";
+import { DatabaseOutlined, SearchOutlined } from "@/components/ui/ant-icons-compat";
 import { AdminAssetModerationForm } from "@/components/admin/AdminAssetModerationForm";
 import type { AdminAssetList, AdminAssetListItem } from "@/lib/admin/data";
 

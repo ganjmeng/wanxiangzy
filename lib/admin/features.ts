@@ -1,4 +1,4 @@
-import { FEATURE_ITEMS, type AppModuleKey } from "@/lib/navigation";
+import { FEATURE_ITEMS, type AppModuleKey, type FeatureKey } from "@/lib/navigation";
 import { getAdminClient } from "@/lib/supabase/admin";
 
 export const ADMIN_FEATURES_CONFIG_KEY = "features.registry";
@@ -38,7 +38,6 @@ const moduleAdminHref: Record<AppModuleKey, string> = {
   aiShoots: "/admin/generations",
   assistant: "/admin/evals",
   tools: "/admin/generations",
-  canvas: "/admin/assets",
   aiVideo: "/admin/generations",
   works: "/admin/assets",
 };
@@ -69,22 +68,22 @@ export function parseAdminFeatureConfig(input: unknown): AdminFeatureConfig | nu
   const key = normalizeText(record.key, 64);
   const label = normalizeText(record.label, 80);
   const href = normalizeText(record.href, 160);
-  const moduleKey = normalizeModule(record.module);
-  if (!key || !label || !href || !moduleKey) return null;
+  const module = normalizeModule(record.module);
+  if (!key || !label || !href || !module) return null;
   const status = normalizeStatus(record.status);
   const enabled = typeof record.enabled === "boolean" ? record.enabled : status === "active";
 
   return {
     key,
     label,
-    module: moduleKey,
+    module,
     href,
     description: normalizeText(record.description, 240),
     enabled,
     navVisible: typeof record.navVisible === "boolean" ? record.navVisible : enabled,
     defaultModel: normalizeText(record.defaultModel, 80),
     creditPolicy: normalizeText(record.creditPolicy, 120),
-    adminHref: normalizeText(record.adminHref, 160) || moduleAdminHref[moduleKey],
+    adminHref: normalizeText(record.adminHref, 160) || moduleAdminHref[module],
     status,
     notes: normalizeText(record.notes, 1000),
     updatedAt: normalizeText(record.updatedAt, 40) || null,
@@ -165,8 +164,8 @@ function normalizeText(value: unknown, maxLength: number) {
 }
 
 function normalizeModule(value: unknown): AppModuleKey | null {
-  const moduleKey = normalizeText(value, 40);
-  return ["home", "aiShoots", "assistant", "tools", "canvas", "aiVideo", "works"].includes(moduleKey) ? (moduleKey as AppModuleKey) : null;
+  const module = normalizeText(value, 40);
+  return ["home", "aiShoots", "assistant", "tools", "aiVideo", "works"].includes(module) ? (module as AppModuleKey) : null;
 }
 
 function normalizeStatus(value: unknown): AdminFeatureStatus {

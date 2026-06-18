@@ -35,9 +35,6 @@
     ".next/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules",
-    "tmp",
-    "tmp/**",
-    "tools/infinite-canvas/canvas-agent"
+    "node_modules"
   ]
 }

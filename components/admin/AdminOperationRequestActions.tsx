@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { App, Button, Form, Input, Modal, Space, Typography } from "@/components/ui/shadcn-compat";
-import { CheckCircleOutlined, CloseCircleOutlined } from "@/components/ui/lucide-icons-compat";
+import { CheckCircleOutlined, CloseCircleOutlined } from "@/components/ui/ant-icons-compat";
 
 type ApprovalAction = "approve" | "reject";
 

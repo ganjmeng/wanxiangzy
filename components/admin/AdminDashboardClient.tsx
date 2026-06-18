@@ -38,7 +38,7 @@ import {
   DollarOutlined,
   FireOutlined,
   ReloadOutlined,
-} from "@/components/ui/lucide-icons-compat";
+} from "@/components/ui/ant-icons-compat";
 import {
   ChartContainer,
   ChartLegend,

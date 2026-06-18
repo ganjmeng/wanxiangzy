@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { App, Button, Form, Input, Select } from "@/components/ui/shadcn-compat";
-import { UserAddOutlined } from "@/components/ui/lucide-icons-compat";
+import { UserAddOutlined } from "@/components/ui/ant-icons-compat";
 import { AdminUserPicker, type AdminUserOption } from "@/components/admin/AdminUserPicker";
 
 type MemberFormValue = {

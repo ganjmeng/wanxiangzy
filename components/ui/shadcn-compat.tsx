@@ -24,7 +24,7 @@ import { toast } from "sonner";
 import { ArrowRight, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Loader2, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  Pagination as ShadcnPagination,
+  Pagination,
   PaginationContent,
   PaginationEllipsis,
   PaginationItem,
@@ -48,19 +48,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Tabs as ShadcnTabs,
-  TabsContent as ShadcnTabsContent,
-  TabsList as ShadcnTabsList,
-  TabsTrigger as ShadcnTabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 type PrimitiveValue = string | number | boolean | null | undefined;
 
@@ -117,21 +104,6 @@ export const zhCN = {};
 
 export const theme = {
   compactAlgorithm: {},
-  defaultAlgorithm: {},
-  darkAlgorithm: {},
-  useToken: () => ({
-    token: {
-      colorBgContainer: "var(--background)",
-      colorBgElevated: "var(--popover)",
-      colorFillAlter: "var(--muted)",
-      colorBorder: "var(--border)",
-      colorBorderSecondary: "var(--border)",
-      colorText: "var(--foreground)",
-      colorTextSecondary: "var(--muted-foreground)",
-      boxShadowSecondary: "0 10px 24px rgba(15, 23, 42, 0.10)",
-      borderRadius: 8,
-    },
-  }),
 };
 
 type ConfirmOptions = {
@@ -139,7 +111,6 @@ type ConfirmOptions = {
   content?: ReactNode;
   okText?: ReactNode;
   cancelText?: ReactNode;
-  okType?: string;
   okButtonProps?: { danger?: boolean; disabled?: boolean };
   onOk?: () => void | Promise<void>;
   onCancel?: () => void | Promise<void>;
@@ -262,12 +233,11 @@ type ButtonProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "type"> &
   loading?: boolean;
   icon?: ReactNode;
   size?: "small" | "middle" | "large";
-  shape?: "circle" | "round" | "default";
   block?: boolean;
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { className, type = "default", htmlType = "button", danger, loading, icon, size = "middle", shape, block, children, disabled, ...props },
+  { className, type = "default", htmlType = "button", danger, loading, icon, size = "middle", block, children, disabled, ...props },
   ref,
 ) {
   return (
@@ -278,8 +248,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       className={cn(
         "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
         size === "small" ? "h-8 px-2.5 text-xs" : size === "large" ? "h-11 px-5" : "h-9 px-4",
-        shape === "circle" && "aspect-square rounded-full px-0",
-        shape === "round" && "rounded-full",
         type === "primary" && !danger && "border-primary bg-primary text-primary-foreground hover:bg-primary/90",
         danger && "border-red-200 bg-red-50 text-red-700 hover:bg-red-100",
         type === "default" && !danger && "border-border bg-white text-slate-900 hover:bg-slate-50",
@@ -300,23 +268,19 @@ type CardProps = Omit<HTMLAttributes<HTMLDivElement>, "title"> & {
   title?: ReactNode;
   extra?: ReactNode;
   loading?: boolean;
-  hoverable?: boolean;
-  cover?: ReactNode;
-  size?: "small" | "default";
   styles?: { body?: CSSProperties; header?: CSSProperties };
 };
 
-export function Card({ title, extra, loading, hoverable, cover, size, className, styles, children, ...props }: CardProps) {
+export function Card({ title, extra, loading, className, styles, children, ...props }: CardProps) {
   return (
-    <section className={cn("rounded-lg border border-border bg-card text-card-foreground shadow-sm", hoverable && "transition hover:shadow-md", className)} {...props}>
-      {cover ? <div className="overflow-hidden rounded-t-lg">{cover}</div> : null}
+    <section className={cn("rounded-lg border border-border bg-card text-card-foreground shadow-sm", className)} {...props}>
       {(title || extra) && (
-        <div className={cn("flex items-center justify-between gap-3 border-b border-border px-4", size === "small" ? "min-h-10 py-2" : "min-h-12 py-3")} style={styles?.header}>
+        <div className="flex min-h-12 items-center justify-between gap-3 border-b border-border px-4 py-3" style={styles?.header}>
           <div className="min-w-0 text-sm font-semibold text-slate-950">{title}</div>
           {extra ? <div className="shrink-0">{extra}</div> : null}
         </div>
       )}
-      <div className={cn(size === "small" ? "p-3" : "p-4")} style={styles?.body}>
+      <div className="p-4" style={styles?.body}>
         {loading ? <CardLoadingSkeleton /> : children}
       </div>
     </section>
@@ -343,17 +307,15 @@ function CardLoadingSkeleton() {
   );
 }
 
-type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "prefix" | "size"> & {
+type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "prefix"> & {
   allowClear?: boolean;
   prefix?: ReactNode;
-  size?: "small" | "middle" | "large";
-  status?: "error" | "warning";
 };
 
-const BaseInput = forwardRef<HTMLInputElement, InputProps>(function BaseInput({ className, prefix, allowClear, size, status, ...props }, ref) {
+const BaseInput = forwardRef<HTMLInputElement, InputProps>(function BaseInput({ className, prefix, allowClear, ...props }, ref) {
   if (prefix) {
     return (
-      <span className={cn("flex items-center gap-2 rounded-md border border-input bg-white px-3 text-sm shadow-sm focus-within:ring-2 focus-within:ring-ring", size === "small" ? "h-8" : "h-9", status === "error" && "border-red-400", className)}>
+      <span className={cn("flex h-9 items-center gap-2 rounded-md border border-input bg-white px-3 text-sm shadow-sm focus-within:ring-2 focus-within:ring-ring", className)}>
         <span className="text-slate-400">{prefix}</span>
         <input ref={ref} className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-slate-400" {...props} />
       </span>
@@ -363,18 +325,18 @@ const BaseInput = forwardRef<HTMLInputElement, InputProps>(function BaseInput({ 
   return (
     <input
       ref={ref}
-      className={cn("w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50", size === "small" ? "h-8" : "h-9", status === "error" && "border-red-400", className)}
+      className={cn("h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50", className)}
       {...props}
     />
   );
 });
 
-function TextArea({ className, showCount, maxLength, value, status, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement> & { showCount?: boolean; status?: "error" | "warning" }) {
+function TextArea({ className, showCount, maxLength, value, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement> & { showCount?: boolean }) {
   const length = typeof value === "string" ? value.length : typeof props.defaultValue === "string" ? props.defaultValue.length : 0;
   return (
     <span className="block">
       <textarea
-        className={cn("min-h-20 w-full rounded-md border border-input bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50", status === "error" && "border-red-400", className)}
+        className={cn("min-h-20 w-full rounded-md border border-input bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50", className)}
         maxLength={maxLength}
         value={value}
         {...props}
@@ -409,40 +371,22 @@ function SearchInput({
   );
 }
 
-const PasswordInput = forwardRef<HTMLInputElement, InputProps>(function PasswordInput(props, ref) {
-  return <BaseInput ref={ref} type="password" {...props} />;
-});
+export const Input = Object.assign(BaseInput, { TextArea, Search: SearchInput });
 
-export const Input = Object.assign(BaseInput, { TextArea, Search: SearchInput, Password: PasswordInput });
-
-export function InputNumber({ onChange, ...props }: Omit<InputProps, "onChange" | "type"> & { min?: number; max?: number; precision?: number; onChange?: (value: string | number | null) => void }) {
-  return (
-    <BaseInput
-      type="number"
-      {...props}
-      onChange={(event) => {
-        const value = event.target.value;
-        onChange?.(value === "" ? null : Number(value));
-      }}
-    />
-  );
+export function InputNumber(props: InputProps & { min?: number; max?: number }) {
+  return <BaseInput type="number" {...props} />;
 }
 
 type SelectProps = {
   options?: Option[];
-  value?: any;
-  defaultValue?: any;
+  value?: string | number;
+  defaultValue?: string | number;
   onChange?: (value: any, option?: any) => void;
   onSearch?: (value: string) => void;
-  onOpenChange?: (open: boolean) => void;
-  onInputKeyDown?: (event: React.KeyboardEvent<HTMLInputElement>) => void;
-  onBlur?: () => void;
   onClear?: () => void;
   filterOption?: boolean;
   optionRender?: (option: { data: Option }) => ReactNode;
   showSearch?: boolean;
-  open?: boolean;
-  searchValue?: string;
   allowClear?: boolean;
   loading?: boolean;
   placeholder?: string;
@@ -450,10 +394,6 @@ type SelectProps = {
   className?: string;
   disabled?: boolean;
   popupMatchSelectWidth?: boolean | number;
-  popupRender?: (menu: ReactNode) => ReactNode;
-  mode?: string;
-  maxTagCount?: string | number;
-  size?: "small" | "middle" | "large";
   getPopupContainer?: unknown;
   style?: CSSProperties;
   name?: string;
@@ -465,39 +405,26 @@ export function Select({
   defaultValue,
   onChange,
   onSearch,
-  onOpenChange,
-  onInputKeyDown,
-  onBlur,
   onClear,
   optionRender,
   showSearch,
-  open: controlledOpen,
-  searchValue,
   allowClear,
   loading,
   placeholder,
   notFoundContent,
   className,
   disabled,
-  popupRender,
   style,
   name,
 }: SelectProps) {
   const controlled = value !== undefined;
-  const [innerValue, setInnerValue] = useState<any>(defaultValue);
-  const [innerOpen, setInnerOpen] = useState(false);
+  const [innerValue, setInnerValue] = useState<string | number | undefined>(defaultValue);
+  const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const open = controlledOpen ?? innerOpen;
-  const setOpen = (next: boolean) => {
-    if (controlledOpen === undefined) setInnerOpen(next);
-    onOpenChange?.(next);
-  };
-  const currentQuery = searchValue ?? query;
   const currentValue = controlled ? value : innerValue;
-  const currentValueString = Array.isArray(currentValue) ? currentValue.map(String).join(", ") : currentValue === undefined || currentValue === null ? "" : String(currentValue);
-  const selected = options.find((item) => String(item.value) === String(Array.isArray(currentValue) ? currentValue[0] : currentValue));
-  const visibleOptions = showSearch && currentQuery
-    ? options.filter((item) => textFromNode(item.label).toLowerCase().includes(currentQuery.toLowerCase()) || String(item.value).toLowerCase().includes(currentQuery.toLowerCase()))
+  const selected = options.find((item) => String(item.value) === String(currentValue));
+  const visibleOptions = showSearch && query
+    ? options.filter((item) => textFromNode(item.label).toLowerCase().includes(query.toLowerCase()) || String(item.value).toLowerCase().includes(query.toLowerCase()))
     : options;
 
   function commit(option: Option | undefined) {
@@ -509,6 +436,8 @@ export function Select({
   }
 
   if (!showSearch) {
+    const currentValueString = currentValue === undefined || currentValue === null ? "" : String(currentValue);
+
     return (
       <span className={cn("inline-block w-full", className)} style={style}>
         {name ? <input type="hidden" name={name} value={currentValueString} /> : null}
@@ -534,7 +463,7 @@ export function Select({
             role="listbox"
             className="z-[5000] max-h-[min(320px,var(--radix-popover-content-available-height))] w-[var(--radix-popover-trigger-width)] min-w-[var(--radix-popover-trigger-width)] gap-0 overflow-y-auto rounded-md border border-slate-200 bg-white p-1 shadow-lg"
           >
-            {(popupRender ? [popupRender(options.map((option) => (
+            {options.map((option) => (
               <SelectOptionButton
                 key={String(option.value)}
                 option={option}
@@ -542,15 +471,7 @@ export function Select({
                 onSelect={commit}
                 optionRender={optionRender}
               />
-            )))] : options.map((option) => (
-              <SelectOptionButton
-                key={String(option.value)}
-                option={option}
-                selected={String(option.value) === currentValueString}
-                onSelect={commit}
-                optionRender={optionRender}
-              />
-            )))}
+            ))}
             {!options.length ? <div className="px-3 py-2 text-sm text-slate-500">{notFoundContent ?? "暂无数据"}</div> : null}
           </PopoverContent>
         </Popover>
@@ -564,12 +485,10 @@ export function Select({
         <input
           name={name}
           disabled={disabled}
-          value={open ? currentQuery : textFromNode(selected?.label) || currentValueString || ""}
+          value={open ? query : textFromNode(selected?.label) || ""}
           placeholder={placeholder}
           className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
           onFocus={() => setOpen(true)}
-          onBlur={onBlur}
-          onKeyDown={onInputKeyDown}
           onChange={(event) => {
             setQuery(event.target.value);
             setOpen(true);
@@ -582,13 +501,13 @@ export function Select({
             <X className="h-4 w-4" />
           </button>
         ) : null}
-        <button type="button" className="ml-1 text-slate-400" onClick={() => setOpen(!open)}>
+        <button type="button" className="ml-1 text-slate-400" onClick={() => setOpen((next) => !next)}>
           <ChevronDown className="h-4 w-4" />
         </button>
       </div>
       {open ? (
         <div className="absolute left-0 top-[calc(100%+4px)] z-[5000] max-h-64 w-full overflow-auto rounded-md border border-border bg-white p-1 text-sm shadow-xl">
-          {visibleOptions.length ? (popupRender ? [popupRender(visibleOptions.map((option) => (
+          {visibleOptions.length ? visibleOptions.map((option) => (
             <button
               key={String(option.value)}
               type="button"
@@ -600,19 +519,7 @@ export function Select({
               <span className="min-w-0">{optionRender ? optionRender({ data: option }) : option.label}</span>
               {String(option.value) === String(currentValue) ? <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> : null}
             </button>
-          )))] : visibleOptions.map((option) => (
-            <button
-              key={String(option.value)}
-              type="button"
-              disabled={option.disabled}
-              className="flex w-full items-start justify-between gap-3 rounded-sm px-2 py-2 text-left hover:bg-slate-100 disabled:opacity-50"
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => commit(option)}
-            >
-              <span className="min-w-0">{optionRender ? optionRender({ data: option }) : option.label}</span>
-              {String(option.value) === String(currentValue) ? <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> : null}
-            </button>
-          ))) : (
+          )) : (
             <div className="px-2 py-3 text-center text-slate-500">{notFoundContent || "暂无数据"}</div>
           )}
         </div>
@@ -689,7 +596,6 @@ function FormRoot<T extends Record<string, any> = Record<string, any>>({
   form?: FormInstance<T>;
   initialValues?: Partial<T>;
   layout?: "vertical" | "inline";
-  requiredMark?: boolean;
   onFinish?: (values: T) => void | Promise<void>;
 }) {
   const [values, setValues] = useState<Record<string, any>>(() => ({ ...(initialValues || {}) }));
@@ -805,7 +711,7 @@ function RadioGroup({ value, onChange, children, className }: { value?: string; 
 
 export const Radio = Object.assign(RadioItem, { Group: RadioGroup });
 
-function CheckboxRoot({ checked, onChange, children, className, name, value }: { checked?: boolean; onChange?: (event: any) => void; children?: ReactNode; className?: string; name?: string; value?: string }) {
+export function Checkbox({ checked, onChange, children, className, name, value }: { checked?: boolean; onChange?: (event: any) => void; children?: ReactNode; className?: string; name?: string; value?: string }) {
   return (
     <label className={cn("inline-flex cursor-pointer items-center gap-2 text-sm", className)}>
       <input
@@ -821,37 +727,13 @@ function CheckboxRoot({ checked, onChange, children, className, name, value }: {
   );
 }
 
-function CheckboxGroup({ value = [], onChange, className, children }: { value?: Array<string | number>; onChange?: (values: Array<string | number>) => void; className?: string; children?: ReactNode }) {
-  const values = value.map(String);
-  return (
-    <div className={className}>
-      {Children.map(children, (child) => {
-        if (!isValidElement<any>(child)) return child;
-        const option = child as ReactElement<{ value?: string | number; checked?: boolean; onChange?: (event: any) => void }>;
-        const optionValue = option.props.value;
-        const checked = values.includes(String(optionValue));
-        return cloneElement(option, {
-          checked,
-          onChange: () => {
-            const next = checked ? values.filter((item) => item !== String(optionValue)) : [...values, String(optionValue)];
-            onChange?.(next);
-          },
-        });
-      })}
-    </div>
-  );
-}
-
-export const Checkbox = Object.assign(CheckboxRoot, { Group: CheckboxGroup });
-
-export function Switch({ checked, onChange, checkedChildren, unCheckedChildren, className, disabled }: { checked?: boolean; onChange?: (checked: boolean) => void; checkedChildren?: ReactNode; unCheckedChildren?: ReactNode; className?: string; disabled?: boolean; size?: "small" | "default" }) {
+export function Switch({ checked, onChange, checkedChildren, unCheckedChildren }: { checked?: boolean; onChange?: (checked: boolean) => void; checkedChildren?: ReactNode; unCheckedChildren?: ReactNode }) {
   return (
     <button
       type="button"
-      disabled={disabled}
       aria-pressed={Boolean(checked)}
       onClick={() => onChange?.(!checked)}
-      className={cn("inline-flex h-7 min-w-14 items-center rounded-full border px-1 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50", checked ? "border-primary bg-primary text-white" : "border-border bg-slate-100 text-slate-500", className)}
+      className={cn("inline-flex h-7 min-w-14 items-center rounded-full border px-1 text-xs font-medium transition", checked ? "border-primary bg-primary text-white" : "border-border bg-slate-100 text-slate-500")}
     >
       <span className={cn("h-5 w-5 rounded-full bg-white shadow transition", checked ? "translate-x-7" : "translate-x-0")} />
       <span className="ml-2 mr-1">{checked ? checkedChildren : unCheckedChildren}</span>
@@ -859,86 +741,20 @@ export function Switch({ checked, onChange, checkedChildren, unCheckedChildren, 
   );
 }
 
-export function Modal({
-  title,
-  open,
-  onCancel,
-  onOk,
-  okText = "确认",
-  cancelText = "取消",
-  confirmLoading,
-  okButtonProps,
-  width,
-  footer,
-  styles,
-  className,
-  children,
-  maskClosable = true,
-}: {
-  title?: ReactNode;
-  open?: boolean;
-  onCancel?: () => void;
-  onOk?: () => void;
-  okText?: ReactNode;
-  cancelText?: ReactNode;
-  confirmLoading?: boolean;
-  okButtonProps?: { danger?: boolean; disabled?: boolean };
-  width?: number | string;
-  centered?: boolean;
-  maskClosable?: boolean;
-  footer?: ReactNode | null;
-  styles?: { body?: CSSProperties; header?: CSSProperties; footer?: CSSProperties };
-  className?: string;
-  destroyOnHidden?: boolean;
-  children?: ReactNode;
-}) {
-  const [mounted, setMounted] = useState(open ?? false);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    if (open) {
-      setMounted(true);
-      // double rAF ensures the entry transition fires after the node is committed
-      requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)));
-    } else if (mounted) {
-      setVisible(false);
-      const t = setTimeout(() => setMounted(false), 180);
-      return () => clearTimeout(t);
-    }
-  }, [open, mounted]);
-
-  if (!mounted) return null;
+export function Modal({ title, open, onCancel, onOk, okText = "确认", confirmLoading, okButtonProps, width, children }: { title?: ReactNode; open?: boolean; onCancel?: () => void; onOk?: () => void; okText?: ReactNode; confirmLoading?: boolean; okButtonProps?: { danger?: boolean }; width?: number | string; destroyOnHidden?: boolean; children?: ReactNode }) {
+  if (!open) return null;
   return (
-    <div
-      className={cn("fixed inset-0 z-[6000] flex items-center justify-center p-4 transition-opacity duration-200", visible ? "bg-black/35 opacity-100" : "bg-black/0 opacity-0")}
-      onMouseDown={(event) => {
-        if (maskClosable && event.target === event.currentTarget) onCancel?.();
-      }}
-    >
-      <div
-        className={cn(
-          "w-full max-w-lg rounded-lg border border-border bg-white shadow-2xl transition-all duration-200 dark:bg-stone-900",
-          visible ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-[0.97] opacity-0",
-          className,
-        )}
-        style={width ? { maxWidth: width } : undefined}
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        {title !== null ? (
-          <div className="flex items-center justify-between border-b border-border px-5 py-4" style={styles?.header}>
-            <h2 className="text-base font-semibold">{title}</h2>
-            <button type="button" onClick={onCancel} className="rounded p-1 text-slate-500 hover:bg-slate-100"><X className="h-4 w-4" /></button>
-          </div>
-        ) : null}
-        <div className="p-5" style={styles?.body}>{children}</div>
-        {footer === null ? null : footer !== undefined ? (
-          <div className="border-t border-border px-5 py-4" style={styles?.footer}>{footer}</div>
-        ) : (
-          <div className="flex justify-end gap-2 border-t border-border px-5 py-4" style={styles?.footer}>
-            <Button onClick={onCancel}>{cancelText}</Button>
-            <Button type="primary" danger={okButtonProps?.danger} loading={confirmLoading} disabled={okButtonProps?.disabled} onClick={onOk}>{okText}</Button>
-          </div>
-        )}
+    <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/35 p-4">
+      <div className="w-full max-w-lg rounded-lg border border-border bg-white shadow-2xl" style={width ? { maxWidth: width } : undefined}>
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <h2 className="text-base font-semibold">{title}</h2>
+          <button type="button" onClick={onCancel} className="rounded p-1 text-slate-500 hover:bg-slate-100"><X className="h-4 w-4" /></button>
+        </div>
+        <div className="p-5">{children}</div>
+        <div className="flex justify-end gap-2 border-t border-border px-5 py-4">
+          <Button onClick={onCancel}>取消</Button>
+          <Button type="primary" danger={okButtonProps?.danger} loading={confirmLoading} onClick={onOk}>{okText}</Button>
+        </div>
       </div>
     </div>
   );
@@ -953,7 +769,7 @@ export function Alert({ type = "info", message, description, className }: { type
   );
 }
 
-function TagRoot({ color, className, children }: { color?: string; className?: string; children?: ReactNode }) {
+export function Tag({ color, className, children }: { color?: string; className?: string; children?: ReactNode }) {
   const tone = color === "red" || color === "volcano"
     ? "border-red-200 bg-red-50 text-red-700"
     : color === "green"
@@ -966,64 +782,23 @@ function TagRoot({ color, className, children }: { color?: string; className?: s
   return <span className={cn("inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium", tone, className)}>{children}</span>;
 }
 
-function CheckableTagComponent({ checked, onChange, className, children }: { checked?: boolean; onChange?: (checked: boolean) => void; className?: string; children?: ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={checked}
-      className={cn(
-        "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium transition",
-        checked ? "border-primary bg-primary text-primary-foreground" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100",
-        className,
-      )}
-      onClick={() => onChange?.(!checked)}
-    >
-      {children}
-    </button>
-  );
-}
-
-export const Tag = Object.assign(TagRoot, { CheckableTag: CheckableTagComponent });
-
-export function Badge(props: Parameters<typeof TagRoot>[0]) {
+export function Badge(props: Parameters<typeof Tag>[0]) {
   return <Tag {...props} />;
 }
 
-export function Empty({ description, className }: { image?: ReactNode; description?: ReactNode; className?: string }) {
-  return <div className={cn("flex min-h-24 items-center justify-center rounded-md border border-dashed border-border bg-slate-50 p-6 text-sm text-slate-500", className)}>{description || "\u6682\u65e0\u6570\u636e"}</div>;
+export function Empty({ description }: { image?: ReactNode; description?: ReactNode }) {
+  return <div className="flex min-h-24 items-center justify-center rounded-md border border-dashed border-border bg-slate-50 p-6 text-sm text-slate-500">{description || "暂无数据"}</div>;
 }
 Empty.PRESENTED_IMAGE_SIMPLE = null;
 
-export function Pagination({ current = 1, pageSize = 10, total = 0, onChange, showSizeChanger = false, size = "default" }: { current?: number; pageSize?: number; total?: number; onChange?: (page: number, pageSize: number) => void; showSizeChanger?: boolean; size?: "small" | "default" }) {
-  const pageCount = Math.max(1, Math.ceil(total / Math.max(1, pageSize)));
-  const safeCurrent = Math.max(1, Math.min(pageCount, current));
-  const tokens = buildPageTokens(safeCurrent, pageCount);
-  return (
-    <div className={cn("flex items-center gap-1", size === "small" && "text-xs")}>
-      <Button size="small" disabled={safeCurrent <= 1} onClick={() => onChange?.(safeCurrent - 1, pageSize)}>上一页</Button>
-      {tokens.map((token, index) =>
-        token === "ellipsis" ? (
-          <span key={`ellipsis-${index}`} className="px-2 text-slate-400">...</span>
-        ) : (
-          <Button key={token} size="small" type={token === safeCurrent ? "primary" : "default"} onClick={() => onChange?.(token, pageSize)}>
-            {token}
-          </Button>
-        ),
-      )}
-      <Button size="small" disabled={safeCurrent >= pageCount} onClick={() => onChange?.(safeCurrent + 1, pageSize)}>下一页</Button>
-      {showSizeChanger ? null : null}
-    </div>
-  );
-}
-
-export function Progress({ percent = 0, showInfo = true }: { percent?: number; size?: "small" | "default"; status?: string; showInfo?: boolean }) {
+export function Progress({ percent = 0 }: { percent?: number; size?: "small" | "default" }) {
   const value = Math.max(0, Math.min(100, percent));
   return (
     <div className="flex items-center gap-2">
       <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
         <div className="h-full rounded-full bg-primary" style={{ width: `${value}%` }} />
       </div>
-      {showInfo ? <span className="w-10 text-right text-xs text-slate-500">{value}%</span> : null}
+      <span className="w-10 text-right text-xs text-slate-500">{value}%</span>
     </div>
   );
 }
@@ -1116,7 +891,7 @@ export function Table<T extends Record<string, any>>({ columns = [], dataSource 
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
           <span>{paging.showTotal ? paging.showTotal(total, range) : `共 ${total} 条`}</span>
           <div className="flex flex-wrap items-center justify-end gap-3">
-            <ShadcnPagination className="mx-0 w-auto">
+            <Pagination className="mx-0 w-auto">
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
@@ -1157,7 +932,7 @@ export function Table<T extends Record<string, any>>({ columns = [], dataSource 
                   />
                 </PaginationItem>
               </PaginationContent>
-            </ShadcnPagination>
+            </Pagination>
             {paging.showSizeChanger ? (
               <Select
                 className="w-[104px]"
@@ -1204,11 +979,11 @@ function buildPageTokens(currentPage: number, pageCount: number): Array<number |
   });
 }
 
-export function Tooltip({ title, children }: { title?: ReactNode; placement?: string; children?: ReactNode; mouseEnterDelay?: number; color?: string; styles?: unknown }) {
+export function Tooltip({ title, children }: { title?: ReactNode; placement?: string; children?: ReactNode }) {
   return <span title={textFromNode(title)}>{children}</span>;
 }
 
-function ImageRoot({ src, alt = "", width, height, className, style }: { src?: string; alt?: string; width?: number; height?: number; className?: string; style?: CSSProperties; preview?: { visible?: boolean; src?: string; onVisibleChange?: (visible: boolean) => void } | boolean }) {
+function ImageRoot({ src, alt = "", width, height, className, style }: { src?: string; alt?: string; width?: number; height?: number; className?: string; style?: CSSProperties; preview?: unknown }) {
   if (!src) return null;
   return <img src={src} alt={alt} width={width} height={height} className={className} style={style} />;
 }
@@ -1276,11 +1051,11 @@ export function Col({ xs = 24, sm, xl, className, children }: { xs?: number; sm?
   return <div className={cn("min-w-0", className)} style={{ gridColumn: `span ${safeSpan} / span ${safeSpan}` }}>{children}</div>;
 }
 
-export function Segmented({ value, options, onChange, className, block, size }: { value?: PrimitiveValue; options: Option[]; onChange?: (value: any) => void; className?: string; block?: boolean; size?: "small" | "middle" | "large" }) {
+export function Segmented({ value, options, onChange }: { value?: PrimitiveValue; options: Option[]; onChange?: (value: any) => void }) {
   return (
-    <div className={cn("inline-flex rounded-md border border-border bg-slate-100 p-1", block && "w-full", className)}>
+    <div className="inline-flex rounded-md border border-border bg-slate-100 p-1">
       {options.map((option) => (
-        <button key={String(option.value)} type="button" disabled={option.disabled} onClick={() => onChange?.(option.value)} className={cn("rounded px-3 py-1.5 text-sm disabled:pointer-events-none disabled:opacity-45", size === "small" && "px-2 py-1 text-xs", block && "flex-1", String(value) === String(option.value) ? "bg-white text-slate-950 shadow-sm" : "text-slate-500 hover:text-slate-950")}>{option.label}</button>
+        <button key={String(option.value)} type="button" onClick={() => onChange?.(option.value)} className={cn("rounded px-3 py-1.5 text-sm", String(value) === String(option.value) ? "bg-white text-slate-950 shadow-sm" : "text-slate-500 hover:text-slate-950")}>{option.label}</button>
       ))}
     </div>
   );
@@ -1304,42 +1079,6 @@ export const List = Object.assign(
   },
 );
 
-type DropdownItem = {
-  key?: string;
-  type?: "divider";
-  icon?: ReactNode;
-  label?: ReactNode;
-  danger?: boolean;
-  disabled?: boolean;
-  onClick?: () => void;
-};
-
-export function Dropdown({ children, menu, overlayStyle }: { children?: ReactNode; trigger?: string[]; getPopupContainer?: () => HTMLElement; overlayStyle?: CSSProperties; menu?: { items?: DropdownItem[] } }) {
-  return (
-    <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>{children as ReactElement}</DropdownMenuTrigger>
-      <DropdownMenuContent className="z-[1200] min-w-44" style={overlayStyle}>
-        {(menu?.items || []).map((item, index) =>
-          item.type === "divider" ? (
-            <DropdownMenuSeparator key={`divider-${index}`} />
-          ) : (
-            <DropdownMenuItem
-              key={item.key || index}
-              disabled={item.disabled}
-              variant={item.danger ? "destructive" : "default"}
-              onClick={() => item.onClick?.()}
-              className="gap-2"
-            >
-              {item.icon}
-              <span className="min-w-0 flex-1">{item.label}</span>
-            </DropdownMenuItem>
-          ),
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
 export const Layout = Object.assign(
   function Layout({ className, children, onSubmit }: { className?: string; children?: ReactNode; onClick?: (event: any) => void; onSubmit?: (event: FormEvent<HTMLElement>) => void }) {
     return <div className={className} onSubmit={onSubmit as any}>{children}</div>;
@@ -1350,55 +1089,6 @@ export const Layout = Object.assign(
     Content: ({ className, children }: { className?: string; children?: ReactNode }) => <main className={className}>{children}</main>,
   },
 );
-
-export function Tabs({ activeKey, defaultActiveKey, items = [], onChange, className }: { activeKey?: string; defaultActiveKey?: string; items?: Array<{ key: string; label: ReactNode; children: ReactNode; disabled?: boolean }>; onChange?: (key: string) => void; className?: string }) {
-  const value = activeKey ?? defaultActiveKey ?? items[0]?.key;
-  return (
-    <ShadcnTabs value={value} onValueChange={onChange} className={className}>
-      <ShadcnTabsList className="mb-4 flex w-fit flex-wrap">
-        {items.map((item) => (
-          <ShadcnTabsTrigger key={item.key} value={item.key} disabled={item.disabled}>
-            {item.label}
-          </ShadcnTabsTrigger>
-        ))}
-      </ShadcnTabsList>
-      {items.map((item) => (
-        <ShadcnTabsContent key={item.key} value={item.key}>
-          {item.children}
-        </ShadcnTabsContent>
-      ))}
-    </ShadcnTabs>
-  );
-}
-
-export function Slider({ min = 0, max = 100, step = 1, value, defaultValue, onChange, disabled, className }: { min?: number; max?: number; step?: number; value?: number; defaultValue?: number; onChange?: (value: number) => void; disabled?: boolean; className?: string }) {
-  const current = value ?? defaultValue ?? min;
-  return (
-    <input
-      type="range"
-      min={min}
-      max={max}
-      step={step}
-      value={current}
-      disabled={disabled}
-      className={cn("h-2 w-full cursor-pointer accent-primary disabled:cursor-not-allowed disabled:opacity-50", className)}
-      onChange={(event) => onChange?.(Number(event.target.value))}
-    />
-  );
-}
-
-export function Timeline({ items = [] }: { items?: Array<{ content?: ReactNode; children?: ReactNode }> }) {
-  return (
-    <ol className="space-y-5 border-l border-border pl-4">
-      {items.map((item, index) => (
-        <li key={index} className="relative">
-          <span className="absolute -left-[21px] top-1 size-2.5 rounded-full border border-background bg-border" />
-          {item.content ?? item.children}
-        </li>
-      ))}
-    </ol>
-  );
-}
 
 export function Drawer({ open, onClose, title, children, className }: { title?: ReactNode; placement?: string; size?: number; open?: boolean; onClose?: () => void; className?: string; children?: ReactNode }) {
   if (!open) return null;
