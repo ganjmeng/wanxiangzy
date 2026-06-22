@@ -29,7 +29,7 @@ export function FeatureTabs({ active }: { active: FeatureKey }) {
   }, [active, visibleItems.length]);
 
   return (
-    <aside className="studio-nav-rail w-full max-w-[100vw] shrink-0 overflow-hidden border-b px-2 py-2 lg:h-full lg:w-[112px] lg:max-w-none lg:border-b-0 lg:border-r lg:px-2 lg:py-4">
+    <aside className="w-full max-w-[100vw] shrink-0 overflow-hidden border-b border-[var(--codex-border)] px-2 py-2 lg:h-full lg:w-[112px] lg:max-w-none lg:border-b-0 lg:border-r lg:px-2 lg:py-4">
       <div ref={scrollerRef} className="flex w-full items-center gap-1 overflow-x-auto overscroll-x-contain pb-1 lg:h-full lg:flex-col lg:items-stretch lg:overflow-y-auto lg:overflow-x-hidden lg:pb-0">
         {visibleItems.map((item) => {
           const Icon = item.icon;
@@ -41,14 +41,14 @@ export function FeatureTabs({ active }: { active: FeatureKey }) {
               href={item.href}
               prefetch={false}
               aria-current={isActive ? "page" : undefined}
-              className={`studio-nav-item group flex h-14 min-w-[92px] flex-col items-center justify-center gap-1 rounded-2xl px-2 text-[10px] font-black transition-[background-color,color,box-shadow,border-color] duration-150 lg:h-[72px] lg:min-w-0 ${
+              className={`group flex h-14 min-w-[92px] flex-col items-center justify-center gap-1 rounded-2xl px-2 text-[10px] font-black transition-[background-color,color,box-shadow] duration-150 lg:h-[72px] lg:min-w-0 ${
                 isActive
-                  ? "studio-nav-item-active bg-white/80 text-[var(--codex-accent)] shadow-sm ring-1 ring-zinc-200"
-                  : "text-codex-muted hover:bg-white/70 hover:text-codex-ink"
+                  ? "bg-[var(--codex-glass-fill)] text-[var(--codex-accent)] shadow-[var(--codex-shadow-apple)] backdrop-blur-md"
+                  : "text-[var(--codex-muted)] hover:bg-[var(--codex-glass-fill)] hover:text-[var(--codex-ink)]"
               }`}
               title={item.description}
             >
-              <span className={`relative flex h-6 w-6 items-center justify-center ${isActive ? "text-[var(--codex-accent)]" : "text-codex-faint group-hover:text-codex-ink"}`}>
+              <span className={`relative flex h-6 w-6 items-center justify-center ${isActive ? "text-[var(--codex-accent)]" : "text-[var(--codex-faint)] group-hover:text-[var(--codex-ink)]"}`}>
                 <Icon className="h-5 w-5" aria-hidden="true" />
               </span>
               <span className="max-w-full text-center leading-tight [overflow-wrap:anywhere]">{item.label}</span>

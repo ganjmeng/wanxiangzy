@@ -45,12 +45,12 @@ export function PreviewGuide({
 
   return (
     <div className="relative mx-auto w-full max-w-[1080px] px-1 py-2 text-center sm:px-3">
-      <div className="pointer-events-none absolute inset-x-10 top-16 h-40 rounded-full bg-[radial-gradient(circle,rgba(5,5,5,0.04),transparent_68%)] blur-3xl" />
+      <div className="pointer-events-none absolute inset-x-10 top-16 h-40 rounded-full bg-[radial-gradient(circle,rgba(0,122,255,0.04),transparent_68%)] blur-3xl" />
       <div className="relative">
-        <h3 className="text-[24px] font-black tracking-normal text-slate-950 sm:text-[34px]" style={{ textWrap: "balance" }}>{title}</h3>
-        <p className="mx-auto mt-2 max-w-2xl text-sm font-semibold leading-6 text-slate-500 sm:text-[15px]">{subtitle}</p>
+        <h3 className="text-[28px] font-semibold tracking-[-0.02em] text-[var(--codex-ink)] sm:text-[40px]" style={{ textWrap: "balance" }}>{title}</h3>
+        <p className="mx-auto mt-3 max-w-2xl text-[15px] font-normal leading-relaxed text-[var(--codex-muted)] sm:text-[17px]">{subtitle}</p>
 
-        <div className="mt-8 overflow-hidden rounded-[30px] border border-white/80 bg-white/95 px-4 py-7 text-left shadow-[0_28px_90px_rgba(5,5,5,0.08),0_8px_26px_rgba(15,23,42,0.06)] ring-1 ring-slate-950/[0.03] backdrop-blur sm:px-7 sm:py-8">
+        <div className="mt-10 overflow-hidden rounded-3xl border border-[var(--codex-border)] bg-card/90 px-5 py-7 text-left shadow-[var(--codex-shadow-apple-lg)] ring-1 ring-[var(--codex-border)] backdrop-blur-xl backdrop-saturate-150 sm:px-8 sm:py-10">
           <div className={`grid grid-cols-1 gap-5 sm:gap-6 ${stepGridClass} ${visualGridWidthClass}`}>
             {steps.map((step, index) => {
               const hasImage = Boolean(step.imageSrc || imageSrc);
@@ -58,13 +58,13 @@ export function PreviewGuide({
 
               return (
                 <div key={step.title} className="group relative min-w-0">
-                  <div className="relative overflow-hidden rounded-[22px] bg-gradient-to-br from-white via-slate-100 to-slate-200 p-px shadow-[0_18px_42px_rgba(15,23,42,0.08)] transition-[transform,box-shadow] duration-300 group-hover:-translate-y-0.5 group-hover:shadow-[0_24px_54px_rgba(5,5,5,0.12)]">
+                  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-white via-[#f5f5f7] to-[#eaeaef] p-px shadow-[var(--codex-shadow-apple)] transition-[transform,box-shadow] duration-300 group-hover:-translate-y-0.5 group-hover:shadow-[var(--codex-shadow-apple-lg)]">
                     <div
                       className={cn(
-                        "relative aspect-[4/5] overflow-hidden rounded-[21px]",
+                        "relative aspect-[4/5] overflow-hidden rounded-[15px]",
                         isContain
-                          ? "bg-[linear-gradient(135deg,#ffffff_0%,#fafafa_55%,#fafafa_100%)]"
-                          : "bg-slate-100"
+                          ? "bg-[linear-gradient(135deg,#ffffff_0%,#f5f5f7_55%,#f5f5f7_100%)]"
+                          : "bg-[#f5f5f7]"
                       )}
                     >
                       {hasImage ? (

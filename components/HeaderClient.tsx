@@ -306,7 +306,7 @@ function MarketingAccountActions({
       <DropdownMenuContent
         align="end"
         sideOffset={8}
-        className="mac-surface z-[80] min-w-[180px] overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-200/50"
+        className="z-[80] min-w-[200px] overflow-hidden rounded-2xl border border-[var(--codex-border)] bg-popover/90 p-1.5 shadow-[var(--codex-shadow-apple-lg)] backdrop-blur-xl backdrop-saturate-150"
       >
         <AccountMenuHeader email={email} credits={credits} creditsReady={creditsReady} />
         <AccountMenuLink href="/account" icon={UserRound} label="个人中心" />
@@ -324,7 +324,7 @@ function MarketingAccountActions({
             event.preventDefault();
             onLogout();
           }}
-          className="flex cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 outline-none transition hover:bg-slate-50 hover:text-slate-950 focus:bg-slate-50 focus:text-slate-950 data-[highlighted]:bg-slate-50 data-[highlighted]:text-slate-950 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50"
+          className="flex cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-bold text-[var(--codex-ink)] outline-none transition hover:bg-[var(--codex-glass-fill)] focus:bg-[var(--codex-glass-fill)] data-[highlighted]:bg-[var(--codex-glass-fill)] data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50"
         >
           <LogOut className="h-4 w-4" />
           {isLoggingOut ? "退出中" : "退出登录"}
@@ -349,14 +349,14 @@ function MarketingMobileMenu() {
       <DropdownMenuContent
         align="end"
         sideOffset={8}
-        className="z-[80] min-w-[220px] overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-300/45"
+        className="z-[80] min-w-[220px] overflow-hidden rounded-2xl border border-[var(--codex-border)] bg-popover/90 p-1.5 shadow-[var(--codex-shadow-apple-lg)] backdrop-blur-xl backdrop-saturate-150"
       >
         {marketingNav.map((item) => (
           <DropdownMenuItem key={item.href} asChild>
             <Link
               href={item.href}
               prefetch={false}
-              className="flex items-center rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 outline-none transition hover:bg-slate-50 hover:text-slate-950 focus:bg-slate-50 focus:text-slate-950 data-[highlighted]:bg-slate-50 data-[highlighted]:text-slate-950"
+              className="flex items-center rounded-xl px-3 py-2.5 text-sm font-bold text-[var(--codex-ink)] outline-none transition hover:bg-[var(--codex-glass-fill)] focus:bg-[var(--codex-glass-fill)] data-[highlighted]:bg-[var(--codex-glass-fill)]"
             >
               {item.label}
             </Link>
@@ -410,7 +410,7 @@ function AppHeader({ pathname }: { pathname: string }) {
 function BrandMark() {
   return (
     <Link href="/" className="flex min-w-0 items-center gap-3" aria-label="VastWearGen 首页">
-      <span className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/70 bg-white/88 shadow-sm">
+      <span className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--codex-border)] bg-[var(--codex-glass-fill)] shadow-sm backdrop-blur-md">
         <Image
           src={codexTheme.brand.logo}
           alt=""
@@ -435,14 +435,14 @@ function BrandMark() {
 
 function DesktopTopNav({ activeModule }: { activeModule: string }) {
   return (
-    <nav className="studio-surface-toolbar hidden items-center gap-1 p-1 lg:flex" aria-label="主导航">
+    <nav className="hidden items-center gap-1 rounded-2xl border border-[var(--codex-border)] bg-[var(--codex-glass-fill)] p-1 backdrop-blur-md lg:flex" aria-label="主导航">
       {VISIBLE_TOP_MODULES.map((item) => {
         const active = activeModule === item.key;
         const Icon = item.icon;
-        const className = `relative inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-black transition ${
+        const className = `relative inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-black transition-all duration-150 ${
           active
-            ? "bg-white text-codex-ink shadow-sm ring-1 ring-zinc-200"
-            : "text-codex-muted hover:bg-white/72 hover:text-codex-ink"
+            ? "bg-background text-[var(--codex-ink)] shadow-[var(--codex-shadow-apple)]"
+            : "text-[var(--codex-muted)] hover:bg-background/60 hover:text-[var(--codex-ink)]"
         }`;
 
         if (item.comingSoon) {
@@ -571,7 +571,7 @@ function AccountAvatarDropdown({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-900 shadow-sm ring-1 ring-zinc-200 transition hover:bg-zinc-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-zinc-950/30"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--codex-glass-fill)] text-[var(--codex-ink)] shadow-sm ring-1 ring-[var(--codex-border)] transition hover:bg-[var(--codex-glass-fill-strong)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--codex-accent)]/30"
           title="打开个人中心"
           aria-label="打开个人中心菜单"
           aria-expanded={open}
@@ -586,7 +586,7 @@ function AccountAvatarDropdown({
       <DropdownMenuContent
         align="end"
         sideOffset={12}
-        className="z-[80] w-[272px] overflow-hidden rounded-md border border-slate-100 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.16)]"
+        className="z-[80] w-[272px] overflow-hidden rounded-2xl border border-[var(--codex-border)] bg-popover/90 shadow-[var(--codex-shadow-apple-lg)] backdrop-blur-xl backdrop-saturate-150"
       >
         <AccountMenuHeader email={email} credits={credits} creditsReady={creditsReady} />
         <AccountMenuBanner />

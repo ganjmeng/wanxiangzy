@@ -35,14 +35,14 @@ export function ModuleHeader({ title, tooltip, actions }: ModuleHeaderProps) {
           onMouseLeave={() => setTooltipStyle(null)}
           onFocus={showTooltip}
           onBlur={() => setTooltipStyle(null)}
-          className="flex h-5 w-5 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-400 shadow-sm transition-colors hover:border-emerald-200 hover:text-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+          className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--codex-glass-fill)] text-[var(--codex-faint)] shadow-sm transition-colors hover:bg-[var(--codex-glass-fill-strong)] hover:text-[var(--codex-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--codex-accent)]/30"
         >
           <CircleHelp className="h-3.5 w-3.5" />
         </button>
         {tooltipStyle && (
           <ClientPortal>
             <div
-              className="mac-surface pointer-events-none fixed z-[320] w-72 rounded-xl px-3 py-2.5 text-left text-xs font-medium leading-relaxed text-slate-700 shadow-[0_18px_42px_rgba(15,23,42,0.26)] animate-fade-in"
+              className="pointer-events-none fixed z-[320] w-72 rounded-2xl border border-[var(--codex-border)] bg-popover/90 px-3.5 py-2.5 text-left text-[13px] font-normal leading-relaxed text-[var(--codex-ink)] shadow-[var(--codex-shadow-apple-lg)] backdrop-blur-xl backdrop-saturate-150 animate-fade-in"
               style={{ top: tooltipStyle.top, left: tooltipStyle.left }}
             >
             {tooltip}
