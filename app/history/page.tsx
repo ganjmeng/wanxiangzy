@@ -1283,11 +1283,11 @@ function formatGrassSceneBackgroundMode(mode?: string) {
 
 function getStatusClasses(status: string) {
   const normalizedStatus = normalizeHistoryStatusFilter(status);
-  if (normalizedStatus === "completed") return "bg-emerald-50 text-emerald-700";
-  if (normalizedStatus === "failed") return "bg-red-50 text-red-600";
-  if (normalizedStatus === "processing") return "bg-amber-50 text-amber-700";
-  if (normalizedStatus === "pending") return "bg-sky-50 text-sky-700";
-  return "bg-gray-100 text-gray-600";
+  if (normalizedStatus === "completed") return "bg-[var(--codex-success)]/10 text-[var(--codex-success)]";
+  if (normalizedStatus === "failed") return "bg-[var(--codex-danger)]/10 text-[var(--codex-danger)]";
+  if (normalizedStatus === "processing") return "bg-[var(--codex-warning)]/10 text-[var(--codex-warning)]";
+  if (normalizedStatus === "pending") return "bg-[var(--codex-accent)]/10 text-[var(--codex-accent)]";
+  return "bg-[var(--codex-glass-fill)] text-[var(--codex-faint)]";
 }
 
 class HistoryAuthError extends Error {}

@@ -2474,12 +2474,12 @@ function ProductAnalysisNotice({ status }: { status: ReturnType<typeof getProduc
 function QualityBadge({ score }: { score?: number }) {
   const quality = getProductSetModuleQualityLabel(score);
   const className = quality.tone === "good"
-    ? "bg-emerald-50 text-emerald-600"
+    ? "bg-[var(--codex-success)]/10 text-[var(--codex-success)]"
     : quality.tone === "ok"
-      ? "bg-sky-50 text-sky-600"
+      ? "bg-[var(--codex-accent)]/10 text-[var(--codex-accent)]"
       : quality.tone === "warn"
-        ? "bg-amber-50 text-amber-600"
-        : "bg-slate-100 text-slate-400";
+        ? "bg-[var(--codex-warning)]/10 text-[var(--codex-warning)]"
+        : "bg-[var(--codex-glass-fill)] text-[var(--codex-faint)]";
   return (
     <span className={`inline-flex h-6 items-center rounded-full px-2 text-[10px] font-black ${className}`}>
       {quality.label}{typeof score === "number" ? ` ${Math.round(score * 100)}` : ""}

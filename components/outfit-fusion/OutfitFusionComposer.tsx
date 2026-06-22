@@ -618,9 +618,9 @@ function getAssetLabelTone(role: OutfitFusionAssetRole, active: boolean) {
 }
 
 function getAssetReferenceTone(role: OutfitFusionAssetRole) {
-  if (role === "reference") return "bg-rose-50 text-rose-500 ring-rose-100 hover:bg-rose-100";
-  if (role === "model") return "bg-amber-50 text-amber-500 ring-amber-100 hover:bg-amber-100";
-  return "bg-zinc-100 text-zinc-700 ring-zinc-200 hover:bg-zinc-200";
+  if (role === "reference") return "bg-[var(--codex-danger)]/10 text-[var(--codex-danger)] ring-[var(--codex-danger)]/20 hover:bg-[var(--codex-danger)]/15";
+  if (role === "model") return "bg-[var(--codex-warning)]/10 text-[var(--codex-warning)] ring-[var(--codex-warning)]/20 hover:bg-[var(--codex-warning)]/15";
+  return "bg-[var(--codex-glass-fill)] text-[var(--codex-muted)] ring-[var(--codex-border)] hover:bg-[var(--codex-glass-fill-strong)]";
 }
 
 function OutfitFusionConfigPopover({

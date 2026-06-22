@@ -357,7 +357,7 @@ export function PricingSection() {
                   type="button"
                   onClick={openBillingPortal}
                   disabled={portalLoading}
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 text-xs font-black text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[var(--codex-success)] px-4 text-xs font-bold text-white hover:bg-[var(--codex-success)]/90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {portalLoading && <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
                   管理订阅

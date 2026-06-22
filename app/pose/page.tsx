@@ -275,11 +275,11 @@ function getSelectedExpressionPresetId(slot: PosePlanSlot | null | undefined) {
 
 function getPoseAngleBadgeClass(angle?: PosePlanAngle) {
   const base = "rounded-full px-1.5 py-0.5 text-[9px] font-black ring-1";
-  if (angle === "front") return `${base} bg-zinc-100 text-zinc-700 ring-zinc-200`;
-  if (angle === "side") return `${base} bg-zinc-100 text-zinc-700 ring-zinc-200`;
-  if (angle === "back") return `${base} bg-amber-50 text-amber-700 ring-amber-100`;
-  if (angle === "detail") return `${base} bg-teal-50 text-teal-700 ring-teal-100`;
-  return `${base} bg-slate-100 text-slate-500 ring-slate-200`;
+  if (angle === "front") return `${base} bg-[var(--codex-glass-fill)] text-[var(--codex-muted)] ring-[var(--codex-border)]`;
+  if (angle === "side") return `${base} bg-[var(--codex-glass-fill)] text-[var(--codex-muted)] ring-[var(--codex-border)]`;
+  if (angle === "back") return `${base} bg-[var(--codex-warning)]/10 text-[var(--codex-warning)] ring-[var(--codex-warning)]/20`;
+  if (angle === "detail") return `${base} bg-[var(--codex-accent)]/10 text-[var(--codex-accent)] ring-[var(--codex-accent)]/20`;
+  return `${base} bg-[var(--codex-glass-fill)] text-[var(--codex-faint)] ring-[var(--codex-border)]`;
 }
 
 function resolvePoseOutputModeFromPayload(payload: PoseHistoryPayload): PoseOutputMode {
