@@ -186,20 +186,20 @@ export default function LoginPage() {
   const copy = viewCopy[view];
 
   return (
-    <div className="min-h-[calc(100dvh-64px)] bg-[var(--codex-gradient-page)] px-4 py-8 text-codex-ink sm:px-6 lg:px-8">
+    <div className="min-h-[calc(100dvh-64px)] bg-background px-4 py-8 text-[var(--codex-ink)] sm:px-6 lg:px-8">
       <div className="mx-auto grid min-h-[calc(100dvh-128px)] max-w-6xl items-start gap-8 pt-10 sm:pt-16 lg:grid-cols-[minmax(0,1fr)_440px] lg:items-center lg:pt-0">
         <section className="hidden lg:block" aria-hidden="true">
-          <div className="studio-surface studio-surface-elevated relative overflow-hidden rounded-[34px] p-8">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(5,5,5,0.06),transparent_34%),radial-gradient(circle_at_86%_8%,rgba(5,5,5,0.04),transparent_38%)]" />
+          <div className="relative overflow-hidden rounded-3xl border border-[var(--codex-border)] bg-card/90 p-8 shadow-[var(--codex-shadow-apple-lg)] backdrop-blur-xl backdrop-saturate-150">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(0,122,255,0.08),transparent_34%),radial-gradient(circle_at_86%_8%,rgba(175,82,222,0.06),transparent_38%)]" />
             <div className="relative z-10">
-              <Link href="/" className="studio-button studio-button-compact">
+              <Link href="/" className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[var(--codex-glass-fill)] px-3 text-[13px] font-semibold text-[var(--codex-ink)] shadow-sm backdrop-blur-md transition hover:bg-[var(--codex-glass-fill-strong)]">
                 <CheckCircle aria-hidden="true" className="h-4 w-4 text-[var(--codex-accent)]" />
                 VastWearGen
               </Link>
-              <h1 className="mt-10 max-w-xl text-5xl font-black leading-[0.95] tracking-[-0.04em] text-codex-ink">
+              <h1 className="mt-10 max-w-xl text-[44px] font-semibold leading-[1.05] tracking-[-0.025em] text-[var(--codex-ink)] sm:text-[56px]">
                 把每一次上新，做成统一的品牌视觉。
               </h1>
-              <p className="mt-5 max-w-lg text-base leading-8 text-codex-muted">
+              <p className="mt-5 max-w-lg text-[17px] leading-relaxed text-[var(--codex-muted)]">
                 从服装上身到姿势裂变，从专属模特到商品质感图，VastWearGen 帮你把分散的素材变成可持续复用的视觉资产。
               </p>
 
@@ -207,7 +207,7 @@ export default function LoginPage() {
                 {showcaseImages.map((src, index) => (
                   <div
                     key={src}
-                    className={`relative aspect-[3/4] overflow-hidden rounded-[24px] bg-[var(--codex-ice)] shadow-[0_18px_48px_rgba(14,18,38,0.14)] ${index % 2 === 1 ? "translate-y-8" : ""}`}
+                    className={`relative aspect-[3/4] overflow-hidden rounded-2xl bg-[#f5f5f7] shadow-[var(--codex-shadow-apple-lg)] ring-1 ring-[var(--codex-border)] ${index % 2 === 1 ? "translate-y-8" : ""}`}
                   >
                     <Image src={src} alt="" fill sizes="180px" className="object-cover" />
                   </div>
@@ -217,13 +217,13 @@ export default function LoginPage() {
           </div>
         </section>
 
-        <section className="studio-surface studio-surface-elevated mx-0 w-full max-w-[350px] rounded-[28px] p-6 sm:mx-auto sm:max-w-[440px] sm:p-8">
+        <section className="mx-0 w-full max-w-[350px] rounded-2xl border border-[var(--codex-border)] bg-card/95 p-6 shadow-[var(--codex-shadow-apple-lg)] backdrop-blur-xl backdrop-saturate-150 sm:mx-auto sm:max-w-[440px] sm:p-8">
           <div className="mb-8">
-            <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-codex-dark shadow-lg shadow-slate-300/70">
+            <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--codex-accent)] shadow-[var(--codex-shadow-apple)]">
               <CheckCircle aria-hidden="true" className="h-6 w-6 text-white" />
             </div>
-            <h2 className="text-2xl font-black tracking-[-0.02em] text-codex-ink">{copy.title}</h2>
-            <p className="mt-2 text-sm leading-6 text-codex-muted">
+            <h2 className="text-[28px] font-semibold tracking-[-0.02em] text-[var(--codex-ink)]">{copy.title}</h2>
+            <p className="mt-2 text-[15px] leading-6 text-[var(--codex-muted)]">
               {view === "check-email" && email ? `确认邮件已发送至 ${email}` : copy.desc}
             </p>
           </div>
@@ -231,9 +231,9 @@ export default function LoginPage() {
           {view === "login" && (
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-bold text-slate-700">邮箱</label>
+                <label className="mb-1.5 block text-[13px] font-semibold text-[var(--codex-ink)]">邮箱</label>
                 <div className="relative">
-                  <Mail aria-hidden="true" className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Mail aria-hidden="true" className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--codex-faint)]" />
                   <input
                     type="email"
                     value={email}
@@ -242,29 +242,29 @@ export default function LoginPage() {
                     autoComplete="email"
                     inputMode="email"
                     spellCheck={false}
-                    className="w-full rounded-2xl border border-[var(--codex-border)] bg-white px-4 py-3 pl-10 text-sm outline-none transition-all focus:border-zinc-900 focus:ring-4 focus:ring-zinc-900/15"
+                    className="h-11 w-full rounded-2xl border border-transparent bg-[var(--codex-glass-fill)] px-4 py-2.5 pl-10 text-[15px] text-[var(--codex-ink)] outline-none transition-all placeholder:text-[var(--codex-faint)] focus:bg-background focus:border-[var(--codex-accent)]/40 focus:ring-[3px] focus:ring-[var(--codex-accent)]/25"
                     placeholder="you@example.com…"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-bold text-slate-700">密码</label>
+                <label className="mb-1.5 block text-[13px] font-semibold text-[var(--codex-ink)]">密码</label>
                 <div className="relative">
-                  <Lock aria-hidden="true" className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Lock aria-hidden="true" className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--codex-faint)]" />
                   <input
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     autoComplete="current-password"
-                    className="w-full rounded-2xl border border-[var(--codex-border)] bg-white px-4 py-3 pl-10 pr-10 text-sm outline-none transition-all focus:border-zinc-900 focus:ring-4 focus:ring-zinc-900/15"
+                    className="h-11 w-full rounded-2xl border border-transparent bg-[var(--codex-glass-fill)] px-4 py-2.5 pl-10 pr-10 text-[15px] text-[var(--codex-ink)] outline-none transition-all placeholder:text-[var(--codex-faint)] focus:bg-background focus:border-[var(--codex-accent)]/40 focus:ring-[3px] focus:ring-[var(--codex-accent)]/25"
                     placeholder="输入密码…"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((value) => !value)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-700"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--codex-faint)] transition-colors hover:text-[var(--codex-ink)]"
                     aria-label={showPassword ? "隐藏密码" : "显示密码"}
                   >
                     {showPassword ? <EyeOff aria-hidden="true" className="h-4 w-4" /> : <Eye aria-hidden="true" className="h-4 w-4" />}
@@ -273,7 +273,7 @@ export default function LoginPage() {
               </div>
 
               {error && (
-                <div aria-live="polite" className="flex items-start gap-2 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+                <div aria-live="polite" className="flex items-start gap-2 rounded-2xl border border-[var(--codex-danger)]/20 bg-[var(--codex-danger)]/8 px-4 py-3 text-[13px] text-[var(--codex-danger)]">
                   <AlertCircle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
                   <span>{error}</span>
                 </div>
@@ -282,7 +282,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="gradient-brand flex h-12 w-full items-center justify-center rounded-2xl text-sm font-black text-white shadow-xl shadow-slate-300/40 transition-opacity hover:opacity-95 disabled:opacity-50"
+                className="flex h-12 w-full items-center justify-center rounded-2xl bg-[var(--codex-accent)] text-[15px] font-semibold text-white shadow-[var(--codex-shadow-apple)] transition-all hover:bg-[var(--codex-accent-hover)] active:scale-[0.98] disabled:opacity-50"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -322,9 +322,9 @@ export default function LoginPage() {
           {view === "signup" && (
             <form onSubmit={handleSignUp} className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-bold text-slate-700">邮箱</label>
+                <label className="mb-1.5 block text-[13px] font-semibold text-[var(--codex-ink)]">邮箱</label>
                 <div className="relative">
-                  <Mail aria-hidden="true" className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Mail aria-hidden="true" className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--codex-faint)]" />
                   <input
                     type="email"
                     value={email}
@@ -333,31 +333,31 @@ export default function LoginPage() {
                     autoComplete="email"
                     inputMode="email"
                     spellCheck={false}
-                    className="w-full rounded-2xl border border-[var(--codex-border)] bg-white px-4 py-3 pl-10 text-sm outline-none transition-all focus:border-zinc-900 focus:ring-4 focus:ring-zinc-900/15"
+                    className="h-11 w-full rounded-2xl border border-transparent bg-[var(--codex-glass-fill)] px-4 py-2.5 pl-10 text-[15px] text-[var(--codex-ink)] outline-none transition-all placeholder:text-[var(--codex-faint)] focus:bg-background focus:border-[var(--codex-accent)]/40 focus:ring-[3px] focus:ring-[var(--codex-accent)]/25"
                     placeholder="you@example.com…"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-bold text-slate-700">邀请码</label>
+                <label className="mb-1.5 block text-[13px] font-semibold text-[var(--codex-ink)]">邀请码</label>
                 <div className="relative">
-                  <KeyRound aria-hidden="true" className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <KeyRound aria-hidden="true" className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--codex-faint)]" />
                   <input
                     value={inviteCode}
                     onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                     required
                     autoComplete="one-time-code"
-                    className="w-full rounded-2xl border border-[var(--codex-border)] bg-white px-4 py-3 pl-10 font-mono text-sm font-black uppercase tracking-[0.08em] outline-none transition-all focus:border-zinc-900 focus:ring-4 focus:ring-zinc-900/15"
+                    className="h-11 w-full rounded-2xl border border-transparent bg-[var(--codex-glass-fill)] px-4 py-2.5 pl-10 font-mono text-[15px] font-semibold uppercase tracking-[0.08em] text-[var(--codex-ink)] outline-none transition-all placeholder:text-[var(--codex-faint)] focus:bg-background focus:border-[var(--codex-accent)]/40 focus:ring-[3px] focus:ring-[var(--codex-accent)]/25"
                     placeholder="输入邀请码…"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-bold text-slate-700">密码</label>
+                <label className="mb-1.5 block text-[13px] font-semibold text-[var(--codex-ink)]">密码</label>
                 <div className="relative">
-                  <Lock aria-hidden="true" className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Lock aria-hidden="true" className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--codex-faint)]" />
                   <input
                     type={showPassword ? "text" : "password"}
                     value={password}
@@ -365,13 +365,13 @@ export default function LoginPage() {
                     required
                     minLength={6}
                     autoComplete="new-password"
-                    className="w-full rounded-2xl border border-[var(--codex-border)] bg-white px-4 py-3 pl-10 pr-10 text-sm outline-none transition-all focus:border-zinc-900 focus:ring-4 focus:ring-zinc-900/15"
+                    className="h-11 w-full rounded-2xl border border-transparent bg-[var(--codex-glass-fill)] px-4 py-2.5 pl-10 pr-10 text-[15px] text-[var(--codex-ink)] outline-none transition-all placeholder:text-[var(--codex-faint)] focus:bg-background focus:border-[var(--codex-accent)]/40 focus:ring-[3px] focus:ring-[var(--codex-accent)]/25"
                     placeholder="至少 6 位…"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((value) => !value)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-700"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--codex-faint)] transition-colors hover:text-[var(--codex-ink)]"
                     aria-label={showPassword ? "隐藏密码" : "显示密码"}
                   >
                     {showPassword ? <EyeOff aria-hidden="true" className="h-4 w-4" /> : <Eye aria-hidden="true" className="h-4 w-4" />}

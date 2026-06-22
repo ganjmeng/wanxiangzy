@@ -282,40 +282,40 @@ export function PricingSection() {
   }
 
   return (
-    <section className="min-h-screen bg-zinc-50 px-4 py-16 sm:px-6" aria-labelledby="pricing-title">
+    <section className="min-h-screen bg-background px-4 py-16 sm:px-6" aria-labelledby="pricing-title">
       <div className="mx-auto max-w-7xl">
         <div className="mb-12 text-center">
-          <p className="mb-2 text-xs font-black uppercase tracking-widest text-amber-700">AI 电商视觉灵点</p>
-          <h1 id="pricing-title" className="mb-4 text-4xl font-black tracking-tight text-zinc-900" style={{ textWrap: "balance" }}>
+          <p className="mb-2 text-xs font-black uppercase tracking-widest text-[#9a5a00]">AI 电商视觉灵点</p>
+          <h1 id="pricing-title" className="mb-4 text-[44px] font-semibold tracking-[-0.02em] text-[var(--codex-ink)] sm:text-[56px]" style={{ textWrap: "balance" }}>
             赋能您的电商视觉
           </h1>
-          <p className="mx-auto flex max-w-2xl flex-wrap items-center justify-center gap-x-1 text-base font-medium leading-relaxed text-zinc-500">
+          <p className="mx-auto flex max-w-2xl flex-wrap items-center justify-center gap-x-1 text-[17px] font-normal leading-relaxed text-[var(--codex-muted)]">
             <span>已服务</span>
-            <span className="text-2xl font-black leading-none text-zinc-900">50000+</span>
+            <span className="text-[22px] font-semibold leading-none text-[var(--codex-ink)]">50000+</span>
             <span>电商商家，主图点击率平均提升 25%</span>
           </p>
         </div>
 
-        <div className="mx-auto mb-12 grid h-14 w-full max-w-sm grid-cols-2 rounded-2xl bg-zinc-100 p-1">
+        <div className="mx-auto mb-12 grid h-12 w-full max-w-sm grid-cols-2 rounded-2xl border border-[var(--codex-border)] bg-[var(--codex-glass-fill)] p-1 backdrop-blur-md">
           <button
             type="button"
             aria-pressed={mode === "credits"}
             onClick={() => setMode("credits")}
             className={cn(
-              "group order-1 inline-flex items-center justify-center gap-2 rounded-xl text-sm font-bold text-zinc-500 transition-[background-color,color,box-shadow] duration-150",
-              mode === "credits" && "bg-white text-zinc-900 shadow-sm"
+              "group order-1 inline-flex items-center justify-center gap-2 rounded-xl text-[13px] font-semibold text-[var(--codex-muted)] transition-[background-color,color,box-shadow] duration-150",
+              mode === "credits" && "bg-background text-[var(--codex-ink)] shadow-[var(--codex-shadow-apple)]"
             )}
           >
             <Zap className="h-4 w-4" aria-hidden="true" />
             <span>购买灵点</span>
             <span
               className={cn(
-                "ml-1 inline-flex items-center gap-1.5 border-l border-zinc-200 pl-2 transition-opacity",
+                "ml-1 inline-flex items-center gap-1.5 border-l border-[var(--codex-border)] pl-2 transition-opacity",
                 mode === "credits" ? "opacity-95" : "opacity-60"
               )}
             >
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-[#1677ff] text-[10px] font-black text-white">支</span>
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-[#2aae67] text-[10px] font-black text-white">微</span>
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-[#1677ff] text-[10px] font-black text-white">支</span>
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-[#2aae67] text-[10px] font-black text-white">微</span>
             </span>
           </button>
           <button
@@ -323,13 +323,13 @@ export function PricingSection() {
             aria-pressed={mode === "subscription"}
             onClick={() => setMode("subscription")}
             className={cn(
-              "order-2 inline-flex items-center justify-center rounded-xl text-sm font-bold text-zinc-500 transition-[background-color,color,box-shadow] duration-150",
-              mode === "subscription" && "bg-white text-zinc-900 shadow-sm"
+              "order-2 inline-flex items-center justify-center rounded-xl text-[13px] font-semibold text-[var(--codex-muted)] transition-[background-color,color,box-shadow] duration-150",
+              mode === "subscription" && "bg-background text-[var(--codex-ink)] shadow-[var(--codex-shadow-apple)]"
             )}
           >
             <Crown className="mr-2 h-4 w-4" aria-hidden="true" />
             订阅套餐
-            <span className="ml-1 text-amber-700">+5%</span>
+            <span className="ml-1 text-[#9a5a00]">+5%</span>
           </button>
         </div>
 
@@ -419,13 +419,15 @@ function PlanCard({
   return (
     <article
       className={cn(
-        "relative flex min-h-[534px] flex-col rounded-2xl border bg-white p-6 transition-[box-shadow,border-color,transform] duration-200",
-        plan.featured ? "border-zinc-900 shadow-lg ring-1 ring-zinc-900" : "border-zinc-200 shadow-sm"
+        "relative flex min-h-[534px] flex-col rounded-2xl border p-6 transition-[box-shadow,border-color,transform] duration-200 backdrop-blur-xl backdrop-saturate-150",
+        plan.featured
+          ? "border-[var(--codex-accent)]/40 bg-card/95 shadow-[var(--codex-shadow-apple-lg)] ring-2 ring-[var(--codex-accent)]/30"
+          : "border-[var(--codex-border)] bg-card/90 shadow-[var(--codex-shadow-apple)]"
       )}
     >
       {plan.featured ? (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span className="rounded-full bg-zinc-900 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+          <span className="rounded-full bg-[var(--codex-accent)] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
             最受欢迎
           </span>
         </div>
@@ -435,12 +437,14 @@ function PlanCard({
         <div
           className={cn(
             "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
-            plan.featured ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-600"
+            plan.featured
+              ? "bg-[var(--codex-accent)] text-white"
+              : "bg-[var(--codex-glass-fill)] text-[var(--codex-muted)]"
           )}
         >
           <CircleDollarSign className="h-5 w-5" aria-hidden="true" />
         </div>
-        <h3 className="flex-1 text-xl font-bold text-zinc-900">{plan.title}</h3>
+        <h3 className="flex-1 text-xl font-semibold text-[var(--codex-ink)]">{plan.title}</h3>
         {plan.savings ? (
           <span className="ml-auto inline-flex h-14 w-14 shrink-0 rotate-[-12deg] flex-col items-center justify-center rounded-full border-2 border-dashed border-amber-300 bg-amber-50 text-amber-700">
             <span className="text-[10px] font-bold leading-none">立省</span>
@@ -450,23 +454,23 @@ function PlanCard({
       </div>
 
       <div className="mb-6 flex items-baseline gap-1">
-        <span className="text-4xl font-black text-zinc-900">¥{formatNumber(plan.price)}</span>
-        {mode === "subscription" ? <span className="text-sm font-medium text-zinc-500">/连续包月</span> : null}
+        <span className="text-[36px] font-semibold tracking-[-0.02em] text-[var(--codex-ink)]">¥{formatNumber(plan.price)}</span>
+        {mode === "subscription" ? <span className="text-sm font-normal text-[var(--codex-muted)]">/连续包月</span> : null}
       </div>
 
       <ul className="mb-8 flex-1 space-y-3">
         {features.map((feature, index) => (
-          <li key={index} className="flex items-center gap-2 text-zinc-700">
-            <Check className={cn("h-4 w-4 shrink-0", feature.primary ? "text-zinc-900" : "text-zinc-300")} aria-hidden="true" />
-            <span className={cn(feature.primary ? "text-sm font-semibold" : "font-medium")}>{feature.content}</span>
+          <li key={index} className="flex items-center gap-2 text-[var(--codex-ink)]">
+            <Check className={cn("h-4 w-4 shrink-0", feature.primary ? "text-[var(--codex-accent)]" : "text-[var(--codex-faint)]")} aria-hidden="true" />
+            <span className={cn(feature.primary ? "text-[14px] font-semibold" : "text-[14px] font-normal text-[var(--codex-muted)]")}>{feature.content}</span>
           </li>
         ))}
       </ul>
 
       {plan.enterpriseNote ? (
-        <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-100 bg-amber-50/50 px-2 py-1.5 text-amber-700">
-          <Crown className="h-3.5 w-3.5 shrink-0 text-amber-500" aria-hidden="true" />
-          <span className="text-xs font-bold">{plan.enterpriseNote}</span>
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-[#ffe5b4] bg-[#fff8eb] px-2.5 py-1.5 text-[#9a5a00]">
+          <Crown className="h-3.5 w-3.5 shrink-0 text-[#f59e0b]" aria-hidden="true" />
+          <span className="text-xs font-semibold">{plan.enterpriseNote}</span>
         </div>
       ) : null}
 
@@ -475,10 +479,10 @@ function PlanCard({
         onClick={onSelect}
         disabled={loading || disabled}
         className={cn(
-          "inline-flex w-full items-center justify-center gap-2 rounded-xl py-4 text-[15px] font-bold transition-[background-color,border-color,color,box-shadow] duration-150 disabled:cursor-not-allowed disabled:opacity-60",
+          "inline-flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-[15px] font-semibold transition-[background-color,border-color,color,box-shadow,transform] duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60",
           plan.featured
-            ? "bg-zinc-900 text-white shadow-md hover:bg-zinc-800"
-            : "border-2 border-zinc-100 bg-white text-zinc-900 hover:border-zinc-200 hover:bg-zinc-50"
+            ? "bg-[var(--codex-accent)] text-white shadow-[var(--codex-shadow-apple)] hover:bg-[var(--codex-accent-hover)]"
+            : "border border-[var(--codex-border)] bg-[var(--codex-glass-fill)] text-[var(--codex-ink)] hover:bg-[var(--codex-glass-fill-strong)]"
         )}
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
