@@ -119,7 +119,7 @@ function DiagnosticCard({ item }: { item: AdminDiagnosticItem }) {
           <h2 className="mt-3 text-base font-black text-slate-950">{item.title}</h2>
           <p className="mt-1 text-sm leading-6 text-slate-600">{item.summary}</p>
         </div>
-        {item.severity === "info" ? <Info className="h-5 w-5 shrink-0 text-blue-600" /> : <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600" />}
+        {item.severity === "info" ? <Info className="h-5 w-5 shrink-0 text-zinc-600" /> : <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600" />}
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -278,7 +278,7 @@ function SeverityBadge({ severity }: { severity: AdminDiagnosticSeverity }) {
   const className = {
     critical: "border-red-200 bg-red-50 text-red-700",
     warning: "border-amber-200 bg-amber-50 text-amber-700",
-    info: "border-blue-200 bg-blue-50 text-blue-700",
+    info: "border-zinc-200 bg-zinc-50 text-zinc-700",
   }[severity];
   const label = severity === "critical" ? "严重" : severity === "warning" ? "预警" : "提示";
 
@@ -292,5 +292,5 @@ function SeverityBadge({ severity }: { severity: AdminDiagnosticSeverity }) {
 function severityBorder(severity: AdminDiagnosticSeverity) {
   if (severity === "critical") return "border-red-200";
   if (severity === "warning") return "border-amber-200";
-  return "border-blue-200";
+  return "border-zinc-200";
 }

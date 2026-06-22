@@ -1482,14 +1482,14 @@ export default function ProductSetPage() {
 
           <section
             {...productImageDrag.dragHandlers}
-            className={`studio-stable-upload-boundary rounded-3xl border bg-white p-4 shadow-sm transition ${isDragging ? "border-[rgba(91,124,255,0.22)] ring-4 ring-[rgba(91,124,255,0.18)]" : "border-slate-100"}`}
+            className={`studio-stable-upload-boundary rounded-3xl border bg-white p-4 shadow-sm transition ${isDragging ? "border-zinc-200 ring-4 ring-zinc-200" : "border-slate-100"}`}
           >
             <div className="mb-3 flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <h3 className="text-sm font-black text-slate-950">商品图</h3>
                 <p className="mt-1 text-xs text-slate-400">支持正面、侧面、背面或细节图，最多 3 张。</p>
               </div>
-              <span className="inline-flex h-7 shrink-0 items-center rounded-full bg-[rgba(91,124,255,0.1)] px-2.5 text-[10px] font-bold text-[var(--codex-accent)]">{productImages.length}/3</span>
+              <span className="inline-flex h-7 shrink-0 items-center rounded-full bg-[rgba(5,5,5,0.04)] px-2.5 text-[10px] font-bold text-[var(--codex-accent)]">{productImages.length}/3</span>
             </div>
             <input
               ref={productInputRef}
@@ -1559,7 +1559,7 @@ export default function ProductSetPage() {
                 type="button"
                 onClick={() => analyzeProductInfo()}
                 disabled={!canAnalyzeProduct}
-                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-[rgba(91,124,255,0.22)] bg-[rgba(91,124,255,0.1)] px-3 text-xs font-black text-[var(--codex-accent)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-zinc-200 bg-[rgba(5,5,5,0.04)] px-3 text-xs font-black text-[var(--codex-accent)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isAnalyzing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
                 {isAnalyzing ? "正在分析" : hasAnalyzedProduct ? "重新帮我写" : "帮我写"}
@@ -1582,7 +1582,7 @@ export default function ProductSetPage() {
                   aria-label="商品信息"
                   placeholder={`可选：写一句商品名称、卖点、目标平台或风格要求。
 也可以不填，上传商品图并选择数量后，点击“帮我写”，系统会自动整理成完整商品规划。`}
-                  className="min-h-40 w-full resize-none rounded-2xl border border-slate-100 bg-slate-50 px-3 py-3 text-sm leading-6 text-slate-800 outline-none transition focus:border-[rgba(91,124,255,0.5)] focus:bg-white"
+                  className="min-h-40 w-full resize-none rounded-2xl border border-slate-100 bg-slate-50 px-3 py-3 text-sm leading-6 text-slate-800 outline-none transition focus:border-zinc-900 focus:bg-white"
                 />
                 <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400">
                   <span>{productInfo ? "建议保留模板字段，生成文案会更稳定。" : "不想写也可以，点“帮我写”让系统根据商品图整理。"}</span>
@@ -1650,7 +1650,7 @@ export default function ProductSetPage() {
                 <h3 className="text-sm font-black text-slate-950">方案来源</h3>
                 <p className="mt-1 text-xs leading-5 text-slate-400">智能模式需要分析；参考图模式可直接选预设或上传参考图。</p>
               </div>
-              {outputCount > 0 && <span className="inline-flex h-8 shrink-0 items-center rounded-full bg-[rgba(91,124,255,0.1)] px-2.5 text-xs font-black text-[var(--codex-accent)]">{outputCount} {imageType === "main" ? "张" : "屏"}</span>}
+              {outputCount > 0 && <span className="inline-flex h-8 shrink-0 items-center rounded-full bg-[rgba(5,5,5,0.04)] px-2.5 text-xs font-black text-[var(--codex-accent)]">{outputCount} {imageType === "main" ? "张" : "屏"}</span>}
             </div>
 
             <div className="grid grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1">
@@ -1678,7 +1678,7 @@ export default function ProductSetPage() {
             </div>
 
             {!isReferenceMode ? (
-              <div className="mt-3 rounded-2xl border border-[rgba(91,124,255,0.22)] bg-[rgba(91,124,255,0.1)] p-3 text-xs leading-5 text-slate-500">
+              <div className="mt-3 rounded-2xl border border-zinc-200 bg-[rgba(5,5,5,0.04)] p-3 text-xs leading-5 text-slate-500">
                 {hasAnalyzedProduct ? (
                   <PlanRecommendationCard recommendation={planRecommendation} imageType={imageType} compact />
                 ) : (
@@ -1717,8 +1717,8 @@ export default function ProductSetPage() {
                         onClick={() => applyPresetPlan(plan.id)}
                         className={`flex min-h-[92px] flex-col rounded-2xl border p-3 text-left transition ${
                           selectedPlanId === plan.id
-                            ? "border-[rgba(91,124,255,0.22)] bg-[rgba(91,124,255,0.1)] text-[var(--codex-accent)]"
-                            : "border-slate-100 bg-slate-50 text-slate-600 hover:border-[rgba(91,124,255,0.3)]"
+                            ? "border-zinc-200 bg-[rgba(5,5,5,0.04)] text-[var(--codex-accent)]"
+                            : "border-slate-100 bg-slate-50 text-slate-600 hover:hover:border-zinc-300"
                         }`}
                       >
                         <span className="flex min-h-5 items-center justify-between gap-2">
@@ -1729,7 +1729,7 @@ export default function ProductSetPage() {
                       </button>
                     ))}
                     {referenceStyleBrief && (
-                      <div className="col-span-2 rounded-2xl border border-[rgba(91,124,255,0.22)] bg-[rgba(91,124,255,0.1)] p-3">
+                      <div className="col-span-2 rounded-2xl border border-zinc-200 bg-[rgba(5,5,5,0.04)] p-3">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <p className="text-xs font-black text-[var(--codex-accent)]">已选参考风格</p>
@@ -1790,7 +1790,7 @@ export default function ProductSetPage() {
                   />
                 )}
 
-                <button type="button" onClick={() => setShowTemplateModal(true)} className="flex h-10 w-full items-center justify-center gap-1.5 rounded-2xl border border-slate-100 bg-white text-xs font-black text-slate-600 hover:border-[rgba(91,124,255,0.3)] hover:bg-[rgba(91,124,255,0.12)]">
+                <button type="button" onClick={() => setShowTemplateModal(true)} className="flex h-10 w-full items-center justify-center gap-1.5 rounded-2xl border border-slate-100 bg-white text-xs font-black text-slate-600 hover:hover:border-zinc-300 hover:bg-[rgba(5,5,5,0.06)]">
                   <Layers3 className="h-3.5 w-3.5" /> 打开完整模板库
                 </button>
                 {outputCount > 0 ? (
@@ -1813,7 +1813,7 @@ export default function ProductSetPage() {
               <button
                 type="button"
                 onClick={() => setShowFullPlan((value) => !value)}
-                className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-[rgba(91,124,255,0.1)] px-2.5 text-xs font-black text-[var(--codex-accent)] hover:bg-[rgba(91,124,255,0.12)]"
+                className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-[rgba(5,5,5,0.04)] px-2.5 text-xs font-black text-[var(--codex-accent)] hover:bg-[rgba(5,5,5,0.06)]"
               >
                 {outputCount || 0} {imageType === "main" ? "张" : "屏"} · {showFullPlan ? "收起" : "查看全部"}
               </button>
@@ -1956,7 +1956,7 @@ export default function ProductSetPage() {
                       {mode === "smart" ? "智能套图" : "自定义套图"} · {imageType === "main" ? "主图辅图" : "详情页"} · {settings.platform} · 已出 {visibleResultCount}/{resultSlotCount}
                     </p>
                   </div>
-                  <span className="inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-[rgba(91,124,255,0.1)] px-3 text-xs font-black text-[var(--codex-accent)]">
+                  <span className="inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-[rgba(5,5,5,0.04)] px-3 text-xs font-black text-[var(--codex-accent)]">
                     {isGenerating ? `${progress}% 继续生成` : "已完成"}
                   </span>
                 </div>
@@ -2017,7 +2017,7 @@ export default function ProductSetPage() {
                           </div>
                           {url && (
                             <div className="flex shrink-0 items-center gap-1">
-                              <button type="button" onClick={() => regenerateResult(index)} disabled={regeneratingIndex !== null || isGenerating} className="flex h-9 w-9 items-center justify-center rounded-full border border-[rgba(91,124,255,0.22)] text-[var(--codex-accent)] hover:bg-[rgba(91,124,255,0.12)] disabled:cursor-not-allowed disabled:opacity-50" title="重生这一张">
+                              <button type="button" onClick={() => regenerateResult(index)} disabled={regeneratingIndex !== null || isGenerating} className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 text-[var(--codex-accent)] hover:bg-[rgba(5,5,5,0.06)] disabled:cursor-not-allowed disabled:opacity-50" title="重生这一张">
                                 {regeneratingIndex === index ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                               </button>
                               <button type="button" onClick={() => downloadResult(url, index)} className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50" title="下载">
@@ -2153,13 +2153,13 @@ function ProductModeTabs({ imageType, onChange }: { imageType: ProductSetImageTy
             onClick={() => onChange(item.value)}
             className={`flex h-14 items-center gap-2.5 rounded-[18px] border px-3 text-left transition-[border-color,background-color,color,box-shadow] ${
               imageType === item.value
-                ? "border-[rgba(91,124,255,0.22)] bg-[rgba(91,124,255,0.1)] text-slate-950 shadow-[0_10px_26px_rgba(124,58,237,0.12)]"
-                : "border-transparent bg-white/70 text-slate-600 hover:border-[rgba(91,124,255,0.3)] hover:bg-white hover:text-[var(--codex-accent)]"
+                ? "border-zinc-200 bg-[rgba(5,5,5,0.04)] text-slate-950 shadow-sm"
+                : "border-transparent bg-white/70 text-slate-600 hover:hover:border-zinc-300 hover:bg-white hover:text-[var(--codex-accent)]"
             }`}
           >
             <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border transition ${
               imageType === item.value
-                ? "border-[rgba(91,124,255,0.22)] bg-white text-[var(--codex-accent)]"
+                ? "border-zinc-200 bg-white text-[var(--codex-accent)]"
                 : "border-slate-100 bg-white text-slate-400"
             }`}>
               {item.value === "main" ? <ImagePlus className="h-4 w-4" /> : <Layers3 className="h-4 w-4" />}
@@ -2193,11 +2193,11 @@ function WorkflowStepper({ currentStep }: { currentStep: number }) {
             <div
               key={step.value}
               className={`min-h-14 rounded-xl px-2 py-2 text-center transition ${
-                active ? "bg-[rgba(91,124,255,0.1)] text-[var(--codex-accent)]" : done ? "bg-emerald-50 text-emerald-700" : "bg-slate-50 text-slate-400"
+                active ? "bg-[rgba(5,5,5,0.04)] text-[var(--codex-accent)]" : done ? "bg-emerald-50 text-emerald-700" : "bg-slate-50 text-slate-400"
               }`}
             >
               <span className={`mx-auto flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black ${
-                active ? "bg-[rgba(91,124,255,0.1)] text-white" : done ? "bg-emerald-500 text-white" : "bg-white text-slate-400"
+                active ? "bg-[rgba(5,5,5,0.04)] text-white" : done ? "bg-emerald-500 text-white" : "bg-white text-slate-400"
               }`}>
                 {done ? <Check className="h-3 w-3" /> : step.value}
               </span>
@@ -2257,7 +2257,7 @@ function ProductBriefSummary({ fields, onEdit }: { fields: ProductInfoFields; on
           <h4 className="mt-1 truncate text-sm font-black text-slate-950">{fields.name || "待补充商品名"}</h4>
           <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-600">{fields.description || "已填写商品信息，点击编辑可继续补充卖点、材质和适用人群。"}</p>
         </div>
-        <button type="button" onClick={onEdit} className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-white px-2.5 text-[11px] font-black text-slate-600 shadow-sm hover:bg-[rgba(91,124,255,0.12)] hover:text-[var(--codex-accent)]">
+        <button type="button" onClick={onEdit} className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-white px-2.5 text-[11px] font-black text-slate-600 shadow-sm hover:bg-[rgba(5,5,5,0.06)] hover:text-[var(--codex-accent)]">
           <Edit3 className="h-3.5 w-3.5" /> 编辑
         </button>
       </div>
@@ -2306,7 +2306,7 @@ function AnalysisSummaryCard({
   const missing = (analysis?.missing_info || []).filter((item) => item !== "no_missing").slice(0, 3);
 
   return (
-    <div className="mt-3 rounded-2xl border border-[rgba(91,124,255,0.22)] bg-[rgba(91,124,255,0.1)] px-3 py-3">
+    <div className="mt-3 rounded-2xl border border-zinc-200 bg-[rgba(5,5,5,0.04)] px-3 py-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="inline-flex items-center gap-1.5 text-[11px] font-black text-[var(--codex-accent)]">
@@ -2317,17 +2317,17 @@ function AnalysisSummaryCard({
             {strategyName} · 计划生成 {outputCount} {unit} · 图片质量 {qualityLabel}
           </p>
         </div>
-        <button type="button" onClick={onToggleExpanded} className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-white px-2.5 text-[11px] font-black text-[var(--codex-accent)] shadow-sm hover:bg-[rgba(91,124,255,0.12)]">
+        <button type="button" onClick={onToggleExpanded} className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-white px-2.5 text-[11px] font-black text-[var(--codex-accent)] shadow-sm hover:bg-[rgba(5,5,5,0.06)]">
           {expanded ? "收起细节" : "查看细节"}
           <ChevronRight className={`h-3.5 w-3.5 transition ${expanded ? "rotate-90" : ""}`} />
         </button>
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-2">
-        <button type="button" onClick={onEditProfile} className="flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-white px-2 text-[11px] font-black text-slate-600 shadow-sm hover:bg-[rgba(91,124,255,0.12)] hover:text-[var(--codex-accent)]">
+        <button type="button" onClick={onEditProfile} className="flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-white px-2 text-[11px] font-black text-slate-600 shadow-sm hover:bg-[rgba(5,5,5,0.06)] hover:text-[var(--codex-accent)]">
           <Edit3 className="h-3.5 w-3.5" /> 修改信息
         </button>
-        <button type="button" onClick={onAdjust} className="flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-white px-2 text-[11px] font-black text-slate-600 shadow-sm hover:bg-[rgba(91,124,255,0.12)] hover:text-[var(--codex-accent)]">
+        <button type="button" onClick={onAdjust} className="flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-white px-2 text-[11px] font-black text-slate-600 shadow-sm hover:bg-[rgba(5,5,5,0.06)] hover:text-[var(--codex-accent)]">
           <Palette className="h-3.5 w-3.5" /> 调整风格
         </button>
       </div>
@@ -2358,7 +2358,7 @@ function ProductProfileCard({ profile, analysisSource, onEdit }: { profile: Prod
           : "待确认";
 
   return (
-    <div className="mt-3 rounded-2xl border border-[rgba(91,124,255,0.22)] bg-[rgba(91,124,255,0.1)] px-3 py-3">
+    <div className="mt-3 rounded-2xl border border-zinc-200 bg-[rgba(5,5,5,0.04)] px-3 py-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="inline-flex items-center gap-1.5 text-[11px] font-black text-[var(--codex-accent)]">
@@ -2417,16 +2417,16 @@ function ProductVisualStrategyCard({
   const missing = (analysis?.missing_info || []).filter((item) => item !== "no_missing").slice(0, 4);
 
   return (
-    <div className="mt-3 rounded-2xl border border-indigo-100 bg-indigo-50/60 px-3 py-3">
+    <div className="mt-3 rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="inline-flex items-center gap-1.5 text-[11px] font-black text-indigo-700">
+          <p className="inline-flex items-center gap-1.5 text-[11px] font-black text-zinc-700">
             <Palette className="h-3.5 w-3.5" /> 视觉策略
           </p>
           <h4 className="mt-1 truncate text-sm font-black text-slate-950">{strategyName} · {stylePack.name}</h4>
           <p className="mt-1 line-clamp-3 text-[11px] leading-4 text-slate-500">{strategyReason}</p>
         </div>
-        <button type="button" onClick={onAdjust} className="inline-flex h-7 shrink-0 items-center rounded-full bg-white px-2 text-[10px] font-black text-indigo-600 shadow-sm hover:bg-indigo-100">
+        <button type="button" onClick={onAdjust} className="inline-flex h-7 shrink-0 items-center rounded-full bg-white px-2 text-[10px] font-black text-zinc-700 shadow-sm hover:bg-zinc-100">
           调整风格
         </button>
       </div>
@@ -2513,7 +2513,7 @@ function ModuleProgressList({
         const current = moduleResult?.status === "running" || (isGenerating && !done && resultUrls.filter(Boolean).length === index);
         const statusText = failed ? "失败" : done ? "已完成" : current ? `${moduleResult?.progress || "生成"}%` : "排队";
         return (
-          <div key={`${template.source}-${template.id}-${index}`} className={`flex min-h-11 items-center gap-2 rounded-2xl border px-3 py-2 text-xs ${failed ? "border-red-100 bg-red-50 text-red-600" : done ? "border-emerald-100 bg-emerald-50 text-emerald-700" : current ? "border-[rgba(91,124,255,0.22)] bg-[rgba(91,124,255,0.1)] text-[var(--codex-accent)]" : "border-slate-100 bg-slate-50 text-slate-500"}`}>
+          <div key={`${template.source}-${template.id}-${index}`} className={`flex min-h-11 items-center gap-2 rounded-2xl border px-3 py-2 text-xs ${failed ? "border-red-100 bg-red-50 text-red-600" : done ? "border-emerald-100 bg-emerald-50 text-emerald-700" : current ? "border-zinc-200 bg-[rgba(5,5,5,0.04)] text-[var(--codex-accent)]" : "border-slate-100 bg-slate-50 text-slate-500"}`}>
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-[10px] font-black shadow-sm">{done ? <Check className="h-3.5 w-3.5" /> : current ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : index + 1}</span>
             <span className="min-w-0 flex-1 truncate font-black">{template.name}</span>
             {done && moduleResult?.qualityScore !== undefined && <QualityBadge score={moduleResult.qualityScore} />}
@@ -2552,7 +2552,7 @@ function ReferenceStyleModal({
           <textarea
             value={value}
             onChange={(event) => onChange(event.target.value.slice(0, 2000))}
-            className="min-h-[40vh] w-full resize-none rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-800 outline-none focus:border-[rgba(91,124,255,0.5)] focus:bg-white sm:min-h-[520px]"
+            className="min-h-[40vh] w-full resize-none rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-800 outline-none focus:border-zinc-900 focus:bg-white sm:min-h-[520px]"
             placeholder="写入参考风格、目标平台、视觉风格、统一场景、配色和用户要求。"
           />
           <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400">
@@ -2645,7 +2645,7 @@ function ProductProfileEditorModal({
             <p className="mb-2 text-xs font-black text-slate-700">商品类型</p>
             <div className="grid grid-cols-2 items-stretch gap-2 sm:grid-cols-5">
               {kindOptions.map((item) => (
-                <button key={item.value} type="button" onClick={() => setKind(item.value)} className={`h-10 truncate rounded-xl border px-2 text-xs font-black transition ${draft.kind === item.value ? "border-[rgba(91,124,255,0.22)] bg-[rgba(91,124,255,0.1)] text-[var(--codex-accent)]" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
+                <button key={item.value} type="button" onClick={() => setKind(item.value)} className={`h-10 truncate rounded-xl border px-2 text-xs font-black transition ${draft.kind === item.value ? "border-zinc-200 bg-[rgba(5,5,5,0.04)] text-[var(--codex-accent)]" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
                   {item.label}
                 </button>
               ))}
@@ -2656,7 +2656,7 @@ function ProductProfileEditorModal({
               <p className="mb-2 text-xs font-black text-slate-700">服装细分</p>
               <div className="grid grid-cols-2 items-stretch gap-2 sm:grid-cols-4">
                 {apparelOptions.map((item) => (
-                  <button key={item.value} type="button" onClick={() => setDraft((prev) => ({ ...prev, apparelType: item.value, isApparel: true }))} className={`h-10 truncate rounded-xl border px-2 text-xs font-black transition ${draft.apparelType === item.value ? "border-[rgba(91,124,255,0.22)] bg-[rgba(91,124,255,0.1)] text-[var(--codex-accent)]" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
+                  <button key={item.value} type="button" onClick={() => setDraft((prev) => ({ ...prev, apparelType: item.value, isApparel: true }))} className={`h-10 truncate rounded-xl border px-2 text-xs font-black transition ${draft.apparelType === item.value ? "border-zinc-200 bg-[rgba(5,5,5,0.04)] text-[var(--codex-accent)]" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
                     {item.label}
                   </button>
                 ))}
@@ -2671,7 +2671,7 @@ function ProductProfileEditorModal({
                   key={item.value}
                   type="button"
                   onClick={() => setDraft((prev) => ({ ...prev, modelStrategy: item.value, needsModel: item.value === "recommended" || item.value === "required" }))}
-                  className={`h-10 truncate rounded-xl border px-2 text-xs font-black transition ${draft.modelStrategy === item.value ? "border-[rgba(91,124,255,0.22)] bg-[rgba(91,124,255,0.1)] text-[var(--codex-accent)]" : "border-slate-200 bg-slate-50 text-slate-500"}`}
+                  className={`h-10 truncate rounded-xl border px-2 text-xs font-black transition ${draft.modelStrategy === item.value ? "border-zinc-200 bg-[rgba(5,5,5,0.04)] text-[var(--codex-accent)]" : "border-slate-200 bg-slate-50 text-slate-500"}`}
                 >
                   {item.label}
                 </button>
@@ -2681,7 +2681,7 @@ function ProductProfileEditorModal({
           <textarea
             value={draft.modelBrief}
             onChange={(event) => setDraft((prev) => ({ ...prev, modelBrief: event.target.value.slice(0, 220) }))}
-            className="min-h-28 w-full resize-none rounded-2xl border border-slate-100 bg-slate-50 px-3 py-3 text-sm leading-6 outline-none focus:border-[rgba(91,124,255,0.5)]"
+            className="min-h-28 w-full resize-none rounded-2xl border border-slate-100 bg-slate-50 px-3 py-3 text-sm leading-6 outline-none focus:border-zinc-900"
             placeholder="例如：成年女性模特，法式通勤场景，姿势自然，突出版型和垂感，不要夸张摆拍。"
           />
         </div>
@@ -2741,7 +2741,7 @@ function ModuleEditModal({
           </button>
         </div>
         <div className="flex-1 space-y-4 overflow-y-auto p-5">
-          <div className="rounded-2xl border border-[rgba(91,124,255,0.22)] bg-[rgba(91,124,255,0.1)] px-3 py-3 text-xs leading-5 text-[var(--codex-accent)]">
+          <div className="rounded-2xl border border-zinc-200 bg-[rgba(5,5,5,0.04)] px-3 py-3 text-xs leading-5 text-[var(--codex-accent)]">
             {getProductSetModuleReason(template, productProfile)}
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -2759,7 +2759,7 @@ function ModuleEditModal({
             <p className="mb-2 text-xs font-black text-slate-700">生图比例</p>
             <div className="grid grid-cols-4 items-stretch gap-2">
               {CUSTOM_ASPECTS.map((value) => (
-                <button key={value} type="button" onClick={() => setDraft((prev) => ({ ...prev, aspectRatio: value }))} className={`h-10 rounded-xl border text-xs font-black transition ${draft.aspectRatio === value ? "border-[rgba(91,124,255,0.22)] bg-[rgba(91,124,255,0.1)] text-[var(--codex-accent)]" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
+                <button key={value} type="button" onClick={() => setDraft((prev) => ({ ...prev, aspectRatio: value }))} className={`h-10 rounded-xl border text-xs font-black transition ${draft.aspectRatio === value ? "border-zinc-200 bg-[rgba(5,5,5,0.04)] text-[var(--codex-accent)]" : "border-slate-200 bg-slate-50 text-slate-500"}`}>
                   {getAspectRatioLabel(value)}
                 </button>
               ))}
@@ -2797,7 +2797,7 @@ function FieldInput({ label, value, maxLength, onChange }: { label: string; valu
   return (
     <label className="block">
       <span className="mb-1 block text-[11px] font-black text-slate-500">{label}</span>
-      <input value={value} onChange={(event) => onChange(event.target.value.slice(0, maxLength))} className="h-10 w-full rounded-xl border border-slate-100 bg-slate-50 px-3 text-xs outline-none focus:border-[rgba(91,124,255,0.5)]" />
+      <input value={value} onChange={(event) => onChange(event.target.value.slice(0, maxLength))} className="h-10 w-full rounded-xl border border-slate-100 bg-slate-50 px-3 text-xs outline-none focus:border-zinc-900" />
     </label>
   );
 }
@@ -2806,7 +2806,7 @@ function FieldTextarea({ label, value, maxLength, onChange, placeholder }: { lab
   return (
     <label className="block">
       <span className="mb-1 block text-[11px] font-black text-slate-500">{label}</span>
-      <textarea value={value} onChange={(event) => onChange(event.target.value.slice(0, maxLength))} placeholder={placeholder} className="min-h-24 w-full resize-none rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs leading-5 outline-none focus:border-[rgba(91,124,255,0.5)]" />
+      <textarea value={value} onChange={(event) => onChange(event.target.value.slice(0, maxLength))} placeholder={placeholder} className="min-h-24 w-full resize-none rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs leading-5 outline-none focus:border-zinc-900" />
     </label>
   );
 }
@@ -2828,7 +2828,7 @@ function PlanRecommendationCard({
   const unit = imageType === "main" ? "张主图" : "屏详情页";
 
   return (
-    <div className={`${compact ? "" : "mb-3"} rounded-2xl border border-[rgba(91,124,255,0.22)] bg-[rgba(91,124,255,0.1)] p-3`}>
+    <div className={`${compact ? "" : "mb-3"} rounded-2xl border border-zinc-200 bg-[rgba(5,5,5,0.04)] p-3`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[11px] font-black text-[var(--codex-accent)]">视觉总监方案</p>
@@ -2921,7 +2921,7 @@ function CustomTemplateSourcePanel({
             上传 1 张主参考图即可，系统会自动理解版式和风格，再按{countLabel}拆成方案。
           </p>
         </div>
-        <button type="button" onClick={onOpenLibrary} className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-white px-2.5 text-[11px] font-black text-[var(--codex-accent)] hover:bg-[rgba(91,124,255,0.12)]">
+        <button type="button" onClick={onOpenLibrary} className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-white px-2.5 text-[11px] font-black text-[var(--codex-accent)] hover:bg-[rgba(5,5,5,0.06)]">
           模板库
           <ChevronRight className="h-3.5 w-3.5" />
         </button>
@@ -3021,7 +3021,7 @@ function ReferenceQuickStart({
       <div className="rounded-2xl bg-white px-3 py-3">
         <div className="mb-2 flex items-center justify-between gap-2">
           <p className="text-[11px] font-black text-slate-500">参考重点</p>
-          <span className="rounded-full bg-[rgba(91,124,255,0.1)] px-2 py-0.5 text-[10px] font-black text-[var(--codex-accent)]">{activeIntent.label}</span>
+          <span className="rounded-full bg-[rgba(5,5,5,0.04)] px-2 py-0.5 text-[10px] font-black text-[var(--codex-accent)]">{activeIntent.label}</span>
         </div>
         <div className="grid grid-cols-2 gap-1.5">
           {intentOptions.map((option) => (
@@ -3029,7 +3029,7 @@ function ReferenceQuickStart({
               key={option.role}
               type="button"
               onClick={() => chooseIntent(option)}
-              className={`h-9 rounded-xl border px-2 text-[11px] font-black transition ${activeIntent.role === option.role ? "border-[rgba(91,124,255,0.22)] bg-[rgba(91,124,255,0.1)] text-[var(--codex-accent)]" : "border-slate-100 bg-slate-50 text-slate-500 hover:border-[rgba(91,124,255,0.3)] hover:bg-[rgba(91,124,255,0.12)]"}`}
+              className={`h-9 rounded-xl border px-2 text-[11px] font-black transition ${activeIntent.role === option.role ? "border-zinc-200 bg-[rgba(5,5,5,0.04)] text-[var(--codex-accent)]" : "border-slate-100 bg-slate-50 text-slate-500 hover:hover:border-zinc-300 hover:bg-[rgba(5,5,5,0.06)]"}`}
             >
               {option.label}
             </button>
@@ -3047,7 +3047,7 @@ function ReferenceQuickStart({
             <p className="mb-2 text-[11px] font-black text-slate-500">画面比例</p>
             <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-7">
               {CUSTOM_ASPECTS.map((value) => (
-                <button key={value} type="button" onClick={() => onCustomDraftChange((prev) => ({ ...prev, aspectRatio: value }))} className={`h-8 rounded-lg border px-2 text-[11px] ${customDraft.aspectRatio === value ? "border-[rgba(91,124,255,0.22)] bg-[rgba(91,124,255,0.1)] text-[var(--codex-accent)]" : "border-slate-200 bg-white text-slate-500"}`}>{getAspectRatioLabel(value)}</button>
+                <button key={value} type="button" onClick={() => onCustomDraftChange((prev) => ({ ...prev, aspectRatio: value }))} className={`h-8 rounded-lg border px-2 text-[11px] ${customDraft.aspectRatio === value ? "border-zinc-200 bg-[rgba(5,5,5,0.04)] text-[var(--codex-accent)]" : "border-slate-200 bg-white text-slate-500"}`}>{getAspectRatioLabel(value)}</button>
               ))}
             </div>
           </div>
@@ -3062,7 +3062,7 @@ function ReferenceQuickStart({
               <option value="rich">信息丰富</option>
             </select>
           </div>
-          <textarea value={customDraft.extraDescription} onChange={(event) => onCustomDraftChange((prev) => ({ ...prev, extraDescription: event.target.value.slice(0, 600) }))} className="min-h-16 w-full resize-none rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs leading-5 outline-none focus:border-[rgba(91,124,255,0.5)]" placeholder="特殊要求（可选），例如不要文字、不要模特露脸、突出细节。" />
+          <textarea value={customDraft.extraDescription} onChange={(event) => onCustomDraftChange((prev) => ({ ...prev, extraDescription: event.target.value.slice(0, 600) }))} className="min-h-16 w-full resize-none rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs leading-5 outline-none focus:border-zinc-900" placeholder="特殊要求（可选），例如不要文字、不要模特露脸、突出细节。" />
         </div>
       </details>
 
@@ -3070,7 +3070,7 @@ function ReferenceQuickStart({
         type="button"
         onClick={onAddCustomTemplate}
         disabled={!canAddReference}
-        className={`h-11 w-full rounded-xl text-xs font-black transition ${canAddReference ? "bg-slate-950 text-white hover:bg-[rgba(91,124,255,0.12)]" : "cursor-not-allowed bg-slate-200 text-slate-400"}`}
+        className={`h-11 w-full rounded-xl text-xs font-black transition ${canAddReference ? "bg-slate-950 text-white hover:bg-[rgba(5,5,5,0.06)]" : "cursor-not-allowed bg-slate-200 text-slate-400"}`}
       >
         {!hasReferenceImage ? "请先上传主参考图" : !hasCount ? `请先选择${imageType === "main" ? "张数" : "屏数"}` : `添加参考图并生成 ${genCount} ${unit}方案`}
       </button>
@@ -3123,7 +3123,7 @@ function FavoritePlanPanel({
           <button
             type="button"
             onClick={onToggleList}
-            className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-white px-2.5 text-[11px] font-black text-[var(--codex-accent)] hover:bg-[rgba(91,124,255,0.12)]"
+            className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-white px-2.5 text-[11px] font-black text-[var(--codex-accent)] hover:bg-[rgba(5,5,5,0.06)]"
           >
             {plans.length} 套
             <ChevronRight className={`h-3.5 w-3.5 transition ${showList ? "rotate-90" : ""}`} />
@@ -3136,7 +3136,7 @@ function FavoritePlanPanel({
           value={draftName}
           onChange={(event) => onDraftNameChange(event.target.value.slice(0, 40))}
           placeholder={defaultName}
-          className="h-10 min-w-0 flex-1 rounded-xl border border-slate-100 bg-white px-3 text-xs font-bold text-slate-700 outline-none transition focus:border-[rgba(91,124,255,0.5)]"
+          className="h-10 min-w-0 flex-1 rounded-xl border border-slate-100 bg-white px-3 text-xs font-bold text-slate-700 outline-none transition focus:border-zinc-900"
         />
         <button
           type="button"
@@ -3167,7 +3167,7 @@ function FavoritePlanPanel({
                 <button
                   type="button"
                   onClick={() => onApply(plan)}
-                  className="h-8 shrink-0 rounded-full bg-[rgba(91,124,255,0.1)] px-3 text-[11px] font-black text-[var(--codex-accent)] hover:bg-[rgba(91,124,255,0.12)]"
+                  className="h-8 shrink-0 rounded-full bg-[rgba(5,5,5,0.04)] px-3 text-[11px] font-black text-[var(--codex-accent)] hover:bg-[rgba(5,5,5,0.06)]"
                 >
                   套用
                 </button>
@@ -3244,7 +3244,7 @@ function PlanList({
           {shouldUseModelForTemplate(template, productProfile) && (
             <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black text-slate-600">模特</span>
           )}
-          <button type="button" onClick={() => onEdit(index)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-400 hover:bg-[rgba(91,124,255,0.12)] hover:text-[var(--codex-accent)]" title="编辑模块">
+          <button type="button" onClick={() => onEdit(index)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-400 hover:bg-[rgba(5,5,5,0.06)] hover:text-[var(--codex-accent)]" title="编辑模块">
             <Edit3 className="h-3.5 w-3.5" />
           </button>
           <button type="button" onClick={() => onRemove(index)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-400 hover:bg-red-50 hover:text-red-500" title="移除模块">
@@ -3279,7 +3279,7 @@ function GenerationSettingsSummary({
     <button
       type="button"
       onClick={onToggle}
-      className="flex w-full items-center justify-between gap-3 rounded-3xl border border-slate-100 bg-white p-4 text-left shadow-sm hover:border-[rgba(91,124,255,0.3)] hover:bg-[rgba(91,124,255,0.12)]"
+      className="flex w-full items-center justify-between gap-3 rounded-3xl border border-slate-100 bg-white p-4 text-left shadow-sm hover:hover:border-zinc-300 hover:bg-[rgba(5,5,5,0.06)]"
     >
       <span className="flex min-w-0 items-center gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-50 text-[var(--codex-accent)]">
@@ -3333,7 +3333,7 @@ function ModelConfigPanel({
               onClick={() => onModelChange(model.value)}
               className={`min-h-[72px] rounded-2xl border px-3 py-2.5 text-left transition-[border-color,background-color,color,box-shadow] ${
                 aiModel === model.value
-                  ? "border-[rgba(91,124,255,0.22)]0 bg-[rgba(91,124,255,0.1)] text-slate-950 shadow-[0_10px_26px_rgba(124,58,237,0.12)]"
+                  ? "border-zinc-2000 bg-[rgba(5,5,5,0.04)] text-slate-950 shadow-sm"
                   : "border-slate-100 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
               }`}
             >
@@ -3341,7 +3341,7 @@ function ModelConfigPanel({
                 <RawPreviewImage src={model.icon} alt="" className="h-4 w-4 shrink-0 object-contain" />
                 <span className="min-w-0 truncate text-[11px] font-black">{model.label}</span>
                 {model.badge && (
-                  <span className="shrink-0 rounded-full bg-[rgba(91,124,255,0.1)] px-1.5 py-0.5 text-[9px] font-black text-[var(--codex-accent)]">
+                  <span className="shrink-0 rounded-full bg-[rgba(5,5,5,0.04)] px-1.5 py-0.5 text-[9px] font-black text-[var(--codex-accent)]">
                     {model.badge}
                   </span>
                 )}
@@ -3362,7 +3362,7 @@ function ModelConfigPanel({
               onClick={() => onSizeChange(size)}
               className={`h-10 rounded-xl border px-2 text-xs font-bold transition-colors ${
                 imageSize === size
-                  ? "border-[rgba(91,124,255,0.22)]0 bg-[rgba(91,124,255,0.1)] text-[var(--codex-accent)]"
+                  ? "border-zinc-2000 bg-[rgba(5,5,5,0.04)] text-[var(--codex-accent)]"
                   : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
               }`}
             >
@@ -3387,7 +3387,7 @@ function ModelConfigPanel({
               onClick={() => onQualityChange(value)}
               className={`h-10 rounded-xl border px-3 text-xs font-bold transition-colors ${
                 qualityMode === value
-                  ? "border-[rgba(91,124,255,0.22)]0 bg-[rgba(91,124,255,0.1)] text-[var(--codex-accent)]"
+                  ? "border-zinc-2000 bg-[rgba(5,5,5,0.04)] text-[var(--codex-accent)]"
                   : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
               }`}
             >
@@ -3395,7 +3395,7 @@ function ModelConfigPanel({
             </button>
           ))}
         </div>
-        <div className="mt-3 rounded-2xl border border-[rgba(91,124,255,0.22)] bg-[rgba(91,124,255,0.1)] px-3 py-3">
+        <div className="mt-3 rounded-2xl border border-zinc-200 bg-[rgba(5,5,5,0.04)] px-3 py-3">
           <p className="text-xs font-black text-[var(--codex-accent)]">比例按模板自动</p>
           <p className="mt-1 text-[11px] leading-4 text-[var(--codex-accent)]">首屏海报、细节图、白底主图会分别使用各自模板比例，避免整套图被一个比例误导。</p>
         </div>
@@ -3441,7 +3441,7 @@ function SettingsModal({
                     key={value}
                     type="button"
                     onClick={() => onSettingChange("themeMode", value)}
-                    className={`flex h-11 items-center justify-center gap-2 rounded-xl border px-3 text-xs font-black transition ${settings.themeMode === value ? "border-[rgba(91,124,255,0.22)] bg-[rgba(91,124,255,0.1)] text-[var(--codex-accent)]" : "border-slate-200 bg-slate-50 text-slate-500"}`}
+                    className={`flex h-11 items-center justify-center gap-2 rounded-xl border px-3 text-xs font-black transition ${settings.themeMode === value ? "border-zinc-200 bg-[rgba(5,5,5,0.04)] text-[var(--codex-accent)]" : "border-slate-200 bg-slate-50 text-slate-500"}`}
                   >
                     <Palette className="h-4 w-4" /> {label}
                   </button>
@@ -3452,7 +3452,7 @@ function SettingsModal({
                   value={settings.themeColor}
                   onChange={(event) => onSettingChange("themeColor", event.target.value.slice(0, 80))}
                   placeholder="例如：奶油白 + 牛仔蓝 + 玫瑰粉"
-                  className="mt-2 h-10 w-full rounded-xl border border-slate-100 bg-slate-50 px-3 text-xs outline-none focus:border-[rgba(91,124,255,0.5)]"
+                  className="mt-2 h-10 w-full rounded-xl border border-slate-100 bg-slate-50 px-3 text-xs outline-none focus:border-zinc-900"
                 />
               )}
             </div>
@@ -3464,7 +3464,7 @@ function SettingsModal({
                     key={value}
                     type="button"
                     onClick={() => onSettingChange("fontStyle", value)}
-                    className={`h-10 rounded-xl border px-3 text-xs font-bold transition ${settings.fontStyle === value ? "border-[rgba(91,124,255,0.22)] bg-[rgba(91,124,255,0.1)] text-[var(--codex-accent)]" : "border-slate-200 bg-slate-50 text-slate-500"}`}
+                    className={`h-10 rounded-xl border px-3 text-xs font-bold transition ${settings.fontStyle === value ? "border-zinc-200 bg-[rgba(5,5,5,0.04)] text-[var(--codex-accent)]" : "border-slate-200 bg-slate-50 text-slate-500"}`}
                   >
                     {PRODUCT_SET_FONT_STYLE_LABELS[value]}
                   </button>
@@ -3475,7 +3475,7 @@ function SettingsModal({
               value={settings.extraDescription || ""}
               onChange={(event) => onSettingChange("extraDescription", event.target.value.slice(0, 600))}
               placeholder="额外描述：例如女装要偏法式通勤、不要夸张姿势、文案短句风格等。"
-              className="min-h-28 w-full resize-none rounded-2xl border border-slate-100 bg-slate-50 px-3 py-3 text-sm leading-6 outline-none focus:border-[rgba(91,124,255,0.5)]"
+              className="min-h-28 w-full resize-none rounded-2xl border border-slate-100 bg-slate-50 px-3 py-3 text-sm leading-6 outline-none focus:border-zinc-900"
             />
           </div>
         </div>
@@ -3556,7 +3556,7 @@ function TemplateLibraryModal({
           <div className="flex min-w-0 shrink-0 items-center gap-2">
             <div className="relative min-w-0">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-300" />
-              <input value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder="搜索模板" className="h-10 w-40 rounded-full border border-slate-200 bg-slate-50 pl-9 pr-3 text-xs outline-none focus:border-[rgba(91,124,255,0.5)] sm:w-52" />
+              <input value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder="搜索模板" className="h-10 w-40 rounded-full border border-slate-200 bg-slate-50 pl-9 pr-3 text-xs outline-none focus:border-zinc-900 sm:w-52" />
             </div>
             <button type="button" onClick={onClose} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200">
               <X className="h-5 w-5" />
@@ -3591,7 +3591,7 @@ function TemplateLibraryModal({
             <button
               type="button"
               onClick={() => onShowCustomBuilder(!showCustomBuilder)}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[rgba(91,124,255,0.22)] bg-white px-3 py-3 text-xs font-black text-[var(--codex-accent)] hover:bg-[rgba(91,124,255,0.12)]"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-zinc-200 bg-white px-3 py-3 text-xs font-black text-[var(--codex-accent)] hover:bg-[rgba(5,5,5,0.06)]"
             >
               <Plus className="h-4 w-4" /> 上传参考图
             </button>
@@ -3649,7 +3649,7 @@ function TemplateCard({ template, selected, onToggle }: { template: ProductSetTe
       type="button"
       onClick={onToggle}
       className={`group flex h-full flex-col overflow-hidden rounded-3xl border bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl ${
-        selected ? "border-[rgba(91,124,255,0.22)] ring-2 ring-[rgba(91,124,255,0.18)]" : "border-slate-100"
+        selected ? "border-zinc-200 ring-2 ring-zinc-200" : "border-slate-100"
       }`}
     >
       <div className="relative aspect-[4/3] shrink-0 bg-slate-100">
@@ -3657,7 +3657,7 @@ function TemplateCard({ template, selected, onToggle }: { template: ProductSetTe
         <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2 py-1 text-[10px] font-black text-slate-600 shadow-sm">
           {getAspectRatioLabel(template.aspectRatio)}
         </span>
-        <span className={`absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full shadow-sm ${selected ? "bg-[rgba(91,124,255,0.1)] text-white" : "bg-white/90 text-slate-400"}`}>
+        <span className={`absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full shadow-sm ${selected ? "bg-[rgba(5,5,5,0.04)] text-white" : "bg-white/90 text-slate-400"}`}>
           {selected ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
         </span>
         {template.scenario === "womenswear" && <span className="absolute bottom-3 left-3 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black text-slate-600">女装</span>}
@@ -3685,10 +3685,10 @@ function ToggleButton({ active, label, onClick }: { active: boolean; label: stri
     <button
       type="button"
       onClick={onClick}
-      className={`flex h-10 items-center justify-between rounded-xl border px-3 text-xs font-black transition ${active ? "border-[rgba(91,124,255,0.22)] bg-[rgba(91,124,255,0.1)] text-[var(--codex-accent)]" : "border-slate-100 bg-slate-50 text-slate-500"}`}
+      className={`flex h-10 items-center justify-between rounded-xl border px-3 text-xs font-black transition ${active ? "border-zinc-200 bg-[rgba(5,5,5,0.04)] text-[var(--codex-accent)]" : "border-slate-100 bg-slate-50 text-slate-500"}`}
     >
       <span className="min-w-0 truncate pr-2">{label}</span>
-      <span className={`h-4 w-7 shrink-0 rounded-full p-0.5 transition ${active ? "bg-[rgba(91,124,255,0.1)]" : "bg-slate-300"}`}>
+      <span className={`h-4 w-7 shrink-0 rounded-full p-0.5 transition ${active ? "bg-[rgba(5,5,5,0.04)]" : "bg-slate-300"}`}>
         <span className={`block h-3 w-3 rounded-full bg-white transition ${active ? "translate-x-3" : ""}`} />
       </span>
     </button>
@@ -3697,7 +3697,7 @@ function ToggleButton({ active, label, onClick }: { active: boolean; label: stri
 
 function ReferenceUploadButton({ label, hint, url, loading, onClick }: { label: string; hint?: string; url?: string; loading: boolean; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="flex min-h-[60px] w-full items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-2 py-2 text-left text-xs font-bold text-slate-600 hover:border-[rgba(91,124,255,0.3)] hover:bg-[rgba(91,124,255,0.12)]">
+    <button type="button" onClick={onClick} className="flex min-h-[60px] w-full items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-2 py-2 text-left text-xs font-bold text-slate-600 hover:hover:border-zinc-300 hover:bg-[rgba(5,5,5,0.06)]">
       <span className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg ${url ? "studio-checkerboard" : "bg-white"}`}>
         {url ? <RawPreviewImage src={getImageVariantUrl(url, "thumb")} alt={label} className="h-full w-full object-contain p-0.5" /> : loading ? <Loader2 className="h-4 w-4 animate-spin text-[var(--codex-accent)]" /> : <Upload className="h-4 w-4 text-slate-400" />}
       </span>
@@ -3720,7 +3720,7 @@ function OptionGrid({ title, options, value, onChange }: { title: string; option
             type="button"
             onClick={() => onChange(item)}
             className={`h-10 truncate rounded-xl border px-3 text-xs font-bold transition ${
-              value === item ? "border-[rgba(91,124,255,0.22)] bg-[rgba(91,124,255,0.1)] text-[var(--codex-accent)]" : "border-slate-200 bg-slate-50 text-slate-500 hover:border-[rgba(91,124,255,0.3)]"
+              value === item ? "border-zinc-200 bg-[rgba(5,5,5,0.04)] text-[var(--codex-accent)]" : "border-slate-200 bg-slate-50 text-slate-500 hover:hover:border-zinc-300"
             }`}
           >
             {item}

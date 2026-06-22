@@ -114,7 +114,7 @@ export function OutfitFusionComposer({
                 event.stopPropagation();
                 onUploadClick("outfit");
               }}
-              className="flex size-12 shrink-0 items-center justify-center rounded-[6px] border border-dashed border-slate-300 bg-slate-50 text-slate-400 transition duration-[250ms] ease-out hover:border-[var(--codex-accent)] hover:bg-[rgba(91,124,255,0.08)] hover:text-[var(--codex-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,124,255,0.35)]"
+              className="flex size-12 shrink-0 items-center justify-center rounded-[6px] border border-dashed border-slate-300 bg-slate-50 text-slate-400 transition duration-[250ms] ease-out hover:border-[var(--codex-accent)] hover:bg-[rgba(5,5,5,0.06)] hover:text-[var(--codex-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30"
               aria-label="上传搭配图"
             >
               <ImagePlus className="h-5 w-5" />
@@ -122,7 +122,7 @@ export function OutfitFusionComposer({
             <button
               type="button"
               onClick={onExpand}
-              className="min-w-0 flex-1 rounded-[6px] px-1 py-2 text-left text-sm leading-5 text-slate-500 transition duration-[250ms] ease-out hover:translate-x-0.5 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,124,255,0.35)]"
+              className="min-w-0 flex-1 rounded-[6px] px-1 py-2 text-left text-sm leading-5 text-slate-500 transition duration-[250ms] ease-out hover:translate-x-0.5 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30"
             >
               <span className="line-clamp-1">{prompt.trim() || "上传搭配图，智能识别并生成穿搭推荐描述"}</span>
             </button>
@@ -159,7 +159,7 @@ export function OutfitFusionComposer({
           </div>
           <div className="flex items-center gap-1.5">
             {assets.length > 0 ? (
-              <Button type="button" variant="ghost" size="sm" className="rounded-[6px] text-slate-500 transition hover:bg-[rgba(91,124,255,0.08)] hover:text-[var(--codex-accent)]" onClick={onClear}>
+              <Button type="button" variant="ghost" size="sm" className="rounded-[6px] text-slate-500 transition hover:bg-[rgba(5,5,5,0.06)] hover:text-[var(--codex-accent)]" onClick={onClear}>
                 <Trash2 className="h-3.5 w-3.5" />
                 清空素材
               </Button>
@@ -176,14 +176,14 @@ export function OutfitFusionComposer({
             const roleLabel = getOutfitFusionRoleLabel(asset.role);
             const active = hasPromptAssetReference(prompt, index);
             return (
-                <div key={asset.id} className="group relative w-[78px] overflow-hidden rounded-[6px] border border-slate-200 bg-white shadow-sm ring-1 ring-transparent transition duration-200 hover:border-[rgba(91,124,255,0.28)] hover:ring-[rgba(91,124,255,0.22)] hover:shadow-md">
+                <div key={asset.id} className="group relative w-[78px] overflow-hidden rounded-[6px] border border-slate-200 bg-white shadow-sm ring-1 ring-transparent transition duration-200 hover:border-zinc-300 hover:ring-zinc-200 hover:shadow-md">
                   <span className={cn("pointer-events-none absolute left-1.5 top-1.5 z-[1] max-w-[70px] truncate rounded-[4px] border px-1.5 py-0.5 text-[10px] font-bold leading-3 shadow-sm", getAssetLabelTone(asset.role, active))}>
                     {label}
                   </span>
                   <button
                     type="button"
                     onClick={() => onPreviewAsset?.(asset.id)}
-                    className="block w-full cursor-zoom-in text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,124,255,0.38)]"
+                    className="block w-full cursor-zoom-in text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30"
                     aria-label={`预览${label}${roleLabel}`}
                     title={`${label} · ${roleLabel}`}
                   >
@@ -242,7 +242,7 @@ export function OutfitFusionComposer({
             <OutfitFusionConfigPopover config={config} onChange={onConfigChange} modelLabel={modelLabel} />
             <Button
               type="button"
-              className="h-9 rounded-[6px] bg-[var(--codex-accent)] px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(91,124,255,0.24)] transition hover:bg-[#4d6df4] hover:shadow-[0_12px_24px_rgba(91,124,255,0.30)]"
+              className="h-9 rounded-[6px] bg-zinc-950 px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(5,5,5,0.18)] transition hover:bg-zinc-800 hover:shadow-[0_12px_24px_rgba(5,5,5,0.24)]"
               onClick={onGenerate}
               disabled={!canGenerate}
             >
@@ -292,8 +292,8 @@ function UploadSlot({
       onClick={() => onClick(role)}
       disabled={uploading}
       className={cn(
-        "group flex h-[88px] w-[88px] shrink-0 flex-col items-center justify-center gap-2 rounded-[6px] border border-dashed border-slate-300 bg-white text-slate-400 transition duration-200 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:ring-offset-1 disabled:cursor-wait disabled:opacity-60",
-        isDragging && "border-blue-500 bg-blue-50 text-blue-500 ring-2 ring-blue-500/20"
+        "group flex h-[88px] w-[88px] shrink-0 flex-col items-center justify-center gap-2 rounded-[6px] border border-dashed border-slate-300 bg-white text-slate-400 transition duration-200 hover:border-zinc-400 hover:bg-zinc-50 hover:text-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/20 focus-visible:ring-offset-1 disabled:cursor-wait disabled:opacity-60",
+        isDragging && "border-zinc-950 bg-zinc-50 text-zinc-700 ring-2 ring-zinc-950/20"
       )}
       {...dragHandlers}
     >
@@ -429,7 +429,7 @@ function HighlightedPromptTextarea({
           "relative",
           compact
             ? ""
-            : "rounded-[8px] bg-[#f5f8ff] ring-1 ring-[rgba(91,124,255,0.10)] transition focus-within:ring-2 focus-within:ring-[rgba(91,124,255,0.28)]"
+            : "rounded-[8px] bg-zinc-50 ring-1 ring-zinc-200 transition focus-within:ring-2 focus-within:ring-zinc-950/30"
         )}
       >
         {showHighlightLayer ? (
@@ -478,7 +478,7 @@ function HighlightedPromptTextarea({
           aria-controls="outfit-fusion-mention-list"
           style={showHighlightLayer ? { WebkitTextFillColor: "transparent" } : undefined}
           className={cn(
-            "relative z-10 w-full resize-none border-0 bg-transparent text-[14px] tracking-normal caret-[var(--codex-accent)] outline-none transition placeholder:text-slate-400 selection:bg-[rgba(91,124,255,0.24)]",
+            "relative z-10 w-full resize-none border-0 bg-transparent text-[14px] tracking-normal caret-[var(--codex-accent)] outline-none transition placeholder:text-slate-400 selection:bg-zinc-200",
             textMetricsClass,
             compact ? "overflow-hidden text-slate-500 ring-0 focus:ring-0" : "text-slate-900"
           )}
@@ -504,7 +504,7 @@ function HighlightedPromptTextarea({
                 className={cn(
                   "flex w-full items-center gap-2 rounded-[6px] px-2 py-2 text-left text-sm transition",
                   index === mention.activeIndex
-                    ? "bg-[rgba(91,124,255,0.10)] text-[var(--codex-accent)]"
+                    ? "bg-[rgba(5,5,5,0.06)] text-[var(--codex-accent)]"
                     : "text-slate-700 hover:bg-slate-50"
                 )}
               >
@@ -598,7 +598,7 @@ function getPromptLabelTone(token: string, assets: OutfitFusionAsset[]) {
   const role = getPromptTokenRole(token, assets);
   if (role === "reference") return "bg-rose-50 text-rose-500";
   if (role === "model") return "bg-amber-50 text-amber-500";
-  return "bg-blue-50 text-[#4f6ff4]";
+  return "bg-zinc-100 text-zinc-700";
 }
 
 function getPromptTokenRole(token: string, assets: OutfitFusionAsset[]): OutfitFusionAssetRole {
@@ -614,13 +614,13 @@ function getAssetLabelTone(role: OutfitFusionAssetRole, active: boolean) {
   if (role === "model") {
     return active ? "border-amber-500 bg-amber-500 text-white" : "border-amber-100 bg-amber-50 text-amber-500";
   }
-  return active ? "border-[#5b7cff] bg-[#5b7cff] text-white" : "border-blue-100 bg-blue-50 text-[#4f6ff4]";
+  return active ? "border-zinc-950 bg-zinc-950 text-white" : "border-zinc-200 bg-zinc-50 text-zinc-700";
 }
 
 function getAssetReferenceTone(role: OutfitFusionAssetRole) {
   if (role === "reference") return "bg-rose-50 text-rose-500 ring-rose-100 hover:bg-rose-100";
   if (role === "model") return "bg-amber-50 text-amber-500 ring-amber-100 hover:bg-amber-100";
-  return "bg-blue-50 text-[#4f6ff4] ring-blue-100 hover:bg-blue-100";
+  return "bg-zinc-100 text-zinc-700 ring-zinc-200 hover:bg-zinc-200";
 }
 
 function OutfitFusionConfigPopover({
@@ -737,8 +737,8 @@ function Segmented({
             aria-pressed={active}
             onClick={() => onChange(option.value)}
             className={cn(
-              "h-8 rounded-[6px] bg-slate-100 px-2 text-sm text-slate-700 transition duration-200 hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8aa5ff]",
-              active && "bg-[#eef4ff] font-semibold text-[#4b6fb3] shadow-sm ring-1 ring-[#cfdcff]"
+              "h-8 rounded-[6px] bg-slate-100 px-2 text-sm text-slate-700 transition duration-200 hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30",
+              active && "bg-zinc-100 font-semibold text-zinc-900 shadow-sm ring-1 ring-zinc-200"
             )}
           >
             {option.label}
@@ -779,7 +779,7 @@ function InlineConfigSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
-        className="flex h-9 w-full items-center justify-between gap-2 rounded-[6px] border border-[rgba(91,124,255,0.20)] bg-white px-3 text-left text-[13px] font-medium text-slate-700 shadow-sm outline-none transition hover:border-[rgba(91,124,255,0.34)] focus-visible:ring-2 focus-visible:ring-[rgba(91,124,255,0.26)]"
+        className="flex h-9 w-full items-center justify-between gap-2 rounded-[6px] border border-zinc-200 bg-white px-3 text-left text-[13px] font-medium text-slate-700 shadow-sm outline-none transition hover:border-zinc-300 focus-visible:ring-2 focus-visible:ring-zinc-950/30"
       >
         <span className="min-w-0 truncate">{active?.label || value}</span>
         <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 text-slate-500 transition-transform", open && "rotate-180")} />
@@ -806,7 +806,7 @@ function InlineConfigSelect({
                   "flex h-8 w-full items-center justify-between rounded-[6px] px-2.5 text-left text-[13px] transition",
                   selected
                     ? "bg-[var(--codex-accent)] font-semibold text-white"
-                    : "text-slate-700 hover:bg-[rgba(91,124,255,0.08)] hover:text-[var(--codex-accent)]"
+                    : "text-slate-700 hover:bg-[rgba(5,5,5,0.06)] hover:text-[var(--codex-accent)]"
                 )}
               >
                 <span className="truncate">{option.label}</span>

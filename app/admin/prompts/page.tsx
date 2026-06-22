@@ -165,7 +165,7 @@ function VariantSummary({ variants }: { variants: AdminPromptExperimentVariant[]
 
 function GuidanceCard({ icon, title, text }: { icon: ReactNode; title: string; text: string }) {
   return (
-    <section className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-blue-800">
+    <section className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-zinc-800">
       <div className="flex items-center gap-2 text-sm font-black">
         {icon}
         {title}

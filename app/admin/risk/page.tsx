@@ -189,7 +189,7 @@ function RiskBadge({ level }: { level: AdminRiskLevel }) {
     : level === "high"
       ? "border-amber-200 bg-amber-50 text-amber-700"
       : level === "medium"
-        ? "border-blue-200 bg-blue-50 text-blue-700"
+        ? "border-zinc-200 bg-zinc-50 text-zinc-700"
         : "border-emerald-200 bg-emerald-50 text-emerald-700";
   const label = level === "critical" ? "严重" : level === "high" ? "高" : level === "medium" ? "中" : "低";
   return <span className={`inline-flex h-6 items-center rounded-md border px-2 text-[11px] font-black ${className}`}>{label}</span>;

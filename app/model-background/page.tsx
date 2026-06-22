@@ -96,7 +96,7 @@ const MODE_OPTIONS: { value: ModelBackgroundMode; desc: string }[] = [
 
 const BACKGROUND_SOURCE_OPTIONS: BackgroundSourceMode[] = ["preset", "upload", "text"];
 const CARD_ZOOM_BUTTON_CLASS =
-  "absolute right-1 top-1 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/85 text-slate-600 opacity-0 shadow-sm transition-opacity hover:bg-white hover:text-violet-600 focus-visible:opacity-100 group-hover:opacity-100";
+  "absolute right-1 top-1 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/85 text-slate-600 opacity-0 shadow-sm transition-opacity hover:bg-white hover:text-zinc-900 focus-visible:opacity-100 group-hover:opacity-100";
 
 const MODEL_BACKGROUND_PREVIEW_ACTIONS: ImagePreviewAction[] = [
   { kind: "download", label: "下载图片" },
@@ -720,8 +720,8 @@ export default function ModelBackgroundPage() {
           {mode !== "background_only" ? (
             <section>
               <h3 className="font-bold text-sm mb-1 flex items-center gap-2">
-                <UserRound className="w-4 h-4 text-purple-500" /> 模特参考 <span className="text-purple-400 font-normal text-xs">· 必选</span>
-                <span className="px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-600 text-[9px]">请选择</span>
+                <UserRound className="w-4 h-4 text-zinc-700" /> 模特参考 <span className="text-zinc-500 font-normal text-xs">· 必选</span>
+                <span className="px-1.5 py-0.5 rounded-full bg-zinc-100 text-zinc-700 text-[9px]">请选择</span>
               </h3>
               <p className="text-[11px] text-gray-400 mb-3">
                 {mode === "model_only" ? "只换主图脸部，身体、服装、发型、姿势、背景都保持原图不变。" : "请选择系统模特或上传模特图，再替换模特与背景；图1服装和穿搭仍保持不变。"}
@@ -743,7 +743,7 @@ export default function ModelBackgroundPage() {
                 {PRESET_BACKGROUND_MODELS.map((model) => (
                   <div
                     key={model.id}
-                    className={`group relative overflow-hidden rounded-lg border-2 transition-[border-color,box-shadow] ${modelReferenceUrl === model.imageUrl ? "border-purple-500 ring-1 ring-purple-200" : "border-transparent hover:border-gray-300"}`}
+                    className={`group relative overflow-hidden rounded-lg border-2 transition-[border-color,box-shadow] ${modelReferenceUrl === model.imageUrl ? "border-zinc-950 ring-1 ring-zinc-200" : "border-transparent hover:border-gray-300"}`}
                   >
                     <button
                       type="button"
@@ -768,7 +768,7 @@ export default function ModelBackgroundPage() {
                     {modelReferenceUrl === model.imageUrl ? <CheckCircle2 className="absolute left-1.5 top-1.5 h-4 w-4 rounded-full bg-white text-emerald-500" /> : null}
                   </div>
                 ))}
-                <div className={`group relative overflow-hidden rounded-lg border-2 border-dashed transition-colors ${modelReferenceUrl && !PRESET_BACKGROUND_MODELS.some((item) => item.imageUrl === modelReferenceUrl) ? "border-purple-400 bg-purple-50" : "border-gray-200 hover:border-purple-300"}`}>
+                <div className={`group relative overflow-hidden rounded-lg border-2 border-dashed transition-colors ${modelReferenceUrl && !PRESET_BACKGROUND_MODELS.some((item) => item.imageUrl === modelReferenceUrl) ? "border-zinc-900 bg-zinc-50" : "border-gray-200 hover:border-zinc-300"}`}>
                   <button type="button" onClick={() => modelInputRef.current?.click()} className="flex aspect-square w-full flex-col items-center justify-center">
                     {modelReferenceUrl && !PRESET_BACKGROUND_MODELS.some((item) => item.imageUrl === modelReferenceUrl)
                       ? <RawPreviewImage src={modelReferenceUrl} alt={modelReferenceName || "自定义模特"} className="h-full w-full rounded-lg object-contain p-1" />
@@ -793,7 +793,7 @@ export default function ModelBackgroundPage() {
           {mode !== "model_only" ? (
             <section>
               <h3 className="mb-1 flex items-center gap-2 text-sm font-bold text-slate-950">
-                <Images className="h-4 w-4 text-purple-500" /> 参考图 / 场景
+                <Images className="h-4 w-4 text-zinc-700" /> 参考图 / 场景
               </h3>
               <p className="mb-3 text-[11px] text-slate-400">预设背景、上传背景和文生背景互斥；选择参考图后会优先锁定场景、光线和构图氛围。</p>
               <div className="mb-3">
@@ -835,7 +835,7 @@ export default function ModelBackgroundPage() {
                   <p className="mb-3 text-[11px] text-slate-500">选择系统参考图，只参考场景、光线、色彩和空间氛围。</p>
                   <div className="grid grid-cols-3 gap-2">
                     {BACKGROUND_PRESETS.map((item) => (
-                      <div key={item.id} className={`group relative overflow-hidden rounded-xl border bg-white text-center shadow-sm transition ${backgroundPresetId === item.id ? "border-purple-500 ring-2 ring-purple-100" : "border-slate-100 hover:border-violet-200"}`}>
+                      <div key={item.id} className={`group relative overflow-hidden rounded-xl border bg-white text-center shadow-sm transition ${backgroundPresetId === item.id ? "border-zinc-950 ring-2 ring-zinc-200" : "border-slate-100 hover:border-zinc-300"}`}>
                         <button
                           type="button"
                           onClick={() => {
@@ -864,7 +864,7 @@ export default function ModelBackgroundPage() {
                   </div>
                 </div>
               ) : backgroundSource === "upload" ? (
-                <button type="button" onClick={() => backgroundInputRef.current?.click()} className="group studio-upload-dropzone studio-fixed-upload-slot flex w-full flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-slate-200 p-3 text-center transition hover:border-purple-300" style={{ "--studio-fixed-upload-height": "328px" } as CSSProperties}>
+                <button type="button" onClick={() => backgroundInputRef.current?.click()} className="group studio-upload-dropzone studio-fixed-upload-slot flex w-full flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-slate-200 p-3 text-center transition hover:border-zinc-300" style={{ "--studio-fixed-upload-height": "328px" } as CSSProperties}>
                   {backgroundReferenceUrl ? (
                     <div className="studio-fixed-upload-preview studio-checkerboard relative mb-2 overflow-hidden rounded-xl" style={{ "--studio-fixed-preview-height": "220px" } as CSSProperties}>
                       <RawPreviewImage src={backgroundReferenceUrl} alt="背景参考" className="h-full w-full object-contain p-2" />
@@ -880,7 +880,7 @@ export default function ModelBackgroundPage() {
                     </div>
                   ) : (
                     <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm">
-                      <Images className="h-7 w-7 text-violet-500" />
+                      <Images className="h-7 w-7 text-zinc-700" />
                     </div>
                   )}
                   <span className="text-sm font-semibold text-slate-800">{backgroundReferenceUrl ? "更换背景参考图" : "上传背景参考图"}</span>
@@ -891,7 +891,7 @@ export default function ModelBackgroundPage() {
                 <StudioPromptTextarea value={backgroundText} onChange={(e) => { setBackgroundText(e.target.value); setPromptOverride(null); }} rows={4} className="studio-prompt-textarea-compact" placeholder="描述你想要的背景..." />
                   <div className="flex flex-wrap gap-2">
                     {BACKGROUND_TEXT_PRESETS.map((preset) => (
-                      <button key={preset} type="button" onClick={() => { setBackgroundText(preset); setPromptOverride(null); }} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] text-slate-600 hover:border-purple-200 hover:text-purple-600">
+                      <button key={preset} type="button" onClick={() => { setBackgroundText(preset); setPromptOverride(null); }} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] text-slate-600 hover:border-zinc-300 hover:text-zinc-900">
                         {preset}
                       </button>
                     ))}
@@ -1061,7 +1061,7 @@ export default function ModelBackgroundPage() {
                       <CheckCircle2 className="absolute right-2 top-2 h-5 w-5 rounded-full bg-white text-emerald-500" />
                     </div>
                     <p className="mt-2 text-center text-xs font-semibold text-slate-700">{demo.title}</p>
-                    <button type="button" onClick={() => applyDemo(demo)} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:border-violet-200 hover:text-violet-600">试一试</button>
+                    <button type="button" onClick={() => applyDemo(demo)} className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:border-zinc-300 hover:text-zinc-900">试一试</button>
                   </div>
                 ))}
               </div>

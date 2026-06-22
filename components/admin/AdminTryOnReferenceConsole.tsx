@@ -1292,7 +1292,7 @@ function stringifyList(value: unknown) {
 function messageClass(tone: "success" | "error" | "info") {
   if (tone === "success") return "border-emerald-200 bg-emerald-50 text-emerald-800";
   if (tone === "error") return "border-red-200 bg-red-50 text-red-800";
-  return "border-blue-200 bg-blue-50 text-blue-800";
+  return "border-zinc-200 bg-zinc-50 text-zinc-800";
 }
 
 function extractIssues(error: unknown): ValidationIssue[] {

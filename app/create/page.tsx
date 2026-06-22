@@ -2538,7 +2538,7 @@ export default function CreatePage() {
           <StudioSection
             title="上传服装"
             description={currentUploadRule.uploadSpecText}
-            badge={isUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin text-violet-500" /> : null}
+            badge={isUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin text-zinc-700" /> : null}
             className="studio-clothing-upload-section studio-stable-upload-boundary relative rounded-xl transition-all"
           >
             <input
@@ -2636,12 +2636,12 @@ export default function CreatePage() {
               </div>
             )}
 
-            <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-xl border border-slate-100 bg-white/70 px-3 py-2 text-xs text-slate-700 transition-colors hover:border-violet-200">
+            <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-xl border border-slate-100 bg-white/70 px-3 py-2 text-xs text-slate-700 transition-colors hover:border-zinc-300">
               <input
                 type="checkbox"
                 checked={isIntimateGarment}
                 onChange={(event) => updateIntimateGarment(event.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-zinc-900 focus:ring-zinc-950/30"
               />
               <span>
                 <span className="font-semibold">上传服装为内衣、泳衣、情趣内衣类服装</span>
@@ -2675,7 +2675,7 @@ export default function CreatePage() {
           </StudioSection>
 
           {/* ---- 服装人群 ---- */}
-          <section className="rounded-2xl border border-violet-100 bg-white/78 p-3 shadow-sm">
+          <section className="rounded-2xl border border-zinc-200 bg-white/78 p-3 shadow-sm">
             <div className="mb-2.5 flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-[13px] font-bold text-slate-900">
@@ -2685,7 +2685,7 @@ export default function CreatePage() {
                   影响人物性别线和年龄比例，默认女装成人。
                 </p>
               </div>
-              <span className="shrink-0 rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-medium text-violet-500">
+              <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-700">
                 影响比例
               </span>
             </div>
@@ -2699,8 +2699,8 @@ export default function CreatePage() {
                   aria-pressed={garmentAudience === value}
                   className={`rounded-lg border px-2 py-1.5 text-[11px] font-medium leading-none transition-all ${
                     garmentAudience === value
-                      ? "border-violet-400 bg-violet-50 text-violet-700 shadow-sm"
-                      : "border-slate-200 bg-white text-slate-500 hover:border-violet-200 hover:text-violet-600"
+                      ? "border-zinc-900 bg-zinc-900 text-white shadow-sm"
+                      : "border-slate-200 bg-white text-slate-500 hover:border-zinc-300 hover:text-zinc-900"
                   }`}
                 >
                   {TRYON_GARMENT_AUDIENCE_LABELS[value]}
@@ -2718,8 +2718,8 @@ export default function CreatePage() {
                     aria-pressed={ageGroup === value}
                     className={`rounded-lg border px-1.5 py-1.5 text-[11px] font-medium leading-none transition-all ${
                       ageGroup === value
-                        ? "border-violet-400 bg-violet-50 text-violet-700 shadow-sm"
-                        : "border-slate-200 bg-white text-slate-500 hover:border-violet-200 hover:text-violet-600"
+                        ? "border-zinc-900 bg-zinc-900 text-white shadow-sm"
+                        : "border-slate-200 bg-white text-slate-500 hover:border-zinc-300 hover:text-zinc-900"
                     }`}
                   >
                     {TRYON_AGE_GROUP_LABELS[value]}
@@ -2732,10 +2732,10 @@ export default function CreatePage() {
           {/* ---- 参考图（整个区域可拖拽） ---- */}
           <section
             {...referenceDrag.dragHandlers}
-            className={`studio-stable-upload-boundary relative rounded-xl transition-all ${isDraggingRef ? "ring-2 ring-[rgba(91,124,255,0.38)] ring-offset-2" : ""}`}
+            className={`studio-stable-upload-boundary relative rounded-xl transition-all ${isDraggingRef ? "ring-2 ring-zinc-900/30 ring-offset-2" : ""}`}
           >
             {isDraggingRef && (
-              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-xl border-2 border-dashed border-[rgba(91,124,255,0.58)] bg-[rgba(91,124,255,0.12)]">
+              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-xl border-2 border-dashed border-zinc-900/40 bg-zinc-50">
                 <div className="text-center">
                   <Upload className="mx-auto mb-1 h-7 w-7 text-[var(--codex-accent)]" />
                   <p className="text-xs font-semibold text-[var(--codex-accent)]">松开上传参考图</p>
@@ -2745,12 +2745,12 @@ export default function CreatePage() {
             <div className="mb-3 flex items-center justify-between gap-2">
               <div>
                 <h3 className="font-bold text-sm flex items-center gap-2">
-                  <ImageIcon className="w-4 h-4 text-purple-500" /> 参考图 / 场景
+                  <ImageIcon className="w-4 h-4 text-zinc-700" /> 参考图 / 场景
                 </h3>
                 <p className="mt-1 text-[11px] text-gray-400">默认上传参考图；切换 tab 会保留记录，生成只使用当前 tab 的参考图</p>
               </div>
               {sceneMode !== "auto_design" && (
-                <span className="rounded-full bg-violet-50 px-2 py-1 text-[10px] font-semibold text-[var(--codex-accent)]">
+                <span className="rounded-full bg-zinc-100 px-2 py-1 text-[10px] font-semibold text-zinc-900">
                   最多 {MAX_TRYON_REFERENCE_IMAGES} 张
                 </span>
               )}
@@ -2778,7 +2778,7 @@ export default function CreatePage() {
                       setActiveReferenceSceneUrl((prev) => prev || recommendedSystemReferences[0]?.url || allSystemReferences[0]?.url || null);
                       setIsReferenceScenePanelOpen(true);
                     }}
-                    className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white/80 p-3 text-left transition hover:border-[var(--codex-accent)] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+                    className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white/80 p-3 text-left transition hover:border-[var(--codex-accent)] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2"
                     aria-label="打开系统参考图场景选择"
                   >
                     <div className="relative h-24 w-20 shrink-0 overflow-hidden rounded-xl bg-slate-100 shadow-sm">
@@ -2797,7 +2797,7 @@ export default function CreatePage() {
                         <p className="mt-2 truncate text-[10px] font-semibold text-[var(--codex-accent)]">已识别：{clothingAnalysisLabel}</p>
                       )}
                       {(isAnalyzingClothing || isLoadingSystemReferences) && (
-                        <p className="mt-2 inline-flex items-center gap-1 text-[10px] font-medium text-violet-500">
+                        <p className="mt-2 inline-flex items-center gap-1 text-[10px] font-medium text-zinc-700">
                           <Loader2 className="h-3 w-3 animate-spin" />
                           {isAnalyzingClothing ? "识别服装中" : "推荐场景中"}
                         </p>
@@ -2812,7 +2812,7 @@ export default function CreatePage() {
                         key={ref.url}
                         type="button"
                         onClick={() => openLightbox(ref.url, ref.label || "参考图")}
-                        className="group relative overflow-hidden rounded-lg border-2 border-[var(--codex-accent)] bg-white shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+                        className="group relative overflow-hidden rounded-lg border-2 border-[var(--codex-accent)] bg-white shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2"
                         aria-label={`预览已选参考图：${ref.label}`}
                       >
                         <RawPreviewImage src={ref.url} alt={ref.label || "参考图"} className="aspect-[3/4] w-full object-cover" />
@@ -2827,7 +2827,7 @@ export default function CreatePage() {
                           setActiveReferenceSceneUrl((prev) => prev || recommendedSystemReferences[0]?.url || allSystemReferences[0]?.url || null);
                           setIsReferenceScenePanelOpen(true);
                         }}
-                        className="flex aspect-[3/4] flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-white text-slate-400 transition hover:border-[var(--codex-accent)] hover:bg-violet-50/40 hover:text-[var(--codex-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+                        className="flex aspect-[3/4] flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-white text-slate-400 transition hover:border-[var(--codex-accent)] hover:bg-zinc-100 hover:text-[var(--codex-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2"
                         aria-label="添加系统参考图"
                       >
                         <ChevronRight className="mb-1 h-6 w-6" />
@@ -2841,7 +2841,7 @@ export default function CreatePage() {
             )}
 
             {sceneMode === "upload_reference" && (
-              <div className={`studio-reference-upload-panel transition-colors ${isDraggingRef ? "rounded-xl ring-2 ring-[rgba(91,124,255,0.36)] ring-offset-2" : ""}`}>
+              <div className={`studio-reference-upload-panel transition-colors ${isDraggingRef ? "rounded-xl ring-2 ring-zinc-900/30 ring-offset-2" : ""}`}>
                 <input ref={customRefInputRef} type="file" accept="image/*" multiple className="hidden" aria-label="上传参考图" onChange={handleCustomRef} disabled={selectedReferenceCount >= MAX_TRYON_REFERENCE_IMAGES || isReferenceUploadBusy} />
                 <TryOnReferenceAnalysisStatus
                   status={referenceAnalysisStatus}
@@ -2878,7 +2878,7 @@ export default function CreatePage() {
                         <button
                           type="button"
                           onClick={() => openLightbox(ref.url, ref.label || "参考图")}
-                          className="block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+                          className="block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2"
                           aria-label={`预览参考图：${ref.label}`}
                         >
                           <RawPreviewImage src={ref.url} alt={`参考图：${ref.label}`} className="aspect-[3/4] w-full object-cover" />
@@ -2925,7 +2925,7 @@ export default function CreatePage() {
                       type="button"
                       onClick={() => customRefInputRef.current?.click()}
                       disabled={selectedReferenceCount >= MAX_TRYON_REFERENCE_IMAGES || isReferenceUploadBusy}
-                      className={`flex aspect-[3/4] flex-col items-center justify-center overflow-hidden rounded-lg border-2 border-dashed bg-white text-slate-400 transition-all hover:border-[var(--codex-accent)] hover:bg-violet-50/40 hover:text-[var(--codex-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${isDraggingRef ? "border-[var(--codex-accent)] bg-violet-50 text-[var(--codex-accent)]" : "border-gray-200"}`}
+                      className={`flex aspect-[3/4] flex-col items-center justify-center overflow-hidden rounded-lg border-2 border-dashed bg-white text-slate-400 transition-all hover:border-[var(--codex-accent)] hover:bg-zinc-100 hover:text-[var(--codex-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${isDraggingRef ? "border-[var(--codex-accent)] bg-zinc-100 text-[var(--codex-accent)]" : "border-gray-200"}`}
                       aria-label="上传参考图"
                     >
                       <ChevronRight className="mb-1 h-6 w-6" />
@@ -3013,7 +3013,7 @@ export default function CreatePage() {
                               key={template.id}
                               type="button"
                               onClick={() => applyReferenceTemplate(template)}
-                              className="group overflow-hidden rounded-lg border-2 border-transparent bg-white text-left transition hover:border-[var(--codex-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+                              className="group overflow-hidden rounded-lg border-2 border-transparent bg-white text-left transition hover:border-[var(--codex-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2"
                               aria-label={`套用参考模板：${template.name}`}
                             >
                               <div className="relative aspect-[4/3] overflow-hidden">
@@ -3047,8 +3047,8 @@ export default function CreatePage() {
                           if (!switchSceneMode("favorites")) return;
                           toggleReferenceImage(toFavoriteReference(ref));
                         })}
-                        className={`group relative rounded-lg overflow-hidden border-2 bg-white transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 ${
-                          selected ? "border-[var(--codex-accent)] ring-1 ring-blue-200" : "border-transparent hover:border-gray-300"
+                        className={`group relative rounded-lg overflow-hidden border-2 bg-white transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2 ${
+                          selected ? "border-[var(--codex-accent)] ring-1 ring-zinc-200" : "border-transparent hover:border-gray-300"
                         }`}>
                         <ImgSkeleton src={ref.url} alt={`收藏参考图：${ref.label}`} className="w-full aspect-[3/4] object-cover" />
                         {selected && (
@@ -3060,7 +3060,7 @@ export default function CreatePage() {
                           type="button"
                           onClick={(e) => { e.stopPropagation(); openLightbox(ref.url, `收藏参考图：${ref.label}`); }}
                           onKeyDown={(e) => { e.stopPropagation(); }}
-                          className="absolute left-1 top-1 w-6 h-6 rounded-full bg-white/85 shadow-sm flex items-center justify-center opacity-100 transition-opacity hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+                          className="absolute left-1 top-1 w-6 h-6 rounded-full bg-white/85 shadow-sm flex items-center justify-center opacity-100 transition-opacity hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
                           aria-label={`预览收藏参考图：${ref.label}`}
                           title={`预览收藏参考图：${ref.label}`}
                         >
@@ -3070,7 +3070,7 @@ export default function CreatePage() {
                           type="button"
                           onClick={(e) => { e.stopPropagation(); removeFavoriteReference(ref.id); }}
                           onKeyDown={(e) => { e.stopPropagation(); }}
-                          className="absolute right-1 top-1 w-6 h-6 rounded-full bg-white/85 shadow-sm flex items-center justify-center opacity-100 transition-opacity hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+                          className="absolute right-1 top-1 w-6 h-6 rounded-full bg-white/85 shadow-sm flex items-center justify-center opacity-100 transition-opacity hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
                           aria-label={`移除收藏参考图：${ref.label}`}
                           title={`移除收藏参考图：${ref.label}`}
                         >
@@ -3092,10 +3092,10 @@ export default function CreatePage() {
           {/* ---- 模特（整个区域可拖拽·可选） ---- */}
           <section
             {...modelDrag.dragHandlers}
-            className={`studio-stable-upload-boundary relative rounded-xl transition-all ${isDraggingModel ? "ring-2 ring-[rgba(91,124,255,0.38)] ring-offset-2" : ""}`}
+            className={`studio-stable-upload-boundary relative rounded-xl transition-all ${isDraggingModel ? "ring-2 ring-zinc-900/30 ring-offset-2" : ""}`}
           >
             {isDraggingModel && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl border-2 border-dashed border-[rgba(91,124,255,0.48)] bg-[rgba(91,124,255,0.10)] pointer-events-none">
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl border-2 border-dashed border-zinc-900/40 bg-zinc-50 pointer-events-none">
                 <div className="text-center">
                   <Upload className="w-8 h-8 mx-auto text-[var(--codex-accent)] mb-1" />
                   <p className="text-sm font-medium text-[var(--codex-accent)]">松开上传模特图</p>
@@ -3105,13 +3105,13 @@ export default function CreatePage() {
             <div className="mb-3 flex items-start justify-between gap-3">
               <div>
                 <h3 className="flex items-center gap-2 text-[13px] font-bold text-slate-900">
-                  <UserRound className="h-4 w-4 text-purple-500" />
+                  <UserRound className="h-4 w-4 text-zinc-700" />
                   模特
                   <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">可选</span>
                 </h3>
                 <p className="mt-1 text-[11px] text-gray-400">默认不选；上传或选择模特时只控制脸部身份</p>
               </div>
-              <span className="shrink-0 rounded-full bg-violet-50 px-2 py-1 text-[10px] font-semibold text-[var(--codex-accent)]">
+              <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-1 text-[10px] font-semibold text-zinc-900">
                 可拖拽上传
               </span>
             </div>
@@ -3128,10 +3128,10 @@ export default function CreatePage() {
                   toast.success("已设为不替换脸部");
                 }}
                 disabled={isModelUploadBusy}
-                className={`group relative overflow-hidden rounded-xl border bg-white text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+                className={`group relative overflow-hidden rounded-xl border bg-white text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
                   !store.selectedModel
-                    ? "border-[var(--codex-accent)] bg-[rgba(91,124,255,0.10)] shadow-sm ring-1 ring-blue-100"
-                    : "border-slate-200 hover:border-[rgba(91,124,255,0.34)] hover:bg-violet-50/30"
+                    ? "border-[var(--codex-accent)] bg-zinc-100 shadow-sm ring-1 ring-zinc-200"
+                    : "border-slate-200 hover:border-[var(--codex-accent)] hover:bg-zinc-50"
                 }`}
               >
                 <span className="flex aspect-[4/5] items-center justify-center">
@@ -3142,7 +3142,7 @@ export default function CreatePage() {
                     </span>
                   </span>
                 </span>
-                <span className={`block border-t px-2 py-2 text-[11px] font-semibold ${!store.selectedModel ? "border-[rgba(91,124,255,0.12)] text-[var(--codex-accent)]" : "border-slate-100 text-slate-500"}`}>
+                <span className={`block border-t px-2 py-2 text-[11px] font-semibold ${!store.selectedModel ? "border-zinc-200 text-[var(--codex-accent)]" : "border-slate-100 text-slate-500"}`}>
                   不替换脸部
                 </span>
               </button>
@@ -3170,12 +3170,12 @@ export default function CreatePage() {
                     store.setSelectedModel({ ...m, is_preset: true, user_id: null });
                     setPromptOverride(null);
                   })}
-                  className={`group relative overflow-hidden rounded-xl border bg-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 ${
+                  className={`group relative overflow-hidden rounded-xl border bg-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2 ${
                     isModelUploadBusy ? "cursor-not-allowed opacity-60" : "cursor-pointer"
                   } ${
                     store.selectedModel?.id === m.id
-                      ? "border-[var(--codex-accent)] shadow-sm ring-1 ring-blue-100"
-                      : "border-slate-200 hover:border-[rgba(91,124,255,0.34)] hover:shadow-sm"
+                      ? "border-[var(--codex-accent)] shadow-sm ring-1 ring-zinc-200"
+                      : "border-slate-200 hover:border-[var(--codex-accent)] hover:shadow-sm"
                   }`}>
                   <ImgSkeleton src={m.image_url} alt={`模特：${m.name}`} className="aspect-[4/5] w-full object-cover" />
                   {store.selectedModel?.id === m.id && (
@@ -3183,19 +3183,19 @@ export default function CreatePage() {
                       <CheckCircle2 className="h-4 w-4" />
                     </span>
                   )}
-                  <div className="absolute inset-0 pointer-events-none flex items-end justify-end bg-violet-950/0 p-2 opacity-100 transition-all sm:opacity-0 sm:group-hover:bg-violet-950/10 sm:group-hover:opacity-100 sm:group-focus-within:bg-violet-950/10 sm:group-focus-within:opacity-100">
+                  <div className="absolute inset-0 pointer-events-none flex items-end justify-end bg-zinc-950/0 p-2 opacity-100 transition-all sm:opacity-0 sm:group-hover:bg-zinc-950/10 sm:group-hover:opacity-100 sm:group-focus-within:bg-zinc-950/10 sm:group-focus-within:opacity-100">
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); openLightbox(m.image_url, `模特：${m.name}`); }}
                       onKeyDown={(e) => { e.stopPropagation(); }}
-                      className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+                      className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2"
                       aria-label={`预览模特：${m.name}`}
                       title={`预览模特：${m.name}`}
                     >
                       <ZoomIn className="h-4 w-4 text-gray-600" />
                     </button>
                   </div>
-                  <div className={`border-t px-2 py-2 text-center ${store.selectedModel?.id === m.id ? "border-[rgba(91,124,255,0.12)] bg-blue-50" : "border-slate-100"}`}>
+                  <div className={`border-t px-2 py-2 text-center ${store.selectedModel?.id === m.id ? "border-zinc-200 bg-zinc-50" : "border-slate-100"}`}>
                     <span className="block truncate text-[11px] font-bold text-slate-800">{m.name}</span>
                   </div>
                 </div>
@@ -3205,12 +3205,12 @@ export default function CreatePage() {
                 tabIndex={0}
                 onClick={() => customModelInputRef.current?.click()}
                 onKeyDown={(event) => handlePreviewKeyDown(event, () => customModelInputRef.current?.click())}
-                className={`group relative overflow-hidden rounded-xl border bg-white text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 ${
+                className={`group relative overflow-hidden rounded-xl border bg-white text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2 ${
                   isModelUploadBusy ? "cursor-not-allowed opacity-80" : "cursor-pointer"
                 } ${
                   isCustomModelSelected
-                    ? "border-[var(--codex-accent)] shadow-sm ring-1 ring-blue-100"
-                    : "border-dashed border-slate-200 hover:border-[rgba(91,124,255,0.38)] hover:bg-violet-50/30"
+                    ? "border-[var(--codex-accent)] shadow-sm ring-1 ring-zinc-200"
+                    : "border-dashed border-slate-200 hover:border-[var(--codex-accent)] hover:bg-zinc-50"
                 }`}
                 aria-label={customModelImageUrl ? "更换上传模特图" : "上传模特图"}
               >
@@ -3233,7 +3233,7 @@ export default function CreatePage() {
                   </span>
                 )}
                 {customModelImageUrl && (
-                  <div className="absolute inset-0 pointer-events-none flex items-end justify-end bg-violet-950/0 p-2 opacity-100 transition-all sm:opacity-0 sm:group-hover:bg-violet-950/10 sm:group-hover:opacity-100 sm:group-focus-within:bg-violet-950/10 sm:group-focus-within:opacity-100">
+                  <div className="absolute inset-0 pointer-events-none flex items-end justify-end bg-zinc-950/0 p-2 opacity-100 transition-all sm:opacity-0 sm:group-hover:bg-zinc-950/10 sm:group-hover:opacity-100 sm:group-focus-within:bg-zinc-950/10 sm:group-focus-within:opacity-100">
                     <button
                       type="button"
                       onClick={(event) => {
@@ -3241,7 +3241,7 @@ export default function CreatePage() {
                         openLightbox(customModelImageUrl, "已上传的模特图");
                       }}
                       onKeyDown={(event) => { event.stopPropagation(); }}
-                      className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+                      className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2"
                       aria-label="预览上传模特图"
                       title="预览上传模特图"
                     >
@@ -3250,7 +3250,7 @@ export default function CreatePage() {
                   </div>
                 )}
                 <span className={`block truncate border-t px-2 py-2 text-[11px] font-bold ${
-                  isCustomModelSelected ? "border-[rgba(91,124,255,0.12)] bg-blue-50 text-slate-800" : "border-slate-100 text-slate-500"
+                  isCustomModelSelected ? "border-zinc-200 bg-zinc-50 text-slate-800" : "border-slate-100 text-slate-500"
                 }`}>
                   {customModelImageUrl ? "已上传" : "上传"}
                 </span>
@@ -3268,7 +3268,7 @@ export default function CreatePage() {
           {/* ---- 生成模型 ---- */}
           <section>
             <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-purple-500" /> 生成模型
+              <Sparkles className="w-4 h-4 text-zinc-700" /> 生成模型
             </h3>
             <StudioModelSelector
               models={selectableModels}
@@ -3340,7 +3340,7 @@ export default function CreatePage() {
               {STYLE_PRESETS.map((s, i) => (
                 <button key={i} onClick={() => { setCustomStyle(s); setPromptOverride(null); store.setPromptUsed(""); }}
                   aria-pressed={customStyle === s}
-                  className="px-2 py-0.5 rounded-full bg-gray-50 border text-[10px] text-gray-500 hover:bg-purple-50 hover:text-purple-600 transition-all">{s}</button>
+                  className="px-2 py-0.5 rounded-full bg-gray-50 border text-[10px] text-gray-500 hover:bg-zinc-100 hover:text-zinc-900 transition-all">{s}</button>
               ))}
             </div>
 

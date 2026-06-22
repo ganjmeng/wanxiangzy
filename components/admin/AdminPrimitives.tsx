@@ -99,7 +99,7 @@ export function AdminStatusBadge({ status, group }: { status: string; group?: Ta
       : normalized === "failed" || normalized === "danger" || normalized === "hide" || normalized === "rejected" || normalized === "suspended"
         ? "border-red-200 bg-red-50 text-red-700"
       : normalized === "running" || normalized.startsWith("processing")
-        ? "border-blue-200 bg-blue-50 text-blue-700"
+        ? "border-zinc-200 bg-zinc-50 text-zinc-700"
         : normalized === "queued" || normalized === "draft" || normalized === "escalate" || normalized === "pending" || normalized === "restricted"
             ? "border-amber-200 bg-amber-50 text-amber-700"
             : "border-slate-200 bg-slate-100 text-slate-600";
@@ -259,7 +259,7 @@ function metricToneClass(tone: "neutral" | "good" | "warning" | "danger") {
 
 function noticeToneClass(tone: "warning" | "danger" | "info") {
   if (tone === "danger") return "border-red-200 bg-red-50 text-red-700";
-  if (tone === "info") return "border-blue-200 bg-blue-50 text-blue-700";
+  if (tone === "info") return "border-zinc-200 bg-zinc-50 text-zinc-700";
   return "border-amber-200 bg-amber-50 text-amber-800";
 }
 

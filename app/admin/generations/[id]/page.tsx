@@ -350,7 +350,7 @@ function ResultUrlList({ urls }: { urls: string[] }) {
       {urls.map((url, index) => (
         <div key={`${url}-${index}`} className="rounded-lg border border-slate-200 bg-white px-3 py-2">
           <div className="mb-1 text-xs font-black text-slate-500">结果 {index + 1}</div>
-          <a href={url} target="_blank" rel="noreferrer" className="break-all font-mono text-xs font-semibold text-blue-700 hover:underline">
+          <a href={url} target="_blank" rel="noreferrer" className="break-all font-mono text-xs font-semibold text-zinc-700 hover:underline">
             {url}
           </a>
         </div>

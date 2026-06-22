@@ -749,7 +749,7 @@ export function AiVideoExperience({ mode }: AiVideoExperienceProps) {
                 </p>
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                <section {...firstFrameDrag.dragHandlers} className={`rounded-xl transition-[box-shadow] ${isDraggingFirstFrame ? "ring-2 ring-[rgba(91,124,255,0.38)] ring-offset-2" : ""}`}>
+                <section {...firstFrameDrag.dragHandlers} className={`rounded-xl transition-[box-shadow] ${isDraggingFirstFrame ? "ring-2 ring-zinc-900/30 ring-offset-2" : ""}`}>
                   <input
                     ref={firstFrameInputRef}
                     type="file"
@@ -782,7 +782,7 @@ export function AiVideoExperience({ mode }: AiVideoExperienceProps) {
                     uploadLabel="上传首帧"
                   />
                 </section>
-                <section {...lastFrameDrag.dragHandlers} className={`rounded-xl transition-[box-shadow] ${isDraggingLastFrame ? "ring-2 ring-[rgba(91,124,255,0.38)] ring-offset-2" : ""}`}>
+                <section {...lastFrameDrag.dragHandlers} className={`rounded-xl transition-[box-shadow] ${isDraggingLastFrame ? "ring-2 ring-zinc-900/30 ring-offset-2" : ""}`}>
                   <input
                     ref={lastFrameInputRef}
                     type="file"
@@ -819,7 +819,7 @@ export function AiVideoExperience({ mode }: AiVideoExperienceProps) {
             </section>
           </>
         ) : !isMotion ? (
-          <section {...imageDrag.dragHandlers} className={`rounded-xl transition-[box-shadow] ${isDraggingImage ? "ring-2 ring-[rgba(91,124,255,0.38)] ring-offset-2" : ""}`}>
+          <section {...imageDrag.dragHandlers} className={`rounded-xl transition-[box-shadow] ${isDraggingImage ? "ring-2 ring-zinc-900/30 ring-offset-2" : ""}`}>
             <input
               ref={imageInputRef}
               type="file"
@@ -855,7 +855,7 @@ export function AiVideoExperience({ mode }: AiVideoExperienceProps) {
           </section>
         ) : (
           <>
-            <section {...modelImageDrag.dragHandlers} className={`rounded-xl transition-[box-shadow] ${isDraggingModelImage ? "ring-2 ring-[rgba(91,124,255,0.38)] ring-offset-2" : ""}`}>
+            <section {...modelImageDrag.dragHandlers} className={`rounded-xl transition-[box-shadow] ${isDraggingModelImage ? "ring-2 ring-zinc-900/30 ring-offset-2" : ""}`}>
               <input
                 ref={modelImageInputRef}
                 type="file"
@@ -888,7 +888,7 @@ export function AiVideoExperience({ mode }: AiVideoExperienceProps) {
                 uploadLabel="点击或拖拽上传"
               />
             </section>
-            <section {...videoDrag.dragHandlers} className={`rounded-xl transition-[box-shadow] ${isDraggingVideo ? "ring-2 ring-[rgba(91,124,255,0.38)] ring-offset-2" : ""}`}>
+            <section {...videoDrag.dragHandlers} className={`rounded-xl transition-[box-shadow] ${isDraggingVideo ? "ring-2 ring-zinc-900/30 ring-offset-2" : ""}`}>
               <input
                 ref={videoInputRef}
                 type="file"
@@ -942,7 +942,7 @@ export function AiVideoExperience({ mode }: AiVideoExperienceProps) {
             <button
               type="button"
               onClick={applyFirstLastPromptSuggestion}
-              className="gradient-brand inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-black text-white shadow-[0_10px_24px_rgba(91,124,255,0.22)] transition hover:opacity-95"
+              className="gradient-brand inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-black text-white shadow-[0_10px_24px_rgba(7,8,13,0.18)] transition hover:opacity-95"
             >
               <Sparkles className="h-3.5 w-3.5" />
               AI帮写
@@ -957,7 +957,7 @@ export function AiVideoExperience({ mode }: AiVideoExperienceProps) {
               <button
                 type="button"
                 onClick={() => setTemplatePanelOpen(true)}
-                className="inline-flex h-7 items-center gap-1 rounded-full border border-blue-100 bg-blue-50 px-2.5 text-xs font-black text-blue-600 transition hover:border-blue-200 hover:bg-blue-100"
+                className="inline-flex h-7 items-center gap-1 rounded-full border border-zinc-200 bg-zinc-100 px-2.5 text-xs font-black text-zinc-700 transition hover:border-zinc-300 hover:bg-zinc-200"
               >
                 更多 <ChevronRight className="h-3.5 w-3.5" />
               </button>
@@ -1123,7 +1123,7 @@ export function AiVideoExperience({ mode }: AiVideoExperienceProps) {
         ) : (isGenerating || resultUrls.length > 0) ? (
           <div className="studio-result-stage h-full overflow-y-auto p-4 pb-28 sm:p-6">
             {isGenerating && (
-              <div className="mb-4 rounded-xl border border-blue-100 bg-white/80 px-3 py-2 text-xs font-bold text-blue-600 shadow-sm">
+              <div className="mb-4 rounded-xl border border-zinc-200 bg-white/80 px-3 py-2 text-xs font-bold text-zinc-700 shadow-sm">
                 视频生成中 {Math.round(progress)}%，完成后会自动显示在这里。
               </div>
             )}
@@ -1241,7 +1241,7 @@ function TemplateStrip({ selectedId, onSelect }: { selectedId: number | null; on
   return (
     <div className="relative" onMouseLeave={() => setPreviewTemplate(null)}>
       {previewTemplate && (
-        <div className="pointer-events-none absolute bottom-[94px] left-0 z-30 aspect-[4/5] w-[232px] overflow-hidden rounded-[18px] border border-white/90 bg-slate-950 shadow-[0_28px_70px_rgba(15,23,42,0.22)] ring-1 ring-blue-200/80">
+        <div className="pointer-events-none absolute bottom-[94px] left-0 z-30 aspect-[4/5] w-[232px] overflow-hidden rounded-[18px] border border-white/90 bg-slate-950 shadow-[0_28px_70px_rgba(15,23,42,0.22)] ring-1 ring-zinc-200/80">
           <RawPreviewImage src={previewTemplate.previewImage} alt="" className="absolute inset-0 h-full w-full object-cover" />
           <video
             ref={previewVideoRef}
@@ -1275,23 +1275,23 @@ function TemplateStrip({ selectedId, onSelect }: { selectedId: number | null; on
               onFocus={() => setPreviewTemplate(template)}
               onBlur={() => setPreviewTemplate(null)}
               aria-pressed={selected}
-              className={`group relative h-[78px] w-[68px] shrink-0 overflow-hidden rounded-[12px] border bg-slate-100 transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 ${
+              className={`group relative h-[78px] w-[68px] shrink-0 overflow-hidden rounded-[12px] border bg-slate-100 transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2 ${
                 selected || previewing
-                  ? "border-blue-500 shadow-[0_12px_28px_rgba(59,130,246,0.2)] ring-2 ring-blue-100"
-                  : "border-slate-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_10px_22px_rgba(15,23,42,0.10)]"
+                  ? "border-zinc-950 shadow-[0_12px_28px_rgba(5,5,5,0.18)] ring-2 ring-zinc-200"
+                  : "border-slate-200 hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-[0_10px_22px_rgba(15,23,42,0.10)]"
               }`}
               title={template.title}
             >
               <RawPreviewImage src={template.previewImage} alt={template.title} className="h-full w-full object-cover transition duration-200 group-hover:scale-[1.04]" />
-              <span className={`absolute inset-0 transition ${previewing ? "bg-blue-500/10" : "bg-transparent"}`} />
+              <span className={`absolute inset-0 transition ${previewing ? "bg-zinc-950/10" : "bg-transparent"}`} />
               {selected && (
-                <span className="absolute left-1.5 top-1.5 rounded-full bg-blue-600 px-1.5 py-0.5 text-[10px] font-black leading-none text-white shadow-sm">
+                <span className="absolute left-1.5 top-1.5 rounded-full bg-zinc-950 px-1.5 py-0.5 text-[10px] font-black leading-none text-white shadow-sm">
                   已选
                 </span>
               )}
-              {(selected || previewing) && <span className="absolute inset-x-2 bottom-1 h-1.5 rounded-full bg-blue-500 shadow-[0_0_0_1px_rgba(255,255,255,0.8)]" />}
+              {(selected || previewing) && <span className="absolute inset-x-2 bottom-1 h-1.5 rounded-full bg-zinc-950 shadow-[0_0_0_1px_rgba(255,255,255,0.8)]" />}
               {previewing && (
-                <span className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white/92 text-blue-600 shadow-sm">
+                <span className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white/92 text-zinc-900 shadow-sm">
                   <Play className="ml-0.5 h-3 w-3 fill-current" />
                 </span>
               )}
@@ -1327,7 +1327,7 @@ function ImageToVideoGuide({ onOpenTemplates }: { onOpenTemplates: () => void })
           ]}
         />
         <div className="mt-5 flex justify-center">
-          <button type="button" onClick={onOpenTemplates} className="gradient-brand inline-flex h-11 items-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-[0_18px_44px_rgba(91,124,255,0.24)]">
+          <button type="button" onClick={onOpenTemplates} className="gradient-brand inline-flex h-11 items-center gap-2 rounded-full px-5 text-sm font-black text-white shadow-[0_18px_44px_rgba(7,8,13,0.22)]">
             <ImagePlus className="h-4 w-4" />
             选择动作模板
           </button>
@@ -1446,7 +1446,7 @@ function TemplateCard({
   return (
     <article
       className={`group overflow-hidden rounded-[12px] border bg-white shadow-sm transition hover:-translate-y-0.5 ${
-        selected ? "border-blue-500 ring-2 ring-blue-100" : "border-slate-200"
+        selected ? "border-zinc-950 ring-2 ring-zinc-200" : "border-slate-200"
       }`}
       onMouseEnter={() => setActive(true)}
       onMouseLeave={() => setActive(false)}

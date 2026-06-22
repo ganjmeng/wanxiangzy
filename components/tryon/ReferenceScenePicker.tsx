@@ -118,7 +118,7 @@ export function ReferenceScenePicker<TItem extends ReferenceScenePickerItem = Re
             <button
               type="button"
               onClick={onClose}
-              className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+              className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2"
               aria-label="关闭场景选择"
             >
               <X className="h-4 w-4" />
@@ -135,9 +135,9 @@ export function ReferenceScenePicker<TItem extends ReferenceScenePickerItem = Re
                       type="button"
                       onClick={() => onTabChange(item.value)}
                       className={cn(
-                        "h-8 rounded-full px-4 text-[11px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2",
+                        "h-8 rounded-full px-4 text-[11px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2",
                         activeTab === item.value
-                          ? "bg-violet-100 text-[var(--codex-accent)]"
+                          ? "bg-zinc-100 text-zinc-900"
                           : "bg-white text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                       )}
                     >
@@ -146,7 +146,7 @@ export function ReferenceScenePicker<TItem extends ReferenceScenePickerItem = Re
                   ))}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <button type="button" className="h-7 rounded-full bg-violet-100 px-3 text-[10px] font-bold text-[var(--codex-accent)]">
+                  <button type="button" className="h-7 rounded-full bg-zinc-100 px-3 text-[10px] font-bold text-zinc-900">
                     全部场景
                   </button>
                   <button type="button" className="h-7 rounded-full bg-white px-3 text-[10px] font-medium text-slate-500">
@@ -243,7 +243,7 @@ export function ReferenceScenePicker<TItem extends ReferenceScenePickerItem = Re
                       type="button"
                       onClick={() => onActiveReferenceChange(ref.url)}
                       className={cn(
-                        "w-[108px] shrink-0 overflow-hidden rounded-lg border bg-white text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2",
+                        "w-[108px] shrink-0 overflow-hidden rounded-lg border bg-white text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2",
                         activeReference?.url === ref.url
                           ? "border-[var(--codex-accent)] shadow-sm"
                           : "border-slate-200 hover:border-slate-300"
@@ -344,7 +344,7 @@ function ScenePreviewPane({
             <button
               type="button"
               onClick={() => onPreview?.(activeReference.url, activeReference.label || "主场景")}
-              className="block h-full w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+              className="block h-full w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2"
               aria-label={`预览场景：${activeReference.label}`}
             >
               <img src={activeReference.url} alt={activeReference.label || "主场景"} className="h-full min-h-[320px] w-full object-cover lg:min-h-0" />
@@ -425,7 +425,7 @@ function SceneMainCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "group relative overflow-hidden rounded-lg border bg-white text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2",
+        "group relative overflow-hidden rounded-lg border bg-white text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2",
         active || selected ? "border-[var(--codex-accent)] shadow-sm" : "border-slate-200 hover:border-slate-300"
       )}
       aria-label={`选择风格场景：${item.label}`}
@@ -456,7 +456,7 @@ function SceneChildCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "group relative overflow-hidden rounded-xl border-2 bg-white text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2",
+        "group relative overflow-hidden rounded-xl border-2 bg-white text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2",
         selected ? "border-[var(--codex-accent)] shadow-sm" : "border-transparent hover:border-slate-300"
       )}
       aria-label={`选择场景姿势图：${item.label}`}

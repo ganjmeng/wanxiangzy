@@ -889,7 +889,7 @@ export default function ModelPage() {
               <button
                 onClick={() => { setHairStyle(null); setHairReferenceUrl(null); }}
                 className={`rounded-lg border p-2 text-center transition-all aspect-[3/4] flex flex-col items-center justify-center ${
-                  !hairStyle && !hairReferenceUrl ? "border-purple-500 bg-purple-50 text-purple-600 ring-1 ring-purple-200" : "border-gray-100 text-gray-500 hover:border-gray-300"
+                  !hairStyle && !hairReferenceUrl ? "border-zinc-950 bg-zinc-100 text-zinc-900 ring-1 ring-zinc-200" : "border-gray-100 text-gray-500 hover:border-gray-300"
                 }`}
               >
                 <UserRound className="w-5 h-5 mb-1" />
@@ -898,7 +898,7 @@ export default function ModelPage() {
               {HAIR_STYLES[gender].map((item) => (
                 <button key={item.value} onClick={() => { setHairStyle(item.value); setHairReferenceUrl(null); }}
                   className={`rounded-lg overflow-hidden border text-left transition-all ${
-                    hairStyle === item.value && !hairReferenceUrl ? "border-purple-500 ring-1 ring-purple-200" : "border-gray-100 hover:border-gray-300"
+                    hairStyle === item.value && !hairReferenceUrl ? "border-zinc-950 ring-1 ring-zinc-200" : "border-gray-100 hover:border-gray-300"
                   }`}>
                   <RawPreviewImage src={item.image} alt={item.label} className="w-full aspect-[3/4] object-cover bg-gray-50" />
                   <div className="px-1 py-1 text-[10px] text-center font-medium">{item.label}</div>
@@ -908,19 +908,19 @@ export default function ModelPage() {
                 onClick={() => hairInputRef.current?.click()}
                 className={`relative rounded-lg border-2 border-dashed p-2 text-center transition-all aspect-[3/4] flex flex-col items-center justify-center overflow-hidden ${
                   hairReferenceUrl
-                    ? "studio-checkerboard border-purple-500 text-purple-700 ring-2 ring-purple-200 shadow-[0_14px_34px_rgba(124,58,237,0.18)]"
-                    : "border-slate-200 bg-slate-50/70 text-slate-400 hover:border-purple-300 hover:bg-purple-50/60 hover:text-purple-500"
+                    ? "studio-checkerboard border-zinc-950 text-zinc-900 ring-2 ring-zinc-200 shadow-[0_14px_34px_rgba(5,5,5,0.18)]"
+                    : "border-slate-200 bg-slate-50/70 text-slate-400 hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-700"
                 }`}
               >
                 {hairReferenceUrl ? (
                   <>
                     <RawPreviewImage src={hairReferenceUrl} className="absolute inset-0 h-full w-full object-contain p-1" alt="上传发型参考" />
-                    <span className="absolute inset-0 bg-gradient-to-t from-purple-950/38 via-transparent to-transparent" />
+                    <span className="absolute inset-0 bg-gradient-to-t from-zinc-950/38 via-transparent to-transparent" />
                     <span className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-emerald-500 shadow">
                       <CheckCircle2 className="h-4 w-4" />
                     </span>
                     <span className="absolute bottom-0 left-0 right-0 bg-white/94 px-1.5 py-1 text-center backdrop-blur">
-                      <span className="block text-[10px] font-bold text-purple-700">已上传发型参考</span>
+                      <span className="block text-[10px] font-bold text-zinc-900">已上传发型参考</span>
                       <span className="block truncate text-[9px] text-slate-400">只参考发型轮廓</span>
                     </span>
                   </>
@@ -965,7 +965,7 @@ export default function ModelPage() {
               <button
                 onClick={() => { setHairColor(null); setHairColorReferenceUrl(null); }}
                 className={`rounded-lg border p-2 text-center transition-all aspect-[3/4] flex flex-col items-center justify-center ${
-                  !hairColor && !hairColorReferenceUrl ? "border-purple-500 bg-purple-50 text-purple-600 ring-1 ring-purple-200" : "border-gray-100 text-gray-500 hover:border-gray-300"
+                  !hairColor && !hairColorReferenceUrl ? "border-zinc-950 bg-zinc-100 text-zinc-900 ring-1 ring-zinc-200" : "border-gray-100 text-gray-500 hover:border-gray-300"
                 }`}
               >
                 <UserRound className="w-5 h-5 mb-1" />
@@ -974,7 +974,7 @@ export default function ModelPage() {
               {HAIR_COLORS.map((item) => (
                 <button key={item.value} onClick={() => { setHairColor(item.value); setHairColorReferenceUrl(null); }}
                   className={`rounded-lg overflow-hidden border text-left transition-all ${
-                    hairColor === item.value && !hairColorReferenceUrl ? "border-purple-500 ring-1 ring-purple-200" : "border-gray-100 hover:border-gray-300"
+                    hairColor === item.value && !hairColorReferenceUrl ? "border-zinc-950 ring-1 ring-zinc-200" : "border-gray-100 hover:border-gray-300"
                   }`}>
                   <RawPreviewImage src={item.image} alt={item.label} className="w-full aspect-[3/4] object-cover bg-gray-50" />
                   <div className="px-1 py-1 text-[10px] text-center font-medium">{item.label}</div>
@@ -984,19 +984,19 @@ export default function ModelPage() {
                 onClick={() => hairColorInputRef.current?.click()}
                 className={`relative rounded-lg border-2 border-dashed p-2 text-center transition-all aspect-[3/4] flex flex-col items-center justify-center overflow-hidden ${
                   hairColorReferenceUrl
-                    ? "studio-checkerboard border-purple-500 text-purple-700 ring-2 ring-purple-200 shadow-[0_14px_34px_rgba(124,58,237,0.18)]"
-                    : "border-slate-200 bg-slate-50/70 text-slate-400 hover:border-purple-300 hover:bg-purple-50/60 hover:text-purple-500"
+                    ? "studio-checkerboard border-zinc-950 text-zinc-900 ring-2 ring-zinc-200 shadow-[0_14px_34px_rgba(5,5,5,0.18)]"
+                    : "border-slate-200 bg-slate-50/70 text-slate-400 hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-700"
                 }`}
               >
                 {hairColorReferenceUrl ? (
                   <>
                     <RawPreviewImage src={hairColorReferenceUrl} className="absolute inset-0 h-full w-full object-contain p-1" alt="上传发色参考" />
-                    <span className="absolute inset-0 bg-gradient-to-t from-purple-950/38 via-transparent to-transparent" />
+                    <span className="absolute inset-0 bg-gradient-to-t from-zinc-950/38 via-transparent to-transparent" />
                     <span className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-emerald-500 shadow">
                       <CheckCircle2 className="h-4 w-4" />
                     </span>
                     <span className="absolute bottom-0 left-0 right-0 bg-white/94 px-1.5 py-1 text-center backdrop-blur">
-                      <span className="block text-[10px] font-bold text-purple-700">已上传发色参考</span>
+                      <span className="block text-[10px] font-bold text-zinc-900">已上传发色参考</span>
                       <span className="block truncate text-[9px] text-slate-400">只提取发色明暗</span>
                     </span>
                   </>
@@ -1024,7 +1024,7 @@ export default function ModelPage() {
 
           <section>
             <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-purple-500" /> 生成模型
+              <Sparkles className="w-4 h-4 text-zinc-700" /> 生成模型
             </h3>
             <StudioModelSelector
               models={MODELS}
@@ -1183,11 +1183,11 @@ export default function ModelPage() {
           >
             <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-violet-500">{MODEL_UPLOAD_RULE.shortTitle}</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--codex-accent)]">{MODEL_UPLOAD_RULE.shortTitle}</p>
                 <h3 className="mt-1 text-base font-bold text-slate-950">{MODEL_UPLOAD_RULE.title}</h3>
                 <p className="mt-1 text-xs text-slate-500">{MODEL_UPLOAD_RULE.uploadSpecText}</p>
               </div>
-              <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-medium text-violet-600">Hover 预览</span>
+              <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-700">Hover 预览</span>
             </div>
 
             <div className="studio-scrollbar-hide overflow-y-auto px-5 py-4" style={{ maxHeight: rulesPopoverStyle.maxHeight - 88 }}>
@@ -1207,7 +1207,7 @@ export default function ModelPage() {
                     <button
                       type="button"
                       onClick={() => applyRuleDemo(demo)}
-                      className="mt-auto w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:border-violet-200 hover:text-violet-600"
+                      className="mt-auto w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:border-zinc-300 hover:text-zinc-900"
                     >
                       试一试
                     </button>

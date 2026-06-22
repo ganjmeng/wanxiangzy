@@ -833,7 +833,7 @@ export default function Garment3dPage() {
                   <button
                     onClick={() => referenceInputRef.current?.click()}
                     className={`aspect-square rounded-lg border-2 border-dashed flex items-center justify-center ${
-                      customReferenceUrl ? "border-purple-500 bg-purple-50" : "border-gray-200"
+                      customReferenceUrl ? "border-zinc-950 bg-zinc-50" : "border-gray-200"
                     }`}
                     title="上传参考图"
                   >
@@ -1040,11 +1040,11 @@ export default function Garment3dPage() {
           >
             <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-violet-500">{GARMENT_3D_UPLOAD_RULE.shortTitle}</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-700">{GARMENT_3D_UPLOAD_RULE.shortTitle}</p>
                 <h3 className="mt-1 text-base font-bold text-slate-950">{GARMENT_3D_UPLOAD_RULE.title}</h3>
                 <p className="mt-1 text-xs text-slate-500">{GARMENT_3D_UPLOAD_RULE.uploadSpecText}</p>
               </div>
-              <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-medium text-violet-600">Hover 预览</span>
+              <span className="rounded-full bg-zinc-50 px-2.5 py-1 text-[11px] font-medium text-zinc-700">Hover 预览</span>
             </div>
 
             <div className="studio-scrollbar-hide overflow-y-auto px-5 py-4" style={{ maxHeight: rulesPopoverStyle.maxHeight - 88 }}>
@@ -1060,7 +1060,7 @@ export default function Garment3dPage() {
                     <button
                       type="button"
                       onClick={() => applyRuleDemo(demo)}
-                      className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:border-violet-200 hover:text-violet-600"
+                      className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:border-zinc-300 hover:text-zinc-900"
                     >
                       试一试
                     </button>

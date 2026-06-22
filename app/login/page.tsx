@@ -190,7 +190,7 @@ export default function LoginPage() {
       <div className="mx-auto grid min-h-[calc(100dvh-128px)] max-w-6xl items-start gap-8 pt-10 sm:pt-16 lg:grid-cols-[minmax(0,1fr)_440px] lg:items-center lg:pt-0">
         <section className="hidden lg:block" aria-hidden="true">
           <div className="studio-surface studio-surface-elevated relative overflow-hidden rounded-[34px] p-8">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(91,124,255,0.18),transparent_34%),radial-gradient(circle_at_86%_8%,rgba(174,184,255,0.28),transparent_38%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(5,5,5,0.06),transparent_34%),radial-gradient(circle_at_86%_8%,rgba(5,5,5,0.04),transparent_38%)]" />
             <div className="relative z-10">
               <Link href="/" className="studio-button studio-button-compact">
                 <CheckCircle aria-hidden="true" className="h-4 w-4 text-[var(--codex-accent)]" />
@@ -242,7 +242,7 @@ export default function LoginPage() {
                     autoComplete="email"
                     inputMode="email"
                     spellCheck={false}
-                    className="w-full rounded-2xl border border-[var(--codex-border)] bg-white px-4 py-3 pl-10 text-sm outline-none transition-all focus:border-[rgba(91,124,255,0.5)] focus:ring-4 focus:ring-[rgba(91,124,255,0.14)]"
+                    className="w-full rounded-2xl border border-[var(--codex-border)] bg-white px-4 py-3 pl-10 text-sm outline-none transition-all focus:border-zinc-900 focus:ring-4 focus:ring-zinc-900/15"
                     placeholder="you@example.com…"
                   />
                 </div>
@@ -258,7 +258,7 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     autoComplete="current-password"
-                    className="w-full rounded-2xl border border-[var(--codex-border)] bg-white px-4 py-3 pl-10 pr-10 text-sm outline-none transition-all focus:border-[rgba(91,124,255,0.5)] focus:ring-4 focus:ring-[rgba(91,124,255,0.14)]"
+                    className="w-full rounded-2xl border border-[var(--codex-border)] bg-white px-4 py-3 pl-10 pr-10 text-sm outline-none transition-all focus:border-zinc-900 focus:ring-4 focus:ring-zinc-900/15"
                     placeholder="输入密码…"
                   />
                   <button
@@ -333,7 +333,7 @@ export default function LoginPage() {
                     autoComplete="email"
                     inputMode="email"
                     spellCheck={false}
-                    className="w-full rounded-2xl border border-[var(--codex-border)] bg-white px-4 py-3 pl-10 text-sm outline-none transition-all focus:border-[rgba(91,124,255,0.5)] focus:ring-4 focus:ring-[rgba(91,124,255,0.14)]"
+                    className="w-full rounded-2xl border border-[var(--codex-border)] bg-white px-4 py-3 pl-10 text-sm outline-none transition-all focus:border-zinc-900 focus:ring-4 focus:ring-zinc-900/15"
                     placeholder="you@example.com…"
                   />
                 </div>
@@ -348,7 +348,7 @@ export default function LoginPage() {
                     onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                     required
                     autoComplete="one-time-code"
-                    className="w-full rounded-2xl border border-[var(--codex-border)] bg-white px-4 py-3 pl-10 font-mono text-sm font-black uppercase tracking-[0.08em] outline-none transition-all focus:border-[rgba(91,124,255,0.5)] focus:ring-4 focus:ring-[rgba(91,124,255,0.14)]"
+                    className="w-full rounded-2xl border border-[var(--codex-border)] bg-white px-4 py-3 pl-10 font-mono text-sm font-black uppercase tracking-[0.08em] outline-none transition-all focus:border-zinc-900 focus:ring-4 focus:ring-zinc-900/15"
                     placeholder="输入邀请码…"
                   />
                 </div>
@@ -365,7 +365,7 @@ export default function LoginPage() {
                     required
                     minLength={6}
                     autoComplete="new-password"
-                    className="w-full rounded-2xl border border-[var(--codex-border)] bg-white px-4 py-3 pl-10 pr-10 text-sm outline-none transition-all focus:border-[rgba(91,124,255,0.5)] focus:ring-4 focus:ring-[rgba(91,124,255,0.14)]"
+                    className="w-full rounded-2xl border border-[var(--codex-border)] bg-white px-4 py-3 pl-10 pr-10 text-sm outline-none transition-all focus:border-zinc-900 focus:ring-4 focus:ring-zinc-900/15"
                     placeholder="至少 6 位…"
                   />
                   <button
@@ -413,7 +413,7 @@ export default function LoginPage() {
 
           {view === "check-email" && (
             <div className="space-y-6 text-center">
-              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[rgba(91,124,255,0.1)]">
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-zinc-100">
                 <Mail aria-hidden="true" className="h-10 w-10 text-[var(--codex-accent)]" />
               </div>
 
@@ -468,7 +468,7 @@ export default function LoginPage() {
                     autoComplete="email"
                     inputMode="email"
                     spellCheck={false}
-                    className="w-full rounded-2xl border border-[var(--codex-border)] bg-white px-4 py-3 pl-10 text-sm outline-none transition-all focus:border-[rgba(91,124,255,0.5)] focus:ring-4 focus:ring-[rgba(91,124,255,0.14)]"
+                    className="w-full rounded-2xl border border-[var(--codex-border)] bg-white px-4 py-3 pl-10 text-sm outline-none transition-all focus:border-zinc-900 focus:ring-4 focus:ring-zinc-900/15"
                     placeholder="you@example.com…"
                   />
                 </div>

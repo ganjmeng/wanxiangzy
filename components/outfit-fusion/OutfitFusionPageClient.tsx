@@ -1066,7 +1066,7 @@ function OutfitFusionTaskCard({
               <button
                 type="button"
                 onClick={() => setPromptExpanded((value) => !value)}
-                className="mt-0.5 inline-flex shrink-0 items-center gap-0.5 rounded-[5px] px-1.5 py-0.5 text-xs font-medium text-[var(--codex-accent)] transition hover:bg-[rgba(91,124,255,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,124,255,0.35)]"
+                className="mt-0.5 inline-flex shrink-0 items-center gap-0.5 rounded-[5px] px-1.5 py-0.5 text-xs font-medium text-[var(--codex-accent)] transition hover:bg-[rgba(5,5,5,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30"
                 aria-expanded={promptExpanded}
               >
                 {promptExpanded ? "收起" : "展开"}
@@ -1093,7 +1093,7 @@ function OutfitFusionTaskCard({
                   event.preventDefault();
                   onPreview(index);
                 }}
-                className="studio-result-card outfit-fusion-result-card group/slot relative aspect-[3/4] cursor-zoom-in overflow-hidden rounded-[4px] bg-[#f4f6fa] text-sm text-slate-400 outline-none transition duration-300 hover:z-[1] hover:shadow-[0_10px_28px_rgba(15,23,42,0.18)] focus-visible:ring-2 focus-visible:ring-[rgba(91,124,255,0.35)] focus-visible:ring-offset-2"
+                className="studio-result-card outfit-fusion-result-card group/slot relative aspect-[3/4] cursor-zoom-in overflow-hidden rounded-[4px] bg-[#f4f6fa] text-sm text-slate-400 outline-none transition duration-300 hover:z-[1] hover:shadow-[0_10px_28px_rgba(15,23,42,0.18)] focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2"
               >
                 <LoadableResultImage src={url} alt={`生成图${index + 1}`} />
                 <span className="pointer-events-none absolute left-2 top-2 rounded-[4px] bg-[var(--codex-accent)] px-1.5 py-0.5 text-[11px] font-semibold leading-4 text-white shadow-sm">
@@ -1134,7 +1134,7 @@ function OutfitFusionTaskCard({
                   ) : (
                     <>
                       <div className="relative flex h-14 w-14 items-center justify-center">
-                        <span className="gen-ring absolute inset-0 rounded-full bg-[#aeb8ff]/45" />
+                        <span className="gen-ring absolute inset-0 rounded-full bg-zinc-300/40" />
                         <div className="relative flex h-14 w-14 items-center justify-center rounded-full border border-white/16 bg-white/10 shadow-lg backdrop-blur-md">
                           <Loader2 className="h-6 w-6 animate-spin text-white" />
                         </div>
@@ -1157,7 +1157,7 @@ function OutfitFusionTaskCard({
           <button
             type="button"
             onClick={onCopy}
-            className="rounded-[5px] p-0.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,124,255,0.35)]"
+            className="rounded-[5px] p-0.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30"
             aria-label="复制任务编号"
           >
             <Copy className="h-3.5 w-3.5" />
@@ -1165,7 +1165,7 @@ function OutfitFusionTaskCard({
           {running ? <span className="text-[var(--codex-accent)]">{task.progress}%</span> : null}
         </div>
         <div className="flex items-center gap-3">
-          <button type="button" onClick={onReedit} className="inline-flex items-center gap-1 rounded-[5px] px-1 py-0.5 text-slate-700 transition hover:bg-[rgba(91,124,255,0.08)] hover:text-[var(--codex-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,124,255,0.35)]">
+          <button type="button" onClick={onReedit} className="inline-flex items-center gap-1 rounded-[5px] px-1 py-0.5 text-slate-700 transition hover:bg-[rgba(5,5,5,0.06)] hover:text-[var(--codex-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30">
             <PenLine className="h-3.5 w-3.5" />
             重新编辑
           </button>
@@ -1173,12 +1173,12 @@ function OutfitFusionTaskCard({
             type="button"
             onClick={onRegenerate}
             disabled={running}
-            className="inline-flex items-center gap-1 rounded-[5px] px-1 py-0.5 text-slate-700 transition hover:bg-[rgba(91,124,255,0.08)] hover:text-[var(--codex-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,124,255,0.35)] disabled:text-slate-300"
+            className="inline-flex items-center gap-1 rounded-[5px] px-1 py-0.5 text-slate-700 transition hover:bg-[rgba(5,5,5,0.06)] hover:text-[var(--codex-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 disabled:text-slate-300"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             重新生成
           </button>
-          <button type="button" onClick={onDelete} className="inline-flex items-center gap-1 rounded-[5px] px-1 py-0.5 text-slate-500 transition hover:bg-[rgba(91,124,255,0.08)] hover:text-[var(--codex-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,124,255,0.35)]">
+          <button type="button" onClick={onDelete} className="inline-flex items-center gap-1 rounded-[5px] px-1 py-0.5 text-slate-500 transition hover:bg-[rgba(5,5,5,0.06)] hover:text-[var(--codex-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30">
             <Trash2 className="h-3.5 w-3.5" />
             删除
           </button>
@@ -1226,7 +1226,7 @@ function TaskInputReuseStack({ assets, onReuse }: { assets: OutfitFusionAsset[];
             <button
               type="button"
               onClick={onReuse}
-              className="group/reuse relative h-[54px] w-[68px] rounded-[6px] outline-none transition focus-visible:ring-2 focus-visible:ring-[rgba(91,124,255,0.45)] focus-visible:ring-offset-2"
+              className="group/reuse relative h-[54px] w-[68px] rounded-[6px] outline-none transition focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2"
               aria-label="再次使用图片"
             >
               {displayAssets.map((asset, index) => {

@@ -237,7 +237,7 @@ export function AdminShell({ admin, children }: AdminShellProps) {
           </Space>
           <Space size={8}>
             {admin.source === "bootstrap-env" && <Tag color="gold">Bootstrap</Tag>}
-            <Tag color="blue">{admin.role}</Tag>
+            <Tag color="default">{admin.role}</Tag>
           </Space>
         </Layout.Header>
         <Layout.Content className="admin-content">

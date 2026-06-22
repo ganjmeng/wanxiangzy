@@ -210,7 +210,7 @@ export default async function AdminEvalsPage({ searchParams }: PageProps) {
         />
       </AdminSection>
 
-      <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm leading-6 text-blue-700">
+      <div className="flex items-start gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm leading-6 text-zinc-700">
         <FlaskConical className="mt-0.5 h-4 w-4 shrink-0" />
         <p>
           上线建议：提示词、智能助手决策或安全策略改动后先在此页触发回归；若失败用例非 0，完成追踪和坏反馈沉淀后再发布生产版本。

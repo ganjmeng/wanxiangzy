@@ -149,7 +149,7 @@ function StatusTag({ status }: { status: string }) {
 }
 
 function supportLevelLabel(value: string) {
-  if (value === "priority") return <Tag color="blue">优先</Tag>;
+  if (value === "priority") return <Tag color="default">优先</Tag>;
   if (value === "watch") return <Tag color="orange">观察</Tag>;
   return <Tag>标准</Tag>;
 }

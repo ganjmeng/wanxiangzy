@@ -275,8 +275,8 @@ function getSelectedExpressionPresetId(slot: PosePlanSlot | null | undefined) {
 
 function getPoseAngleBadgeClass(angle?: PosePlanAngle) {
   const base = "rounded-full px-1.5 py-0.5 text-[9px] font-black ring-1";
-  if (angle === "front") return `${base} bg-blue-50 text-blue-700 ring-blue-100`;
-  if (angle === "side") return `${base} bg-indigo-50 text-indigo-700 ring-indigo-100`;
+  if (angle === "front") return `${base} bg-zinc-100 text-zinc-700 ring-zinc-200`;
+  if (angle === "side") return `${base} bg-zinc-100 text-zinc-700 ring-zinc-200`;
   if (angle === "back") return `${base} bg-amber-50 text-amber-700 ring-amber-100`;
   if (angle === "detail") return `${base} bg-teal-50 text-teal-700 ring-teal-100`;
   return `${base} bg-slate-100 text-slate-500 ring-slate-200`;
@@ -1634,7 +1634,7 @@ export default function PosePage() {
           />
           <section
             {...mainImageDrag.dragHandlers}
-            className={`studio-stable-upload-boundary relative rounded-xl transition-[box-shadow] ${isDragging ? "ring-2 ring-[rgba(91,124,255,0.38)] ring-offset-2" : ""}`}
+            className={`studio-stable-upload-boundary relative rounded-xl transition-[box-shadow] ${isDragging ? "ring-2 ring-zinc-900/30 ring-offset-2" : ""}`}
           >
             <input
               ref={fileInputRef}
@@ -1708,7 +1708,7 @@ export default function PosePage() {
                     onClick={() => setPoseCreationMode(item.value)}
                     className={`rounded-xl px-3 py-2 text-center transition ${
                       selected
-                        ? "bg-white text-blue-700 shadow-[0_8px_18px_rgba(37,99,235,0.12)]"
+                        ? "bg-white text-zinc-900 shadow-[0_8px_18px_rgba(5,5,5,0.10)]"
                         : "text-slate-500 hover:text-slate-900"
                     }`}
                   >
@@ -1725,7 +1725,7 @@ export default function PosePage() {
                 title={(
                   <span className="flex items-center gap-2">
                     姿势参考图
-                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-600">
+                    <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold text-zinc-700">
                       {poseReferenceUrls.length}/{MAX_POSE_REFERENCE_IMAGES}
                     </span>
                   </span>
@@ -1787,7 +1787,7 @@ export default function PosePage() {
                         type="button"
                         onClick={() => setPoseReferenceCopies((count) => normalizePoseReferenceCopies(count - 1, activePoseReferenceUrls.length))}
                         disabled={activePoseReferenceCopies <= 1}
-                        className="inline-flex items-center justify-center text-slate-500 transition hover:bg-white hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-30"
+                        className="inline-flex items-center justify-center text-slate-500 transition hover:bg-white hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-30"
                         aria-label="减少每张参考图生成数量"
                       >
                         <Minus className="h-3.5 w-3.5" />
@@ -1803,7 +1803,7 @@ export default function PosePage() {
                       <button
                         type="button"
                         onClick={() => setPoseReferenceCopies((count) => normalizePoseReferenceCopies(count + 1, activePoseReferenceUrls.length))}
-                        className="inline-flex items-center justify-center text-slate-500 transition hover:bg-white hover:text-blue-700"
+                        className="inline-flex items-center justify-center text-slate-500 transition hover:bg-white hover:text-zinc-900"
                         aria-label="增加每张参考图生成数量"
                       >
                         <Plus className="h-3.5 w-3.5" />
@@ -1835,7 +1835,7 @@ export default function PosePage() {
               onClick={toggleGarmentDetails}
               className={`flex w-full items-center justify-between rounded-2xl border p-3 text-left transition-all ${
                 garmentAngleEnabled
-                  ? "border-blue-300 bg-blue-50/80 text-blue-800"
+                  ? "border-zinc-300 bg-zinc-100 text-zinc-900"
                   : shouldSuggestBackReference
                     ? "border-amber-200 bg-amber-50/70 text-amber-900 hover:border-amber-300"
                     : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300"
@@ -1862,7 +1862,7 @@ export default function PosePage() {
                 title={(
                   <span className="flex items-center gap-2">
                     上传服装背面、侧面或平铺图
-                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-600">
+                    <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold text-zinc-700">
                       {activeGarmentAngleReferences.length}/{MAX_GARMENT_ANGLE_IMAGES}
                     </span>
                   </span>
@@ -1872,20 +1872,20 @@ export default function PosePage() {
                 multiple
                 isDragging={isDraggingGarmentDetails}
                 setDragging={setIsDraggingGarmentDetails}
-                className="rounded-2xl border border-blue-100 bg-blue-50/35 p-3"
+                className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3"
               >
                 {(openFileDialog) => (
                   <div className="space-y-3">
-                    <div className="rounded-xl border border-blue-100 bg-white/92 p-2.5">
+                    <div className="rounded-xl border border-zinc-200 bg-white/92 p-2.5">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="text-[11px] font-bold text-blue-700">这张补充图属于</p>
+                          <p className="text-[11px] font-bold text-zinc-700">这张补充图属于</p>
                           <p className="mt-0.5 truncate text-sm font-black text-slate-900">{activeGarmentAngleMark}</p>
                           <p className="mt-0.5 truncate text-[11px] text-slate-500" title={activeGarmentAngleTargetOption.description}>
                             {activeGarmentAngleTargetOption.description}
                           </p>
                         </div>
-                        <span className="shrink-0 rounded-full bg-blue-50 px-2 py-1 text-[10px] font-bold text-blue-700">
+                        <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-1 text-[10px] font-bold text-zinc-700">
                           还可上传 {MAX_GARMENT_ANGLE_IMAGES - activeGarmentAngleReferences.length} 张
                         </span>
                       </div>
@@ -1904,8 +1904,8 @@ export default function PosePage() {
                                   title={item.description}
                                   className={`rounded-full border px-2.5 py-1 text-[11px] font-bold transition ${
                                     selected
-                                      ? "border-blue-400 bg-blue-50 text-blue-700 shadow-sm"
-                                      : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700"
+                                      ? "border-zinc-900 bg-zinc-900 text-white shadow-sm"
+                                      : "border-slate-200 bg-white text-slate-600 hover:border-zinc-300 hover:text-zinc-900"
                                   }`}
                                 >
                                   {item.label}
@@ -1927,8 +1927,8 @@ export default function PosePage() {
                                   onClick={() => setGarmentAngleView(item.value)}
                                   className={`rounded-full border px-2.5 py-1 text-[11px] font-bold transition ${
                                     selected
-                                      ? "border-blue-400 bg-blue-50 text-blue-700 shadow-sm"
-                                      : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700"
+                                      ? "border-zinc-900 bg-zinc-900 text-white shadow-sm"
+                                      : "border-slate-200 bg-white text-slate-600 hover:border-zinc-300 hover:text-zinc-900"
                                   }`}
                                 >
                                   {item.label}
@@ -1944,12 +1944,12 @@ export default function PosePage() {
                       type="button"
                       onClick={openFileDialog}
                       disabled={isUploadingGarmentDetails || activeGarmentAngleReferences.length >= MAX_GARMENT_ANGLE_IMAGES}
-                      className={`flex w-full items-center gap-3 rounded-xl border border-dashed bg-white/85 p-3 text-left transition hover:border-blue-300 hover:bg-white disabled:cursor-not-allowed disabled:opacity-55 ${
-                        isDraggingGarmentDetails ? "border-blue-400 bg-blue-50" : "border-blue-200"
+                      className={`flex w-full items-center gap-3 rounded-xl border border-dashed bg-white/85 p-3 text-left transition hover:border-zinc-300 hover:bg-white disabled:cursor-not-allowed disabled:opacity-55 ${
+                        isDraggingGarmentDetails ? "border-zinc-900 bg-zinc-50" : "border-zinc-200"
                       }`}
                       aria-label={`上传${activeGarmentAngleMark}背/侧补充图`}
                     >
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700">
                         {isUploadingGarmentDetails ? <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin" /> : <Sparkles aria-hidden="true" className="h-5 w-5" />}
                       </span>
                       <span className="min-w-0 flex-1">
@@ -1960,7 +1960,7 @@ export default function PosePage() {
                           建议上传完整背面、侧面、平铺或悬挂图；不要上传纯局部纹理特写。
                         </span>
                       </span>
-                      <span className="shrink-0 rounded-full bg-blue-50 px-2 py-1 text-[10px] font-bold text-blue-700 shadow-sm">
+                      <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-1 text-[10px] font-bold text-zinc-700 shadow-sm">
                         最多 {MAX_GARMENT_ANGLE_IMAGES} 张
                       </span>
                     </button>
@@ -1971,15 +1971,15 @@ export default function PosePage() {
                           {activeGarmentAngleReferences.map((ref, index) => {
                             const label = formatGarmentAngleReferenceLabel(ref, index);
                             return (
-                              <div key={ref.url} className="group relative overflow-hidden rounded-lg border border-blue-200 bg-white shadow-sm">
+                              <div key={ref.url} className="group relative overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
                                 <button
                                   type="button"
                                   onClick={() => setLightboxSrc(ref.url)}
-                                  className="block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                                  className="block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/30 focus-visible:ring-offset-2"
                                   aria-label={`预览${label}`}
                                 >
                                   <RawPreviewImage src={ref.url} alt={label} className="aspect-[3/4] w-full object-cover" />
-                                  <span className="absolute bottom-1 left-1 max-w-[calc(100%-8px)] truncate rounded-full bg-white/90 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">
+                                  <span className="absolute bottom-1 left-1 max-w-[calc(100%-8px)] truncate rounded-full bg-white/90 px-1.5 py-0.5 text-[10px] font-bold text-zinc-900">
                                     {label}
                                   </span>
                                 </button>
@@ -1998,7 +1998,7 @@ export default function PosePage() {
                       </div>
                     )}
 
-                    <p className="rounded-lg bg-blue-50/70 px-2.5 py-2 text-[11px] leading-relaxed text-blue-800">
+                    <p className="rounded-lg bg-zinc-100 px-2.5 py-2 text-[11px] leading-relaxed text-zinc-900">
                       {GARMENT_ANGLE_UPLOAD_FOOTNOTE}
                     </p>
                   </div>
@@ -2030,7 +2030,7 @@ export default function PosePage() {
                 </p>
               </div>
               <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                activePoseAnglePreset ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-600"
+                activePoseAnglePreset ? "bg-zinc-100 text-zinc-900" : "bg-slate-100 text-slate-600"
               }`}>
                 {poseAnglePlanLabel} · {posePlanTargetCount} 张
               </span>
@@ -2047,21 +2047,21 @@ export default function PosePage() {
                     aria-pressed={selected}
                     className={`rounded-2xl border px-3 py-2 text-left transition ${
                       selected
-                        ? "border-blue-300 bg-blue-50/80 shadow-sm"
-                        : "border-slate-200 bg-white hover:border-blue-200 hover:bg-blue-50/30 hover:text-blue-700"
+                        ? "border-zinc-300 bg-zinc-100 shadow-sm"
+                        : "border-slate-200 bg-white hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900"
                     }`}
                   >
                     <span className="flex items-center justify-between gap-1.5">
-                      <span className={`min-w-0 truncate text-xs font-black ${selected ? "text-blue-800" : "text-slate-800"}`}>
+                      <span className={`min-w-0 truncate text-xs font-black ${selected ? "text-zinc-900" : "text-slate-800"}`}>
                         {preset.label}
                       </span>
                       <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-black ${
-                        selected ? "bg-white text-blue-700" : "bg-slate-100 text-slate-500"
+                        selected ? "bg-white text-zinc-900" : "bg-slate-100 text-slate-500"
                       }`}>
                         {preset.countLabel}
                       </span>
                     </span>
-                    <span className={`mt-0.5 block truncate text-[10px] font-semibold ${selected ? "text-blue-600" : "text-slate-500"}`}>
+                    <span className={`mt-0.5 block truncate text-[10px] font-semibold ${selected ? "text-zinc-700" : "text-slate-500"}`}>
                       {selected ? "当前方案" : preset.desc}
                     </span>
                   </button>
@@ -2101,7 +2101,7 @@ export default function PosePage() {
                           type="button"
                           onClick={() => updatePoseAngleCount(item.value, -1)}
                           disabled={count <= 0 || total <= POSE_PLAN_MIN_COUNT}
-                          className="inline-flex items-center justify-center text-slate-500 transition hover:bg-white hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-30"
+                          className="inline-flex items-center justify-center text-slate-500 transition hover:bg-white hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-30"
                           aria-label={`减少${item.label}姿势`}
                         >
                           <Minus aria-hidden="true" className="h-3.5 w-3.5" />
@@ -2113,7 +2113,7 @@ export default function PosePage() {
                           type="button"
                           onClick={() => updatePoseAngleCount(item.value, 1)}
                           disabled={total >= POSE_PLAN_MAX_COUNT}
-                          className="inline-flex items-center justify-center text-slate-500 transition hover:bg-white hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-30"
+                          className="inline-flex items-center justify-center text-slate-500 transition hover:bg-white hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-30"
                           aria-label={`增加${item.label}姿势`}
                         >
                           <Plus aria-hidden="true" className="h-3.5 w-3.5" />
@@ -2235,7 +2235,7 @@ export default function PosePage() {
                   <button
                     type="button"
                     onClick={() => setShowPosePlanEditor(false)}
-                    className="shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition-colors hover:border-blue-200 hover:text-blue-700"
+                    className="shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition-colors hover:border-zinc-300 hover:text-zinc-900"
                   >
                     收起编辑
                   </button>
@@ -2250,7 +2250,7 @@ export default function PosePage() {
                       onClick={usePresetPosePlan}
                       className={`rounded-full px-3.5 py-1.5 text-[11px] font-black transition ${
                         posePlanMode === "preset"
-                          ? "bg-white text-blue-700 shadow-[0_5px_14px_rgba(37,99,235,0.12)]"
+                          ? "bg-white text-zinc-900 shadow-[0_5px_14px_rgba(5,5,5,0.10)]"
                           : "text-slate-500 hover:text-slate-900"
                       }`}
                     >
@@ -2262,11 +2262,11 @@ export default function PosePage() {
                       disabled={isPlanningPose || !mainImage}
                       className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[11px] font-black transition disabled:cursor-not-allowed disabled:opacity-50 ${
                         posePlanMode === "ai"
-                          ? "bg-white text-blue-700 shadow-[0_5px_14px_rgba(37,99,235,0.12)]"
+                          ? "bg-white text-zinc-900 shadow-[0_5px_14px_rgba(5,5,5,0.10)]"
                           : "text-slate-500 hover:text-slate-900"
                       }`}
                     >
-                      {isPlanningPose ? <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" /> : null}
+                      {isPlanningPose ? <Loader2 className="h-3.5 w-3.5 animate-spin text-zinc-700" /> : null}
                       智能优化
                     </button>
                   </div>
@@ -2296,7 +2296,7 @@ export default function PosePage() {
                           <div className="flex items-start gap-3 px-3.5 py-3.5">
                             <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-black ${
                               editing
-                                ? "bg-blue-600 text-white shadow-[0_8px_16px_rgba(37,99,235,0.18)]"
+                                ? "bg-zinc-950 text-white shadow-[0_8px_16px_rgba(5,5,5,0.20)]"
                                 : "bg-slate-100 text-slate-500 ring-1 ring-slate-200/70 group-hover:bg-white group-hover:text-slate-700"
                             }`}>
                               {index + 1}
@@ -2332,8 +2332,8 @@ export default function PosePage() {
                               }}
                               className={`shrink-0 rounded-full border px-3 py-1 text-[11px] font-black transition ${
                                 editing
-                                  ? "border-blue-600 bg-blue-600 text-white shadow-[0_8px_16px_rgba(37,99,235,0.16)]"
-                                  : "border-slate-200 bg-white/90 text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                                  ? "border-zinc-950 bg-zinc-950 text-white shadow-[0_8px_16px_rgba(5,5,5,0.18)]"
+                                  : "border-slate-200 bg-white/90 text-slate-600 hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900"
                               }`}
                             >
                               {editing ? "收起" : "编辑"}
@@ -2341,7 +2341,7 @@ export default function PosePage() {
                           </div>
 
                           {editing ? (
-                            <div className="border-t border-blue-100/80 px-3.5 pb-3.5 pt-3">
+                            <div className="border-t border-zinc-200 px-3.5 pb-3.5 pt-3">
                               <div className="grid gap-3 sm:grid-cols-2">
                                 <label className="block">
                                   <span className="mb-1.5 block text-[11px] font-black text-slate-700">
@@ -2350,7 +2350,7 @@ export default function PosePage() {
                                   <select
                                     value={selectedActionPresetId}
                                     onChange={(event) => applyPoseActionPreset(selectedPosePlanSlotIndex, event.target.value)}
-                                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-950 shadow-sm outline-none transition hover:border-blue-200 focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-950 shadow-sm outline-none transition hover:border-zinc-300 focus:border-zinc-900 focus:ring-2 focus:ring-zinc-200"
                                   >
                                     <option value="current">{selectedActionPresetId === "current" ? `按计划：${selectedPosePlanSlot.poseName || "原计划"}` : "按计划"}</option>
                                     {selectedActionPresets.map((preset) => (
@@ -2365,7 +2365,7 @@ export default function PosePage() {
                                     value={selectedExpressionPresetId}
                                     onChange={(event) => applyPoseExpressionPreset(selectedPosePlanSlotIndex, event.target.value)}
                                     disabled={suppressPoseFaceControls || selectedExpressionPresets.length === 0}
-                                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-950 shadow-sm outline-none transition hover:border-blue-200 focus:border-blue-300 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-950 shadow-sm outline-none transition hover:border-zinc-300 focus:border-zinc-900 focus:ring-2 focus:ring-zinc-200 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
                                   >
                                     <option value="current">{suppressPoseFaceControls ? "主图无清晰脸部" : "按计划表情/视线"}</option>
                                     {selectedExpressionPresets.map((preset) => (
@@ -2393,7 +2393,7 @@ export default function PosePage() {
                               </div>
 
                               <details className="mt-3 rounded-xl border border-slate-200/90 bg-white px-3 py-2 shadow-sm">
-                                <summary className="cursor-pointer text-[11px] font-bold text-slate-500 transition-colors hover:text-blue-700">高级微调：动作、手部、镜头文字</summary>
+                                <summary className="cursor-pointer text-[11px] font-bold text-slate-500 transition-colors hover:text-zinc-900">高级微调：动作、手部、镜头文字</summary>
                                 <div className="mt-3 grid gap-3">
                                   <div>
                                     <label className="mb-1 block text-[10px] font-bold text-slate-500">动作细节</label>
@@ -2511,7 +2511,7 @@ export default function PosePage() {
         {(isGenerating || resultUrls.length > 0) && (
           <div className="studio-result-stage min-h-[260px] sm:min-h-[360px] overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:h-full flex flex-col animate-fade-in">
             {isGenerating && (
-              <div className="mb-4 rounded-xl border border-purple-100 bg-white/80 px-3 py-2 text-xs font-medium text-purple-600 shadow-sm">
+              <div className="mb-4 rounded-xl border border-zinc-200 bg-white/80 px-3 py-2 text-xs font-medium text-zinc-700 shadow-sm">
                 已生成 {resultUrls.length}{` / ${runningExpectedCount || poseExpectedCount}`}，剩余图片生成中...
               </div>
             )}
@@ -2574,11 +2574,11 @@ export default function PosePage() {
           >
             <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-violet-500">{POSE_UPLOAD_RULE.shortTitle}</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--codex-accent)]">{POSE_UPLOAD_RULE.shortTitle}</p>
                 <h3 className="mt-1 text-base font-bold text-slate-950">{POSE_UPLOAD_RULE.title}</h3>
                 <p className="mt-1 text-xs text-slate-500">{POSE_UPLOAD_RULE.uploadSpecText}</p>
               </div>
-              <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-medium text-violet-600">Hover 预览</span>
+              <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-700">Hover 预览</span>
             </div>
 
             <div className="studio-scrollbar-hide overflow-y-auto px-5 py-4" style={{ maxHeight: rulesPopoverStyle.maxHeight - 88 }}>
@@ -2593,7 +2593,7 @@ export default function PosePage() {
                     <button
                       type="button"
                       onClick={() => applyRuleDemo(demo)}
-                      className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:border-violet-200 hover:text-violet-600"
+                      className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:border-zinc-300 hover:text-zinc-900"
                     >
                       试一试
                     </button>

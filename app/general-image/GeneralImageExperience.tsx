@@ -694,7 +694,7 @@ export function GeneralImageExperience({ initialMode = "text-to-image" }: { init
               }}
               className="studio-general-reference-upload"
               actions={(
-                <span className="rounded-full bg-[rgba(91,124,255,0.1)] px-2 py-1 text-[10px] font-bold text-[var(--codex-accent)]">
+                <span className="rounded-full bg-zinc-100 px-2 py-1 text-[10px] font-bold text-zinc-900">
                   {referenceImages.length}/8
                 </span>
               )}
@@ -925,7 +925,7 @@ export function GeneralImageExperience({ initialMode = "text-to-image" }: { init
             onClick={() => setShowImagePromptModal(false)}
           >
             <div
-              className="w-full max-w-2xl overflow-hidden rounded-[22px] border border-[rgba(91,124,255,0.22)] bg-white shadow-[0_28px_90px_rgba(15,23,42,0.28)] ring-1 ring-[rgba(91,124,255,0.18)]"
+              className="w-full max-w-2xl overflow-hidden rounded-[22px] border border-zinc-200 bg-white shadow-[0_28px_90px_rgba(15,23,42,0.28)] ring-1 ring-zinc-200"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="flex items-start justify-between gap-4 px-5 py-4">
@@ -959,8 +959,8 @@ export function GeneralImageExperience({ initialMode = "text-to-image" }: { init
                   <button
                     type="button"
                     onClick={() => imagePromptInputRef.current?.click()}
-                    className={`group relative flex aspect-[3/4] w-full min-w-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 text-slate-400 transition hover:border-[rgba(91,124,255,0.3)] ${
-                      imagePromptImage ? "studio-checkerboard" : "bg-slate-50 hover:bg-[rgba(91,124,255,0.12)]"
+                    className={`group relative flex aspect-[3/4] w-full min-w-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 text-slate-400 transition hover:border-zinc-300 ${
+                      imagePromptImage ? "studio-checkerboard" : "bg-slate-50 hover:bg-zinc-100"
                     }`}
                   >
                     {imagePromptImage ? (
@@ -981,7 +981,7 @@ export function GeneralImageExperience({ initialMode = "text-to-image" }: { init
                     type="button"
                     onClick={() => generateImagePrompt()}
                     disabled={!imagePromptImage || isImagePromptUploading || isImagePromptGenerating}
-                    className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-600 transition hover:border-[rgba(91,124,255,0.3)] hover:text-[var(--codex-accent)] disabled:cursor-not-allowed disabled:opacity-45"
+                    className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-600 transition hover:border-zinc-300 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-45"
                   >
                     {isImagePromptGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
                     重新生成
@@ -993,7 +993,7 @@ export function GeneralImageExperience({ initialMode = "text-to-image" }: { init
                   onChange={(event) => setImagePromptText(event.target.value.slice(0, 4000))}
                   placeholder="上传图片后，系统会在这里生成可用于文生图的内容描述。"
                   aria-label="图片反推提示词"
-                  className="min-h-[260px] w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm leading-6 text-slate-800 outline-none transition placeholder:text-slate-300 focus:border-[rgba(91,124,255,0.5)] focus:ring-2 focus:ring-[rgba(91,124,255,0.14)] sm:min-h-0"
+                  className="min-h-[260px] w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm leading-6 text-slate-800 outline-none transition placeholder:text-slate-300 focus:border-zinc-900 focus:ring-2 focus:ring-zinc-200 sm:min-h-0"
                 />
               </div>
 

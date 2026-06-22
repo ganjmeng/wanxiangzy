@@ -239,7 +239,7 @@ export default function ApiPlatformTestPage() {
                 <input
                   value={apiUrl}
                   onChange={(e) => setApiUrl(e.target.value)}
-                  className="w-full rounded-lg border px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[rgba(91,124,255,0.14)]"
+                  className="w-full rounded-lg border px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-zinc-900/15"
                   placeholder="https://yunwu.ai"
                 />
               </label>
@@ -252,12 +252,12 @@ export default function ApiPlatformTestPage() {
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
                   type="password"
-                  className="w-full rounded-lg border px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[rgba(91,124,255,0.14)]"
+                  className="w-full rounded-lg border px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-zinc-900/15"
                   placeholder="sk-..."
                 />
               </label>
 
-              <div className="rounded-lg border border-[rgba(91,124,255,0.22)] bg-[rgba(91,124,255,0.1)] px-3 py-2 text-xs text-[var(--codex-accent)]">
+              <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-[var(--codex-accent)]">
                 调用模式：GPT-Image-2 + 参考图走 Edits /v1/images/edits；其他走 Generations
               </div>
 
@@ -266,7 +266,7 @@ export default function ApiPlatformTestPage() {
                 <select
                   value={model}
                   onChange={(e) => setModel(e.target.value)}
-                  className="w-full rounded-lg border px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[rgba(91,124,255,0.14)]"
+                  className="w-full rounded-lg border px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-zinc-900/15"
                 >
                   {MODEL_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                 </select>
@@ -277,7 +277,7 @@ export default function ApiPlatformTestPage() {
                 <input
                   value={customModel}
                   onChange={(e) => setCustomModel(e.target.value)}
-                  className="w-full rounded-lg border px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[rgba(91,124,255,0.14)]"
+                  className="w-full rounded-lg border px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-zinc-900/15"
                   placeholder="留空则使用上方选择"
                 />
               </label>
@@ -288,7 +288,7 @@ export default function ApiPlatformTestPage() {
                   <select
                     value={aspectRatio}
                     onChange={(e) => setAspectRatio(e.target.value)}
-                    className="w-full rounded-lg border px-2 py-2 text-xs outline-none focus:ring-2 focus:ring-[rgba(91,124,255,0.14)]"
+                    className="w-full rounded-lg border px-2 py-2 text-xs outline-none focus:ring-2 focus:ring-zinc-900/15"
                   >
                     {ASPECT_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                   </select>
@@ -298,7 +298,7 @@ export default function ApiPlatformTestPage() {
                   <select
                     value={imageSize}
                     onChange={(e) => setImageSize(e.target.value as ImageSize)}
-                    className="w-full rounded-lg border px-2 py-2 text-xs outline-none focus:ring-2 focus:ring-[rgba(91,124,255,0.14)]"
+                    className="w-full rounded-lg border px-2 py-2 text-xs outline-none focus:ring-2 focus:ring-zinc-900/15"
                   >
                     {IMAGE_SIZE_OPTIONS.map((item) => <option key={item}>{item}</option>)}
                   </select>
@@ -308,7 +308,7 @@ export default function ApiPlatformTestPage() {
                   <select
                     value={quality}
                     onChange={(e) => setQuality(e.target.value as ImageQuality)}
-                    className="w-full rounded-lg border px-2 py-2 text-xs outline-none focus:ring-2 focus:ring-[rgba(91,124,255,0.14)]"
+                    className="w-full rounded-lg border px-2 py-2 text-xs outline-none focus:ring-2 focus:ring-zinc-900/15"
                   >
                     {QUALITY_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                   </select>
@@ -320,13 +320,13 @@ export default function ApiPlatformTestPage() {
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  className="h-28 w-full resize-y rounded-lg border px-3 py-2 text-xs leading-relaxed outline-none focus:ring-2 focus:ring-[rgba(91,124,255,0.14)]"
+                  className="h-28 w-full resize-y rounded-lg border px-3 py-2 text-xs leading-relaxed outline-none focus:ring-2 focus:ring-zinc-900/15"
                 />
               </label>
 
               <div>
                 <span className="mb-1.5 block text-xs font-bold text-gray-700">参考图（可多选，最多 6 张）</span>
-                <label className="flex h-28 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 text-xs text-gray-500 hover:border-[rgba(91,124,255,0.3)]">
+                <label className="flex h-28 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 text-xs text-gray-500 hover:border-zinc-400">
                   <ImagePlus className="mb-2 h-6 w-6 text-gray-300" />
                   点击选择参考图
                   <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleImages(e.target.files)} />

@@ -174,7 +174,7 @@ function BreakdownCard({ title, rows }: { title: string; rows: AdminBreakdownIte
   const columns = useMemo<ColumnsType<AdminBreakdownItem>>(() => [
     { title: "名称", dataIndex: "label", render: (value: string) => <span className="block truncate">{value}</span> },
     { title: "数量", dataIndex: "count", render: (value) => <span className="tabular-nums">{formatNumber(value)}</span> },
-    { title: "运行", dataIndex: "running", render: (value) => <Tag color="blue">{formatNumber(value)}</Tag> },
+    { title: "运行", dataIndex: "running", render: (value) => <Tag color="default">{formatNumber(value)}</Tag> },
     { title: "失败", dataIndex: "failed", render: (value) => <Tag color={value ? "red" : "default"}>{formatNumber(value)}</Tag> },
     { title: "灵点", dataIndex: "credits", render: (value) => <span className="tabular-nums">{formatNumber(value)}</span> },
   ], []);

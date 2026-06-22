@@ -54,7 +54,7 @@ export function TryOnSourceLibraryDialog({
                 type="button"
                 onClick={onRefresh}
                 disabled={isLoading}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-[rgba(91,124,255,0.3)] hover:text-[var(--codex-accent)] disabled:opacity-50"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-zinc-300 hover:text-zinc-900 disabled:opacity-50"
                 aria-label="刷新作品库"
                 title="刷新作品库"
               >
@@ -63,7 +63,7 @@ export function TryOnSourceLibraryDialog({
               <button
                 type="button"
                 onClick={onClose}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-[rgba(91,124,255,0.3)] hover:text-[var(--codex-accent)]"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-zinc-300 hover:text-zinc-900"
                 aria-label="关闭作品库"
                 title="关闭作品库"
               >
@@ -102,7 +102,7 @@ export function TryOnSourceLibraryDialog({
                     key={item.id}
                     type="button"
                     onClick={() => onSelect(item)}
-                    className="group overflow-hidden rounded-2xl border border-slate-100 bg-white text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-[rgba(91,124,255,0.3)] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,124,255,0.22)]0 focus-visible:ring-offset-2"
+                    className="group overflow-hidden rounded-2xl border border-slate-100 bg-white text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-200 focus-visible:ring-offset-2"
                     aria-label={`选择作品库图片：${item.label}`}
                   >
                     <div className="studio-checkerboard aspect-[4/5] overflow-hidden">

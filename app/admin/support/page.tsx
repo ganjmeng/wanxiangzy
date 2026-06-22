@@ -190,7 +190,7 @@ function PriorityBadge({ priority }: { priority: AdminSupportTicket["priority"] 
       ? "border-amber-200 bg-amber-50 text-amber-700"
       : priority === "low"
         ? "border-slate-200 bg-slate-50 text-slate-500"
-        : "border-blue-200 bg-blue-50 text-blue-700";
+        : "border-zinc-200 bg-zinc-50 text-zinc-700";
   return <span className={`inline-flex h-6 items-center rounded-md border px-2 text-[11px] font-black ${className}`}>{priority}</span>;
 }
 

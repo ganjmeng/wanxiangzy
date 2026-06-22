@@ -38,6 +38,7 @@ import {
   WalletCards,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { codexTheme } from "@/lib/design/codex-theme";
 
 const { RangePicker } = DatePicker;
 const { Text, Title } = Typography;
@@ -422,7 +423,7 @@ export function AccountCenterClient() {
       theme={{
         algorithm: uiTheme.compactAlgorithm,
         token: {
-          colorPrimary: "#5b7cff",
+          colorPrimary: codexTheme.colors.accent,
           colorInfo: "#1677ff",
           colorSuccess: "#0f8a5f",
           colorWarning: "#b56a00",
@@ -563,9 +564,9 @@ function AccountSidebar({ activeTab, onSelect }: { activeTab: AccountTab; onSele
                 aria-current={expanded && single ? "page" : undefined}
                 aria-expanded={group.children.length > 1 ? expanded : undefined}
               >
-                <Icon className={cn("h-4 w-4", expanded ? "text-[#5b7cff]" : "text-slate-500")} />
+                <Icon className={cn("h-4 w-4", expanded ? "text-[var(--codex-accent)]" : "text-slate-500")} />
                 <span className="flex-1">{group.label}</span>
-                {group.children.length > 1 ? <ChevronDown className={cn("h-4 w-4 text-slate-500 transition", expanded && "rotate-180 text-[#5b7cff]")} /> : null}
+                {group.children.length > 1 ? <ChevronDown className={cn("h-4 w-4 text-slate-500 transition", expanded && "rotate-180 text-[var(--codex-accent)]")} /> : null}
               </button>
               {group.children.length > 1 && expanded ? (
                 <div className="mt-2 space-y-1 pl-7">
@@ -577,12 +578,12 @@ function AccountSidebar({ activeTab, onSelect }: { activeTab: AccountTab; onSele
                       className={cn(
                         "relative flex h-8 w-full items-center rounded-md px-4 text-left text-sm transition-colors",
                         activeTab === item.key
-                          ? "bg-[#e9eeff] font-medium text-[#3154d4]"
+                          ? "bg-zinc-100 font-medium text-zinc-900"
                           : "text-slate-500 hover:bg-white/70 hover:text-slate-900",
                       )}
                       aria-current={activeTab === item.key ? "page" : undefined}
                     >
-                      {activeTab === item.key ? <span className="absolute left-2 h-3.5 w-0.5 rounded-full bg-[#5b7cff]" /> : null}
+                      {activeTab === item.key ? <span className="absolute left-2 h-3.5 w-0.5 rounded-full bg-[var(--codex-accent)]" /> : null}
                       {item.label}
                     </button>
                   ))}
@@ -626,7 +627,7 @@ function AccountInfoPanel({
       <AccountAssetCard displayName={displayName} maskedAccount={maskedAccount} credits={credits} />
       <div className="my-8 border-t border-slate-900" />
       <section>
-        <h2 className="mb-6 border-l-4 border-[#5b7cff] pl-3 text-lg font-semibold text-slate-950">账号信息</h2>
+        <h2 className="mb-6 border-l-4 border-[var(--codex-accent)] pl-3 text-lg font-semibold text-slate-950">账号信息</h2>
         <div className="divide-y divide-slate-200">
           <InfoLine label="用户ID" value={shortUserId(userId, 12)} />
           <InfoLine label="用户名" value={displayName} hint="用户名半年内仅支持修改一次 请谨慎修改哦" action="用户名修改" />
@@ -937,7 +938,7 @@ function MessagesPanel({ orders, tickets, ticketError }: { orders: BillingOrder[
         <div className="divide-y divide-slate-100">
           {messages.map((message) => (
             <div key={message.id} className="flex items-start gap-3 py-4">
-              <span className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-[#f3f6ff] text-[#5b7cff]">
+              <span className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-zinc-100 text-[var(--codex-accent)]">
                 <Bell className="h-4 w-4" />
               </span>
               <div>
