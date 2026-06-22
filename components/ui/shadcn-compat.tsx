@@ -549,7 +549,7 @@ function SelectOptionButton({
       onClick={() => onSelect(option)}
       className={cn(
         "relative flex min-h-8 w-full items-center rounded-sm px-3 py-1.5 pr-8 text-left text-sm outline-none transition-colors disabled:pointer-events-none disabled:opacity-50",
-        selected ? "bg-[#5b6fff] text-white" : "text-slate-900 hover:bg-slate-50 focus:bg-slate-50"
+        selected ? "bg-zinc-900 text-white" : "text-slate-900 hover:bg-slate-50 focus:bg-slate-50"
       )}
     >
       <span className="min-w-0 flex-1 truncate">{optionRender ? optionRender({ data: option }) : option.label}</span>
@@ -763,7 +763,7 @@ export function Modal({ title, open, onCancel, onOk, okText = "确认", confirmL
 
 export function Alert({ type = "info", message, description, className }: { type?: "success" | "info" | "warning" | "error"; showIcon?: boolean; message?: ReactNode; description?: ReactNode; className?: string }) {
   return (
-    <div className={cn("rounded-md border px-4 py-3 text-sm", type === "error" && "border-red-200 bg-red-50 text-red-800", type === "warning" && "border-amber-200 bg-amber-50 text-amber-900", type === "success" && "border-emerald-200 bg-emerald-50 text-emerald-800", type === "info" && "border-blue-200 bg-blue-50 text-blue-900", className)}>
+    <div className={cn("rounded-md border px-4 py-3 text-sm", type === "error" && "border-red-200 bg-red-50 text-red-800", type === "warning" && "border-amber-200 bg-amber-50 text-amber-900", type === "success" && "border-emerald-200 bg-emerald-50 text-emerald-800", type === "info" && "border-zinc-200 bg-zinc-50 text-zinc-900", className)}>
       {message ? <div className="font-semibold">{message}</div> : null}
       {description ? <div className="mt-1 text-sm opacity-85">{description}</div> : null}
     </div>
@@ -778,7 +778,7 @@ export function Tag({ color, className, children }: { color?: string; className?
       : color === "orange" || color === "gold"
         ? "border-amber-200 bg-amber-50 text-amber-700"
         : color === "blue"
-          ? "border-blue-200 bg-blue-50 text-blue-700"
+          ? "border-zinc-200 bg-zinc-100 text-zinc-800"
           : "border-slate-200 bg-slate-50 text-slate-700";
   return <span className={cn("inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium", tone, className)}>{children}</span>;
 }
@@ -1152,7 +1152,7 @@ export function Menu({ items, selectedKeys }: { mode?: string; selectedKeys?: st
           <div className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">{group.label}</div>
           <div className="space-y-1">
             {(group.children || []).map((item: any) => (
-              <div key={item.key} className={cn("flex items-center gap-2 rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-100", selectedKeys?.includes(item.key) && "bg-blue-50 text-blue-700")}>
+              <div key={item.key} className={cn("flex items-center gap-2 rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-100", selectedKeys?.includes(item.key) && "bg-zinc-100 text-zinc-900")}>
                 <span>{item.icon}</span>
                 {item.label}
               </div>

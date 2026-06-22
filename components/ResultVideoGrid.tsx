@@ -115,7 +115,7 @@ function VideoResultCard({
         <div className="gen-card studio-result-pending-card flex h-full w-full flex-col items-center justify-center gap-2">
           <StudioHomeHeroLoadingBackdrop />
           <div className="relative z-[1] flex h-14 w-14 items-center justify-center">
-            <div className="gen-ring absolute inset-0 rounded-full bg-[#aeb8ff]/45" />
+            <div className="gen-ring absolute inset-0 rounded-full bg-zinc-300/40" />
             <div className="relative flex h-14 w-14 items-center justify-center rounded-full border border-white/16 bg-white/10 shadow-lg backdrop-blur-md">
               {running ? <Loader2 className="h-6 w-6 animate-spin text-white motion-reduce:animate-none" aria-hidden="true" /> : <XCircle className="h-6 w-6 text-white/70" aria-hidden="true" />}
             </div>
@@ -164,7 +164,7 @@ function VideoResultCard({
           event.stopPropagation();
           downloadMedia(url, generateDownloadFilename(filenamePrefix, index, "mp4"));
         }}
-        className="absolute right-3 top-3 z-[3] flex h-9 w-9 items-center justify-center rounded-full bg-white/92 text-slate-700 opacity-100 shadow-lg ring-1 ring-slate-200/70 backdrop-blur transition-[background-color,color,opacity] hover:bg-white hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+        className="absolute right-3 top-3 z-[3] flex h-9 w-9 items-center justify-center rounded-full bg-white/92 text-slate-700 opacity-100 shadow-lg ring-1 ring-slate-200/70 backdrop-blur transition-[background-color,color,opacity] hover:bg-white hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/40 focus-visible:ring-offset-2 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
         aria-label={`下载生成视频 ${index + 1}`}
         title={`下载生成视频 ${index + 1}`}
       >

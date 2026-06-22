@@ -99,8 +99,8 @@
     height: 3px;
     width: 44%;
     border-radius: 999px;
-    background: linear-gradient(90deg, rgba(22, 119, 255, 0), #1677ff 22%, #69b1ff 78%, rgba(22, 119, 255, 0));
-    box-shadow: 0 0 18px rgba(22, 119, 255, 0.32);
+    background: linear-gradient(90deg, rgba(5, 5, 5, 0), #06101d 22%, #4b5263 78%, rgba(5, 5, 5, 0));
+    box-shadow: 0 0 18px rgba(5, 5, 5, 0.18);
     animation: admin-route-loading-slide 1.05s ease-in-out infinite;
   }
 
@@ -228,8 +228,8 @@
     align-items: center;
     justify-content: center;
     border-radius: 8px;
-    background: #eff6ff;
-    color: #1677ff;
+    background: #f4f4f4;
+    color: #06101d;
     font-size: 16px;
   }
 

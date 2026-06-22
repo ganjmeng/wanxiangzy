@@ -43,7 +43,7 @@ export function FeatureTabs({ active }: { active: FeatureKey }) {
               aria-current={isActive ? "page" : undefined}
               className={`studio-nav-item group flex h-14 min-w-[92px] flex-col items-center justify-center gap-1 rounded-2xl px-2 text-[10px] font-black transition-[background-color,color,box-shadow,border-color] duration-150 lg:h-[72px] lg:min-w-0 ${
                 isActive
-                  ? "studio-nav-item-active bg-white/80 text-[var(--codex-accent)] shadow-sm ring-1 ring-[rgba(91,124,255,0.22)]"
+                  ? "studio-nav-item-active bg-white/80 text-[var(--codex-accent)] shadow-sm ring-1 ring-zinc-200"
                   : "text-codex-muted hover:bg-white/70 hover:text-codex-ink"
               }`}
               title={item.description}

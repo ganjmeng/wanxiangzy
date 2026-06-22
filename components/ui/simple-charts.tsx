@@ -14,7 +14,7 @@ type ChartProps = {
   className?: string;
 };
 
-const colors = ["#5b7cff", "#16a34a", "#d97706", "#dc2626", "#0891b2", "#7c3aed", "#0f172a", "#f97316"];
+const colors = ["#0f172a", "#16a34a", "#d97706", "#dc2626", "#0891b2", "#7c3aed", "#475569", "#f97316"];
 
 function numberValue(value: unknown) {
   const next = Number(value);

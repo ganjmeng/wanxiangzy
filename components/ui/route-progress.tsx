@@ -88,8 +88,8 @@ export function RouteProgress() {
           )}
           style={{
             width: `${progress}%`,
-            background: "linear-gradient(90deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%)",
-            boxShadow: "0 0 8px rgba(99, 102, 241, 0.4)",
+            background: "linear-gradient(90deg, #06101d 0%, #4b5263 50%, #06101d 100%)",
+            boxShadow: "none",
           }}
         />
       </div>

@@ -286,7 +286,7 @@ const ResultCard = memo(function ResultCard({
   return (
     <TooltipProvider>
       <div
-        className={`studio-result-card group relative min-w-0 overflow-hidden bg-white transition-transform duration-200 hover:-translate-y-0.5 focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 ${isSingle ? "mx-auto max-w-full" : ""}`}
+        className={`studio-result-card group relative min-w-0 overflow-hidden bg-white transition-transform duration-200 hover:-translate-y-0.5 focus-within:outline-none focus-within:ring-2 focus-within:ring-zinc-950/40 focus-within:ring-offset-2 ${isSingle ? "mx-auto max-w-full" : ""}`}
       >
         {url ? (
           <button
@@ -457,7 +457,7 @@ function PendingResultSlot({
     <div className={`gen-card studio-result-pending-card flex h-full w-full flex-col items-center justify-center gap-2 ${failed ? "studio-result-pending-card-failed" : ""} ${calmMotion ? "studio-result-pending-card-calm" : ""}`}>
       {!failed && !calmMotion && <StudioHomeHeroLoadingBackdrop />}
       <div className="relative z-[1] flex h-14 w-14 items-center justify-center">
-        <div className="gen-ring absolute inset-0 rounded-full bg-[#aeb8ff]/45" />
+        <div className="gen-ring absolute inset-0 rounded-full bg-zinc-300/40" />
         <div className="relative flex h-14 w-14 items-center justify-center rounded-full border border-white/16 bg-white/10 shadow-lg backdrop-blur-md">
           {failed ? <XCircle className="h-6 w-6 text-red-200" aria-hidden="true" /> : <Loader2 className="h-6 w-6 animate-spin text-white motion-reduce:animate-none" aria-hidden="true" />}
         </div>

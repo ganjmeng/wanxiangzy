@@ -21,7 +21,7 @@ export function StyleChoiceGrid<T extends string>({ options, value, onChange }: 
     <div className="grid grid-cols-2 gap-2.5">
       {options.map((style) => {
         const selected = value === style.value;
-        const swatches = style.swatches?.length ? style.swatches : ["#f8fafc", "#e2e8f0", "#a78bfa"];
+        const swatches = style.swatches?.length ? style.swatches : ["#f8fafc", "#e2e8f0", "#f4f4f4"];
         const moodBackground = `linear-gradient(135deg, ${swatches[0]} 0%, ${swatches[1] || swatches[0]} 48%, ${swatches[2] || swatches[1] || swatches[0]} 100%)`;
 
         return (
@@ -32,12 +32,12 @@ export function StyleChoiceGrid<T extends string>({ options, value, onChange }: 
             aria-pressed={selected}
             className={`group relative min-h-[92px] overflow-hidden rounded-[18px] border p-2.5 text-left transition-[background-color,border-color,box-shadow] duration-150 ${
               selected
-                ? "border-[rgba(91,124,255,0.22)] bg-white shadow-[0_18px_42px_rgba(124,58,237,0.14)] ring-1 ring-[rgba(91,124,255,0.18)]"
-                : "border-slate-200/80 bg-white/78 hover:border-[rgba(91,124,255,0.3)] hover:bg-white hover:shadow-[0_14px_32px_rgba(15,23,42,0.06)]"
+                ? "border-zinc-300 bg-white shadow-[0_18px_42px_rgba(5,5,5,0.08)] ring-1 ring-zinc-200"
+                : "border-slate-200/80 bg-white/78 hover:border-zinc-300 hover:bg-white hover:shadow-[0_14px_32px_rgba(15,23,42,0.06)]"
             }`}
           >
             {selected && (
-              <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(168,85,247,0.16),transparent_38%),linear-gradient(135deg,rgba(255,255,255,0.74),rgba(250,245,255,0.66))]" />
+              <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(5,5,5,0.04),transparent_38%),linear-gradient(135deg,rgba(255,255,255,0.74),rgba(250,245,255,0.66))]" />
             )}
             <div className="relative flex h-full items-stretch gap-2">
               {style.imageUrl ? (
@@ -78,7 +78,7 @@ export function StyleChoiceGrid<T extends string>({ options, value, onChange }: 
                 <span className="mt-1 line-clamp-3 text-[10px] leading-snug text-slate-500">{style.desc}</span>
               </span>
               {selected && (
-                <span className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[rgba(91,124,255,0.1)] text-white shadow-[0_8px_18px_rgba(124,58,237,0.28)]">
+                <span className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[rgba(5,5,5,0.08)] text-white shadow-[0_8px_18px_rgba(5,5,5,0.18)]">
                   <Check className="h-3 w-3" aria-hidden="true" />
                 </span>
               )}
