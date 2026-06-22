@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
+import { Check } from "lucide-react";
 import {
   Alert,
   Avatar,
@@ -658,9 +659,15 @@ function AccountAssetCard({ displayName, maskedAccount, credits }: { displayName
         <div className="relative min-h-[128px] overflow-hidden rounded-xl bg-gradient-to-r from-[#edf4f4] to-[#dfe7e6] px-7 py-6">
           <div className="pointer-events-none absolute right-16 top-[-20px] h-28 w-28 rounded-full bg-white/45 blur-xl" />
           <p className="text-lg font-semibold">免费版</p>
-          <div className="mt-16 flex flex-wrap gap-5 text-sm text-slate-600">
-            <span>✓ 注册赠送200灵点</span>
-            <span>✓ 仅体验版功能</span>
+          <div className="mt-16 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-600">
+            <span className="inline-flex items-center gap-1.5">
+              <Check className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
+              注册赠送200灵点
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Check className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
+              仅体验版功能
+            </span>
           </div>
           <Link href="/pricing" className="absolute bottom-6 right-8 rounded-md bg-[#4f5b60] px-8 py-2 text-sm font-semibold text-white">
             升级
