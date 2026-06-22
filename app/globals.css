@@ -211,26 +211,29 @@
 
 @layer base {
   :root {
+    /* ==========================================================================
+       Apple HIG foundation tokens — HSL shims for shadcn primitives
+       ========================================================================== */
     --background: 0 0% 100%;
-    --foreground: 0 0% 2%;
+    --foreground: 0 0% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 2%;
+    --card-foreground: 0 0% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 2%;
-    --primary: 220 14% 8%;
+    --popover-foreground: 0 0% 12%;
+    --primary: 211 100% 50%;            /* Apple systemBlue #007aff */
     --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 98%;
-    --secondary-foreground: 226 18% 18%;
-    --muted: 240 5% 96%;
-    --muted-foreground: 224 13% 34%;
-    --accent: 220 14% 8%;
+    --secondary: 0 0% 96%;              /* Apple secondarySystemBackground #f5f5f7 */
+    --secondary-foreground: 0 0% 12%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 44%;      /* Apple secondaryLabel #707075 */
+    --accent: 211 100% 50%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 2 64% 51%;
+    --destructive: 1 100% 59%;         /* Apple systemRed #ff3b30 */
     --destructive-foreground: 0 0% 100%;
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
-    --ring: 220 14% 8%;
-    --radius: 1rem;
+    --border: 0 0% 90%;                 /* Apple separatorLight */
+    --input: 0 0% 90%;
+    --ring: 211 100% 50%;              /* Apple focus ring systemBlue */
+    --radius: 1rem;                    /* 16px — user spec "统一 rounded-2xl" */
     --radius-sm: calc(var(--radius) - 4px);
     --radius-md: calc(var(--radius) - 2px);
     --radius-lg: var(--radius);
@@ -238,30 +241,58 @@
     --spacing: 0.25rem;
     --font-heading: var(--font-sans);
 
-    --codex-ink: #050505;
-    --codex-muted: #4b5263;
-    --codex-faint: #7b8498;
+    /* ==========================================================================
+       Apple HIG semantic color tokens
+       ========================================================================== */
+    --codex-ink: #1d1d1f;               /* Apple label */
+    --codex-muted: #6e6e73;             /* Apple secondaryLabel */
+    --codex-faint: #86868b;             /* Apple tertiaryLabel */
     --codex-surface: #ffffff;
     --codex-surface-soft: rgba(255, 255, 255, 0.78);
     --codex-surface-strong: rgba(255, 255, 255, 0.92);
-    --codex-border: rgba(17, 24, 39, 0.12);
-    --codex-border-strong: rgba(17, 24, 39, 0.2);
-    --codex-accent: #5b7cff;
-    --codex-accent-soft: rgba(91, 124, 255, 0.10);
-    --codex-ice: rgba(5, 5, 5, 0.04);
-    --codex-dark: #07080d;
-    --codex-success: #22885f;
-    --codex-warning: #a66a00;
-    --codex-danger: #d13b35;
-    --codex-running: #5b7cff;
-    --font-ui-sans: Inter;
+    --codex-border: rgba(0, 0, 0, 0.08);                       /* Apple hairline separator */
+    --codex-border-strong: rgba(0, 0, 0, 0.14);
+    --codex-accent: #007aff;             /* Apple systemBlue (light) */
+    --codex-accent-soft: rgba(0, 122, 255, 0.10);
+    --codex-accent-hover: #006fe6;       /* Apple systemBlue pressed */
+    --codex-ice: rgba(0, 0, 0, 0.04);
+
+    /* Liquid Glass (macOS Sonoma+) */
+    --codex-glass: rgba(255, 255, 255, 0.6);
+    --codex-glass-strong: rgba(255, 255, 255, 0.8);
+    --codex-glass-soft: rgba(255, 255, 255, 0.45);
+    --codex-glass-border: rgba(255, 255, 255, 0.5);
+    --codex-glass-fill: rgba(120, 120, 128, 0.12);   /* Apple tertiarySystemFill */
+    --codex-glass-fill-strong: rgba(120, 120, 128, 0.20);
+
+    --codex-dark: #1d1d1f;
+    --codex-success: #00873a;            /* Apple systemGreen */
+    --codex-warning: #ff9500;            /* Apple systemOrange */
+    --codex-danger: #ff3b30;             /* Apple systemRed */
+    --codex-running: #007aff;            /* task progress = systemBlue */
+
+    /* Apple system colors (direct) */
+    --system-blue: #007aff;
+    --system-blue-dark: #0a84ff;
+    --system-green: #34c759;
+    --system-orange: #ff9500;
+    --system-red: #ff3b30;
+    --system-gray: #8e8e93;
+    --system-gray-2: #aeaeb2;
+    --system-gray-3: #c7c7cc;
+    --system-gray-4: #d1d1d6;
+    --system-gray-5: #e5e5ea;
+    --system-gray-6: #f2f2f7;
+
+    --font-ui-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, ui-sans-serif;
     --codex-font:
       var(--font-ui-sans),
-      Inter,
-      ui-sans-serif,
       -apple-system,
       BlinkMacSystemFont,
-      "Segoe UI",
+      "SF Pro Display",
+      "SF Pro Text",
+      Inter,
+      ui-sans-serif,
       "PingFang SC",
       "Hiragino Sans GB",
       "Microsoft YaHei",
@@ -269,24 +300,34 @@
       "Noto Sans CJK SC",
       sans-serif;
     --codex-mono: "SF Mono", "Cascadia Code", "JetBrains Mono", ui-monospace, monospace;
-    --codex-shadow-sm: 0 1px 2px rgba(5, 5, 5, 0.08);
-    --codex-shadow-md: 0 18px 50px rgba(14, 18, 38, 0.14);
-    --codex-shadow-lg: 0 40px 120px rgba(7, 8, 13, 0.34);
-    --codex-gradient-page:
-      linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
-    --codex-gradient-hero:
-      radial-gradient(circle at 50% 0%, rgba(5, 5, 5, 0.04), transparent 38%),
-      linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
-    --codex-gradient-primary:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.13), transparent 38%),
-      linear-gradient(180deg, #111318 0%, #050505 100%);
-    --codex-gradient-loader:
-      linear-gradient(90deg, #06101d 0%, #4b5263 50%, #06101d 100%);
 
-    /* Legacy aliases kept while pages migrate. */
+    /* Apple-style elevation (softer, larger radius, less opacity) */
+    --codex-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --codex-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+    --codex-shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.12);
+    --codex-shadow-apple: 0 0.5px 0 rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --codex-shadow-apple-lg: 0 0.5px 0 rgba(0, 0, 0, 0.04), 0 12px 28px rgba(0, 0, 0, 0.10);
+
+    /* Page background — pure white, no gradient */
+    --codex-gradient-page: #ffffff;
+    --codex-gradient-hero:
+      radial-gradient(ellipse at 50% 0%, rgba(0, 122, 255, 0.05), transparent 50%),
+      radial-gradient(ellipse at 80% 10%, rgba(175, 82, 222, 0.04), transparent 50%),
+      #ffffff;
+    --codex-gradient-primary:
+      linear-gradient(180deg, #4ca0ff 0%, #007aff 100%);
+    --codex-gradient-loader:
+      linear-gradient(90deg, rgba(0, 122, 255, 0.0) 0%, rgba(0, 122, 255, 0.5) 50%, rgba(0, 122, 255, 0.0) 100%);
+
+    /* Apple ease curves */
+    --ease-apple: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-apple-spring: cubic-bezier(0.5, 1.5, 0.5, 1);
+    --duration-apple: 240ms;
+
+    /* Legacy aliases — kept mapped to Apple tokens so existing components auto-upgrade */
     --studio-bg: #ffffff;
-    --studio-panel: var(--codex-surface-soft);
-    --studio-panel-strong: var(--codex-surface-strong);
+    --studio-panel: var(--codex-glass);
+    --studio-panel-strong: var(--codex-glass-strong);
     --studio-border: var(--codex-border);
     --studio-muted: var(--codex-muted);
     --studio-ink: var(--codex-ink);
@@ -294,17 +335,17 @@
     --studio-accent-2: var(--codex-accent-soft);
     --studio-shadow: var(--codex-shadow-md);
     --mac-bg: #ffffff;
-    --mac-bg-soft: #fafafa;
-    --mac-glass: var(--codex-surface-soft);
-    --mac-glass-strong: var(--codex-surface-strong);
-    --mac-glass-toolbar: rgba(255, 255, 255, 0.86);
+    --mac-bg-soft: #f5f5f7;
+    --mac-glass: var(--codex-glass);
+    --mac-glass-strong: var(--codex-glass-strong);
+    --mac-glass-toolbar: var(--codex-glass-strong);
     --mac-border: var(--codex-border);
     --mac-border-strong: var(--codex-border-strong);
     --mac-ink: var(--codex-ink);
     --mac-muted: var(--codex-muted);
     --mac-faint: var(--codex-faint);
     --mac-accent: var(--codex-accent);
-    --mac-accent-soft: rgba(5, 5, 5, 0.06);
+    --mac-accent-soft: var(--codex-accent-soft);
     --mac-sage: var(--codex-success);
     --mac-brass: var(--codex-warning);
     --mac-success: var(--codex-success);
@@ -323,19 +364,19 @@
     --studio-top-content-gap: 6px;
     --studio-task-rail-width: 92px;
     --studio-nav-rail-width: 112px;
-    --chart-1: 220 14% 8%;
-    --chart-2: 185 58% 48%;
-    --chart-3: 38 92% 55%;
-    --chart-4: 2 64% 51%;
+    --chart-1: 211 100% 50%;
+    --chart-2: 145 65% 42%;
+    --chart-3: 32 100% 50%;
+    --chart-4: 1 100% 59%;
     --chart-5: 262 72% 58%;
     --sidebar: 0 0% 100%;
-    --sidebar-foreground: 0 0% 2%;
-    --sidebar-primary: 220 14% 8%;
+    --sidebar-foreground: 0 0% 12%;
+    --sidebar-primary: 211 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 98%;
-    --sidebar-accent-foreground: 226 18% 18%;
-    --sidebar-border: 240 6% 90%;
-    --sidebar-ring: 220 14% 8%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 12%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 211 100% 50%;
   }
 
   * {
@@ -348,6 +389,7 @@
     background: #ffffff;
     scrollbar-gutter: stable;
     text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
     @apply font-sans;
   }
 
@@ -358,10 +400,11 @@
     background: var(--codex-gradient-page);
     color: var(--codex-ink);
     font-family: var(--codex-font);
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    letter-spacing: -0.01em;
     @apply bg-background text-foreground;
   }
 
@@ -370,6 +413,7 @@
   textarea,
   select {
     font: inherit;
+    letter-spacing: inherit;
   }
 
   img,
@@ -382,36 +426,58 @@
     --font-sans: var(--font-sans);
   }
   .dark {
-    --background: 240 10% 4%;
-    --foreground: 0 0% 98%;
-    --card: 240 6% 10%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 6% 10%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 220 14% 92%;
-    --primary-foreground: 240 10% 4%;
-    --secondary: 240 6% 10%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 6% 10%;
-    --muted-foreground: 224 13% 70%;
-    --accent: 220 14% 92%;
-    --accent-foreground: 240 10% 4%;
-    --destructive: 2 70% 58%;
-    --border: 240 5% 18%;
-    --input: 240 5% 18%;
-    --ring: 220 14% 92%;
-    --chart-1: 220 14% 92%;
-    --chart-2: 185 58% 58%;
-    --chart-3: 38 92% 65%;
-    --chart-4: 2 70% 58%;
+    --background: 0 0% 0%;             /* Apple dark mode — true black */
+    --foreground: 0 0% 96%;
+    --card: 0 0% 11%;                  /* Apple dark mode secondaryBackground #1c1c1e */
+    --card-foreground: 0 0% 96%;
+    --popover: 0 0% 11%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 213 95% 58%;            /* Apple dark mode systemBlue #0a84ff */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 213 95% 58%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 1 100% 63%;
+    --border: 0 0% 22%;
+    --input: 0 0% 22%;
+    --ring: 213 95% 58%;
+    --codex-ink: #f5f5f7;
+    --codex-muted: #98989d;
+    --codex-faint: #6e6e73;
+    --codex-surface: #1c1c1e;
+    --codex-surface-soft: rgba(28, 28, 30, 0.78);
+    --codex-surface-strong: rgba(28, 28, 30, 0.92);
+    --codex-border: rgba(255, 255, 255, 0.12);
+    --codex-border-strong: rgba(255, 255, 255, 0.20);
+    --codex-accent: #0a84ff;
+    --codex-accent-soft: rgba(10, 132, 255, 0.20);
+    --codex-ice: rgba(255, 255, 255, 0.06);
+    --codex-glass: rgba(28, 28, 30, 0.6);
+    --codex-glass-strong: rgba(28, 28, 30, 0.8);
+    --codex-glass-soft: rgba(28, 28, 30, 0.45);
+    --codex-glass-border: rgba(255, 255, 255, 0.10);
+    --codex-glass-fill: rgba(120, 120, 128, 0.24);
+    --codex-glass-fill-strong: rgba(120, 120, 128, 0.36);
+    --codex-dark: #000000;
+    --codex-success: #30d158;
+    --codex-warning: #ff9f0a;
+    --codex-danger: #ff453a;
+    --codex-running: #0a84ff;
+    --chart-1: 213 95% 58%;
+    --chart-2: 145 65% 52%;
+    --chart-3: 32 100% 60%;
+    --chart-4: 1 100% 63%;
     --chart-5: 262 72% 68%;
-    --sidebar: 240 6% 10%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 220 14% 92%;
-    --sidebar-primary-foreground: 240 10% 4%;
-    --sidebar-accent: 240 6% 10%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 240 5% 18%;
-    --sidebar-ring: 220 14% 92%;
+    --sidebar: 0 0% 11%;
+    --sidebar-foreground: 0 0% 96%;
+    --sidebar-primary: 213 95% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 14%;
+    --sidebar-accent-foreground: 0 0% 96%;
+    --sidebar-border: 0 0% 22%;
+    --sidebar-ring: 213 95% 58%;
   }
 }

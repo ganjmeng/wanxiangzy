@@ -44,7 +44,7 @@ function DropdownMenuContent({
         sideOffset={sideOffset}
         align={align}
         className={cn(
-          "z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-32 origin-[var(--radix-dropdown-menu-content-transform-origin)] overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 [overscroll-behavior:contain] duration-100 motion-safe:data-[state=closed]:animate-out motion-safe:data-[state=closed]:fade-out-0 data-[state=closed]:overflow-hidden motion-safe:data-[state=open]:animate-in motion-safe:data-[state=open]:fade-in-0",
+          "z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-32 origin-[var(--radix-dropdown-menu-content-transform-origin)] overflow-x-hidden overflow-y-auto rounded-2xl bg-popover/90 p-1.5 text-popover-foreground shadow-[var(--codex-shadow-apple-lg)] ring-1 ring-[var(--codex-border)] backdrop-blur-xl backdrop-saturate-150 [overscroll-behavior:contain] duration-150 motion-safe:data-[state=closed]:animate-out motion-safe:data-[state=closed]:fade-out-0 data-[state=closed]:overflow-hidden motion-safe:data-[state=open]:animate-in motion-safe:data-[state=open]:fade-in-0",
           className
         )}
         {...props}

@@ -7,47 +7,68 @@ export const codexTheme = {
     logo: "https://vastweargen-images.oss-cn-hongkong.aliyuncs.com/site-assets/original/gemini-icon.png",
   },
   colors: {
-    ink: "#050505",
-    muted: "#4b5263",
-    faint: "#7b8498",
+    ink: "#1d1d1f",                    /* Apple label */
+    muted: "#6e6e73",                  /* Apple secondaryLabel */
+    faint: "#86868b",                  /* Apple tertiaryLabel */
     page: "#ffffff",
     surface: "#ffffff",
-    surfaceSoft: "rgba(255,255,255,0.74)",
+    surfaceSoft: "rgba(255,255,255,0.78)",
     surfaceStrong: "rgba(255,255,255,0.92)",
-    border: "rgba(17,24,39,0.12)",
-    borderStrong: "rgba(17,24,39,0.2)",
-    accent: "#5b7cff",
-    accentSoft: "rgba(91,124,255,0.10)",
-    ice: "rgba(5,5,5,0.04)",
-    dark: "#07080d",
+    border: "rgba(0,0,0,0.08)",        /* Apple hairline separator */
+    borderStrong: "rgba(0,0,0,0.14)",
+    accent: "#007aff",                 /* Apple systemBlue */
+    accentHover: "#006fe6",
+    accentSoft: "rgba(0,122,255,0.10)",
+    ice: "rgba(0,0,0,0.04)",
+    dark: "#1d1d1f",
+    /* Apple Liquid Glass */
+    glass: "rgba(255,255,255,0.6)",
+    glassStrong: "rgba(255,255,255,0.8)",
+    glassSoft: "rgba(255,255,255,0.45)",
+    glassBorder: "rgba(255,255,255,0.5)",
+    glassFill: "rgba(120,120,128,0.12)",
   },
   status: {
-    success: "#22885f",
-    warning: "#a66a00",
-    danger: "#d13b35",
-    running: "#5b7cff",
+    success: "#00873a",                /* Apple systemGreen */
+    warning: "#ff9500",                /* Apple systemOrange */
+    danger: "#ff3b30",                 /* Apple systemRed */
+    running: "#007aff",                /* task progress = systemBlue */
   },
   gradients: {
-    page: "linear-gradient(180deg, #ffffff 0%, #fafafa 100%)",
-    hero: "radial-gradient(circle at 50% 0%, rgba(5,5,5,0.04), transparent 38%), linear-gradient(180deg, #ffffff 0%, #fafafa 100%)",
-    loader: "linear-gradient(90deg, #06101d 0%, #4b5263 50%, #06101d 100%)",
-    primary: "linear-gradient(180deg, rgba(255,255,255,0.12), transparent 38%), linear-gradient(180deg, #111318 0%, #050505 100%)",
+    page: "#ffffff",
+    hero:
+      "radial-gradient(ellipse at 50% 0%, rgba(0,122,255,0.05), transparent 50%), radial-gradient(ellipse at 80% 10%, rgba(175,82,222,0.04), transparent 50%), #ffffff",
+    loader: "linear-gradient(90deg, rgba(0,122,255,0) 0%, rgba(0,122,255,0.5) 50%, rgba(0,122,255,0) 100%)",
+    primary: "linear-gradient(180deg, #4ca0ff 0%, #007aff 100%)",
+    appleChrome:
+      "linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.7) 100%)",
   },
   fontStack: {
-    sans: 'Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Noto Sans CJK SC", sans-serif',
+    sans: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", Inter, ui-sans-serif, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Noto Sans CJK SC", sans-serif',
     mono: '"SF Mono", "Cascadia Code", "JetBrains Mono", ui-monospace, monospace',
   },
   radius: {
-    sm: "10px",
-    md: "16px",
-    lg: "24px",
-    xl: "32px",
-    pill: "999px",
+    sm: "12px",                        /* Apple standard input/secondary */
+    md: "16px",                        /* user spec — unified rounded-2xl */
+    lg: "20px",
+    xl: "28px",
+    pill: "9999px",
   },
   shadow: {
-    sm: "0 1px 2px rgba(5,5,5,0.08)",
-    md: "0 18px 50px rgba(14,18,38,0.14)",
-    lg: "0 40px 120px rgba(7,8,13,0.34)",
+    sm: "0 1px 2px rgba(0,0,0,0.04)",
+    md: "0 4px 16px rgba(0,0,0,0.08)",
+    lg: "0 16px 40px rgba(0,0,0,0.12)",
+    apple: "0 0.5px 0 rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06)",
+    appleLg: "0 0.5px 0 rgba(0,0,0,0.04), 0 12px 28px rgba(0,0,0,0.10)",
+  },
+  ease: {
+    apple: "cubic-bezier(0.16, 1, 0.3, 1)",
+    spring: "cubic-bezier(0.5, 1.5, 0.5, 1)",
+  },
+  duration: {
+    apple: "240ms",
+    snappy: "150ms",
+    deliberate: "360ms",
   },
   upload: {
     minHeight: 224,
