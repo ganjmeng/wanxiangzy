@@ -72,18 +72,6 @@ const config: Config = {
           ice: "var(--codex-ice)",
           dark: "var(--codex-dark)",
         },
-        brand: {
-          50: "#eef4ff",
-          100: "#dbe8ff",
-          200: "#c7d7ff",
-          300: "#aeb8ff",
-          400: "#8397ff",
-          500: "#5b7cff",
-          600: "#4868e5",
-          700: "#3853bd",
-          800: "#2e4292",
-          900: "#26366e",
-        },
       },
       borderRadius: {
         lg: "var(--radius-lg)",

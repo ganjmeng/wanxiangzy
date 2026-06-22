@@ -211,7 +211,7 @@
 
 @layer base {
   :root {
-    --background: 222 100% 96%;
+    --background: 0 0% 100%;
     --foreground: 0 0% 2%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 2%;
@@ -219,17 +219,17 @@
     --popover-foreground: 0 0% 2%;
     --primary: 230 100% 68%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 222 100% 96%;
+    --secondary: 0 0% 98%;
     --secondary-foreground: 226 18% 18%;
-    --muted: 222 46% 94%;
+    --muted: 240 5% 96%;
     --muted-foreground: 224 13% 34%;
-    --accent: 230 100% 68%;
+    --accent: 220 14% 8%;
     --accent-foreground: 0 0% 100%;
     --destructive: 2 64% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 226 35% 86%;
-    --input: 226 35% 86%;
-    --ring: 230 100% 68%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 220 14% 8%;
     --radius: 1rem;
     --radius-sm: calc(var(--radius) - 4px);
     --radius-md: calc(var(--radius) - 2px);
@@ -247,8 +247,8 @@
     --codex-border: rgba(17, 24, 39, 0.12);
     --codex-border-strong: rgba(17, 24, 39, 0.2);
     --codex-accent: #5b7cff;
-    --codex-accent-soft: #aeb8ff;
-    --codex-ice: #dbe8ff;
+    --codex-accent-soft: rgba(91, 124, 255, 0.10);
+    --codex-ice: rgba(5, 5, 5, 0.04);
     --codex-dark: #07080d;
     --codex-success: #22885f;
     --codex-warning: #a66a00;
@@ -273,22 +273,18 @@
     --codex-shadow-md: 0 18px 50px rgba(14, 18, 38, 0.14);
     --codex-shadow-lg: 0 40px 120px rgba(7, 8, 13, 0.34);
     --codex-gradient-page:
-      radial-gradient(circle at 10% 0%, rgba(91, 124, 255, 0.36), transparent 34%),
-      radial-gradient(circle at 88% 4%, rgba(174, 184, 255, 0.52), transparent 36%),
-      linear-gradient(180deg, #eef4ff 0%, #dbe8ff 38%, #f8fbff 100%);
+      linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
     --codex-gradient-hero:
-      radial-gradient(circle at 10% 10%, rgba(91, 124, 255, 0.72), transparent 32%),
-      radial-gradient(circle at 82% 16%, rgba(174, 184, 255, 0.88), transparent 38%),
-      linear-gradient(180deg, #dbe8ff 0%, #aeb8ff 54%, #5f6f9d 78%, #07080d 100%);
+      radial-gradient(circle at 50% 0%, rgba(5, 5, 5, 0.04), transparent 38%),
+      linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
     --codex-gradient-primary:
       linear-gradient(180deg, rgba(255, 255, 255, 0.13), transparent 38%),
       linear-gradient(180deg, #111318 0%, #050505 100%);
     --codex-gradient-loader:
-      radial-gradient(circle at 44% 35%, rgba(231, 243, 255, 0.92) 0 10%, transparent 34%),
-      linear-gradient(113deg, #307dff 0%, #89bfff 25%, #d6eaff 45%, #7f7aff 72%, #4a63f6 100%);
+      linear-gradient(90deg, #06101d 0%, #4b5263 50%, #06101d 100%);
 
     /* Legacy aliases kept while pages migrate. */
-    --studio-bg: #eef4ff;
+    --studio-bg: #ffffff;
     --studio-panel: var(--codex-surface-soft);
     --studio-panel-strong: var(--codex-surface-strong);
     --studio-border: var(--codex-border);
@@ -297,8 +293,8 @@
     --studio-accent: var(--codex-accent);
     --studio-accent-2: var(--codex-accent-soft);
     --studio-shadow: var(--codex-shadow-md);
-    --mac-bg: #eef4ff;
-    --mac-bg-soft: #f8fbff;
+    --mac-bg: #ffffff;
+    --mac-bg-soft: #fafafa;
     --mac-glass: var(--codex-surface-soft);
     --mac-glass-strong: var(--codex-surface-strong);
     --mac-glass-toolbar: rgba(255, 255, 255, 0.86);
@@ -308,7 +304,7 @@
     --mac-muted: var(--codex-muted);
     --mac-faint: var(--codex-faint);
     --mac-accent: var(--codex-accent);
-    --mac-accent-soft: rgba(91, 124, 255, 0.14);
+    --mac-accent-soft: rgba(5, 5, 5, 0.06);
     --mac-sage: var(--codex-success);
     --mac-brass: var(--codex-warning);
     --mac-success: var(--codex-success);
@@ -327,7 +323,7 @@
     --studio-top-content-gap: 6px;
     --studio-task-rail-width: 92px;
     --studio-nav-rail-width: 112px;
-    --chart-1: 230 100% 68%;
+    --chart-1: 220 14% 8%;
     --chart-2: 185 58% 48%;
     --chart-3: 38 92% 55%;
     --chart-4: 2 64% 51%;
@@ -336,9 +332,9 @@
     --sidebar-foreground: 0 0% 2%;
     --sidebar-primary: 230 100% 68%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 100% 96%;
+    --sidebar-accent: 0 0% 98%;
     --sidebar-accent-foreground: 226 18% 18%;
-    --sidebar-border: 226 35% 86%;
+    --sidebar-border: 240 6% 90%;
     --sidebar-ring: 230 100% 68%;
   }
 
@@ -349,7 +345,7 @@
   }
 
   html {
-    background: #eef4ff;
+    background: #ffffff;
     scrollbar-gutter: stable;
     text-size-adjust: 100%;
     @apply font-sans;
@@ -386,36 +382,36 @@
     --font-sans: var(--font-sans);
   }
   .dark {
-    --background: 226 18% 12%;
+    --background: 240 10% 4%;
     --foreground: 0 0% 98%;
-    --card: 226 18% 16%;
+    --card: 240 6% 10%;
     --card-foreground: 0 0% 98%;
-    --popover: 226 18% 16%;
+    --popover: 240 6% 10%;
     --popover-foreground: 0 0% 98%;
-    --primary: 230 100% 76%;
-    --primary-foreground: 226 18% 12%;
-    --secondary: 226 18% 20%;
+    --primary: 220 14% 92%;
+    --primary-foreground: 240 10% 4%;
+    --secondary: 240 6% 10%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 226 18% 20%;
+    --muted: 240 6% 10%;
     --muted-foreground: 224 13% 70%;
-    --accent: 230 100% 76%;
-    --accent-foreground: 226 18% 12%;
+    --accent: 220 14% 92%;
+    --accent-foreground: 240 10% 4%;
     --destructive: 2 70% 58%;
-    --border: 226 18% 28%;
-    --input: 226 18% 28%;
-    --ring: 230 100% 76%;
-    --chart-1: 230 100% 76%;
+    --border: 240 5% 18%;
+    --input: 240 5% 18%;
+    --ring: 220 14% 92%;
+    --chart-1: 220 14% 92%;
     --chart-2: 185 58% 58%;
     --chart-3: 38 92% 65%;
     --chart-4: 2 70% 58%;
     --chart-5: 262 72% 68%;
-    --sidebar: 226 18% 16%;
+    --sidebar: 240 6% 10%;
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 230 100% 76%;
-    --sidebar-primary-foreground: 226 18% 12%;
-    --sidebar-accent: 226 18% 20%;
+    --sidebar-primary: 220 14% 92%;
+    --sidebar-primary-foreground: 240 10% 4%;
+    --sidebar-accent: 240 6% 10%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 226 18% 28%;
-    --sidebar-ring: 230 100% 76%;
+    --sidebar-border: 240 5% 18%;
+    --sidebar-ring: 220 14% 92%;
   }
 }
