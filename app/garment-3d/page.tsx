@@ -807,7 +807,7 @@ export default function Garment3dPage() {
                       key={ref.id}
                       onClick={() => { setSelectedReference(ref); setCustomReferenceUrl(""); setPromptOverride(null); }}
                       className={`group relative aspect-square rounded-lg overflow-hidden border bg-gray-50 ${
-                        !customReferenceUrl && selectedReference.id === ref.id ? "border-purple-500 ring-2 ring-purple-100" : "border-gray-200"
+                        !customReferenceUrl && selectedReference.id === ref.id ? "border-zinc-950 ring-2 ring-zinc-200" : "border-gray-200"
                       }`}
                       title={ref.label}
                     >

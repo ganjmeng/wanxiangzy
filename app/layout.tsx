@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Toaster } from "sonner";
 import "./globals.css";
 import "./styles/shared-components.css";
@@ -41,7 +42,9 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className={cn("font-sans", geist.variable)} style={{ colorScheme: "light" }}>
       <body className="min-h-screen text-codex-ink">
-        <RouteProgress />
+        <Suspense fallback={null}>
+          <RouteProgress />
+        </Suspense>
         <HeaderClient />
         <main>{children}</main>
         <Toaster

@@ -363,7 +363,7 @@ export function StudioTaskRail({
         >
           <div className={cn("min-w-0 flex-1", !expanded && "flex justify-center")}>
             <div className={cn("flex items-center font-black text-slate-900", expanded ? "gap-1.5 text-sm" : "justify-center text-center text-[12px] leading-4")}>
-              {expanded && <History className="h-4 w-4 text-blue-500" />}
+              {expanded && <History className="h-4 w-4 text-zinc-900" />}
               <span className="whitespace-nowrap">{expanded ? "全部任务" : "最近任务"}</span>
             </div>
             {expanded && (
@@ -516,13 +516,13 @@ function ContinueCard({ selected, disabled = false, onClick }: { selected: boole
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "group relative flex h-[68px] w-full items-center justify-center rounded border bg-white px-1 text-center text-[12px] font-medium leading-4 text-slate-600 transition hover:border-blue-300 hover:bg-blue-50/50",
+        "group relative flex h-[68px] w-full items-center justify-center rounded border bg-white px-1 text-center text-[12px] font-medium leading-4 text-slate-600 transition hover:border-zinc-300 hover:bg-zinc-50",
         disabled && "cursor-not-allowed opacity-55",
-        selected ? "border-blue-500 bg-blue-50/60 shadow-[0_0_0_1px_rgba(59,130,246,0.18)]" : "border-slate-100"
+        selected ? "border-zinc-950 bg-zinc-100 shadow-[0_0_0_1px_rgba(5,5,5,0.10)]" : "border-slate-100"
       )}
     >
       <span className="max-w-[3.5em] whitespace-normal break-keep">继续创建</span>
-      {selected && <span className="absolute -right-2 top-2 h-[54px] w-1 rounded-full bg-blue-500" />}
+      {selected && <span className="absolute -right-2 top-2 h-[54px] w-1 rounded-full bg-zinc-950" />}
     </button>
   );
 }
@@ -548,7 +548,7 @@ function SegmentButton({
       className={cn(
         "inline-flex h-8 min-w-0 items-center justify-center gap-1 rounded-lg border px-2 text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-55",
         active
-          ? "border-blue-300 bg-blue-50 text-blue-700"
+          ? "border-zinc-950 bg-zinc-100 text-zinc-900"
           : "border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200 hover:text-slate-800"
       )}
     >
@@ -592,15 +592,15 @@ function TaskCard({
         disabled={disabled}
         onClick={onClick}
         className={cn(
-          "studio-task-card group relative flex h-[68px] w-full items-center justify-center rounded border bg-white p-1 text-left transition hover:border-blue-300 hover:bg-blue-50/40",
-          running && "border-blue-100 bg-blue-50/45",
+          "studio-task-card group relative flex h-[68px] w-full items-center justify-center rounded border bg-white p-1 text-left transition hover:border-zinc-300 hover:bg-zinc-50",
+          running && "border-zinc-200 bg-zinc-50",
           applying ? "cursor-wait" : disabled && "cursor-not-allowed opacity-55",
-          selected ? "border-blue-500 bg-blue-50/60 shadow-[0_0_0_1px_rgba(59,130,246,0.18)]" : "border-slate-100"
+          selected ? "border-zinc-950 bg-zinc-100 shadow-[0_0_0_1px_rgba(5,5,5,0.10)]" : "border-slate-100"
         )}
         title={item.title || item.id}
       >
         <TaskThumb url={cover} running={running} failed={failed} applying={applying} compact className="h-full w-full" />
-        {selected && <span className="absolute -right-2 top-2 h-[54px] w-1 rounded-full bg-blue-500" />}
+        {selected && <span className="absolute -right-2 top-2 h-[54px] w-1 rounded-full bg-zinc-950" />}
       </button>
     );
   }
@@ -611,9 +611,9 @@ function TaskCard({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "studio-task-card studio-task-card-expanded group w-full rounded-lg border bg-white p-2 text-left transition hover:border-blue-200 hover:bg-blue-50/35",
+        "studio-task-card studio-task-card-expanded group w-full rounded-lg border bg-white p-2 text-left transition hover:border-zinc-300 hover:bg-zinc-50",
         applying ? "cursor-wait" : disabled && "cursor-not-allowed opacity-55",
-        selected ? "border-blue-400 ring-2 ring-blue-100" : "border-slate-100",
+        selected ? "border-zinc-950 ring-2 ring-zinc-200" : "border-slate-100",
         failed && "border-red-200 bg-red-50/60"
       )}
     >
@@ -626,7 +626,7 @@ function TaskCard({
               <p className="mt-0.5 truncate text-[11px] font-semibold text-slate-400">{item.id}</p>
             </div>
             {applying ? (
-              <span className="inline-flex h-6 shrink-0 items-center gap-1 rounded-full bg-blue-50 px-2 text-[10px] font-black text-blue-600">
+              <span className="inline-flex h-6 shrink-0 items-center gap-1 rounded-full bg-[rgba(91,124,255,0.10)] px-2 text-[10px] font-black text-[var(--codex-accent)]">
                 <Loader2 className="h-3 w-3 animate-spin" />
                 套用中
               </span>
@@ -693,13 +693,13 @@ function TaskThumb({
         </span>
       )}
       {running && (
-        <span className="absolute inset-x-1 bottom-1 z-[2] flex items-center justify-center gap-1 rounded bg-blue-600/90 px-1.5 py-0.5 text-[9px] font-black leading-none text-white shadow-sm">
+        <span className="absolute inset-x-1 bottom-1 z-[2] flex items-center justify-center gap-1 rounded bg-zinc-950/90 px-1.5 py-0.5 text-[9px] font-black leading-none text-white shadow-sm">
           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-white/90" />
           <span className="truncate">生成中</span>
         </span>
       )}
       {applying && !running && (
-        <span className="absolute inset-0 z-[2] flex items-center justify-center gap-1 bg-white/70 text-[10px] font-semibold text-blue-600 backdrop-blur-[1px]">
+        <span className="absolute inset-0 z-[2] flex items-center justify-center gap-1 bg-white/70 text-[10px] font-semibold text-zinc-900 backdrop-blur-[1px]">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
           {compact && <span>套用中</span>}
         </span>
@@ -733,7 +733,7 @@ function TaskPreviewStrip({ item, displayMode }: { item: TaskQueueItem; displayM
             key={`${slot.url || slot.kind}-${index}`}
             className={cn(
               "relative h-9 w-9 shrink-0 overflow-hidden rounded-md border",
-              slot.kind === "input" ? "border-slate-200" : "border-blue-100"
+              slot.kind === "input" ? "border-slate-200" : "border-zinc-200"
             )}
           >
             {slot.url ? (
@@ -796,7 +796,7 @@ function StatusPill({ item }: { item: TaskQueueItem }) {
     ? "bg-red-50 text-red-600"
     : item.statusGroup === "completed"
       ? "bg-emerald-50 text-emerald-600"
-      : "bg-blue-50 text-blue-600";
+      : "bg-[rgba(91,124,255,0.10)] text-[var(--codex-accent)]";
   return (
     <span className={cn("inline-flex h-6 shrink-0 items-center gap-1 rounded-full px-2 text-[11px] font-black", className)}>
       {isTaskRunning(item) && <Loader2 className="h-3 w-3 animate-spin" />}
@@ -838,7 +838,7 @@ function TaskRailEmpty({
   return (
     <div
       className={cn(
-        "studio-task-rail-empty flex flex-col items-center justify-center rounded-lg border border-dashed border-[rgba(91,124,255,0.2)] bg-white/70 text-center text-xs font-semibold text-codex-faint",
+        "studio-task-rail-empty flex flex-col items-center justify-center rounded-lg border border-dashed border-zinc-200 bg-white/70 text-center text-xs font-semibold text-codex-faint",
         compact ? "min-h-[92px] px-1 py-3" : "min-h-32 px-4 py-5"
       )}
     >

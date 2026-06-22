@@ -87,7 +87,7 @@ export function StudioGenerationLoader({
               <StudioHomeHeroLoadingBackdrop />
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2">
                 <div className="relative flex h-14 w-14 items-center justify-center">
-                  <div className="gen-ring absolute inset-0 rounded-full bg-[#aeb8ff]/40" />
+                  <div className="gen-ring absolute inset-0 rounded-full bg-white/20" />
                   <div className="relative flex h-14 w-14 items-center justify-center rounded-full border border-white/16 bg-white/10 shadow-lg backdrop-blur-md">
                     <Loader2 className="h-6 w-6 animate-spin text-white" />
                   </div>
@@ -103,7 +103,7 @@ export function StudioGenerationLoader({
           <span className="shrink-0 text-[11px] font-bold text-codex-muted">{moduleName}</span>
           <div className="studio-loader-progress h-1.5 flex-1 overflow-hidden rounded-full bg-white/45">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-[#5b7cff] via-[#aeb8ff] to-[#dbe8ff] transition-all duration-700"
+              className="h-full rounded-full bg-zinc-900 transition-all duration-700"
               style={{ width: `${Math.max(displayProgress, 5)}%` }}
             />
           </div>

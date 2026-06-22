@@ -2290,7 +2290,7 @@ export default function PosePage() {
                         <div
                           key={item.key}
                           className={`group border-t border-slate-100 first:border-t-0 ${
-                            editing ? "bg-[linear-gradient(90deg,#f5f9ff_0%,#ffffff_74%)]" : "bg-white hover:bg-slate-50/45"
+                            editing ? "bg-slate-50" : "bg-white hover:bg-slate-50/45"
                           }`}
                         >
                           <div className="flex items-start gap-3 px-3.5 py-3.5">

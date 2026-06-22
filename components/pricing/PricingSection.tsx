@@ -504,7 +504,7 @@ function noticeToneClass(tone: CheckoutNotice["tone"]) {
   if (tone === "success") return "border-emerald-100 bg-emerald-50 text-emerald-800";
   if (tone === "warning") return "border-amber-100 bg-amber-50 text-amber-800";
   if (tone === "danger") return "border-red-100 bg-red-50 text-red-700";
-  return "border-blue-100 bg-blue-50 text-blue-800";
+  return "border-zinc-200 bg-zinc-50 text-zinc-800";
 }
 
 function buildPriceMap(catalog: BillingCatalogResponse | null) {

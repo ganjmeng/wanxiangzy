@@ -172,7 +172,7 @@ export function StudioToggleRow({
       onClick={() => onChange(!checked)}
       className={cn(
         "flex w-full items-center justify-between gap-4 rounded-xl bg-slate-50/90 p-4 text-left transition",
-        "hover:bg-slate-100/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2",
+        "hover:bg-slate-100/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/20 focus-visible:ring-offset-2",
         disabled && "cursor-not-allowed opacity-60 hover:bg-slate-50/90"
       )}
     >
