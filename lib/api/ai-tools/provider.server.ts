@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { AI_TOOL_CATALOG, isAiToolSlug } from "@/lib/ai-tools/catalog";
 import {
   AiToolLocalResizeError,
@@ -44,6 +45,12 @@ const mockTasks = new Map<string, {
   expiresAt: number;
   result: AiToolSubmitResult;
 }>();
+
+type AiToolProviderContext = {
+  userId: string;
+  /** Request-scoped client carrying the authenticated user's JWT. */
+  client?: Pick<SupabaseClient, "from" | "rpc">;
+};
 
 type RuntimeEnv = Partial<Pick<NodeJS.ProcessEnv,
   | "NODE_ENV"
@@ -245,7 +252,7 @@ export function getAiToolProviderStatus(
 
 export async function submitAiToolTask(
   request: AiToolCreateRequest,
-  context: { userId: string },
+  context: AiToolProviderContext,
   env: RuntimeEnv = process.env,
 ): Promise<AiToolSubmitResult> {
   const providerStatus = getAiToolProviderStatus(request, env);
@@ -285,7 +292,10 @@ export async function submitAiToolTask(
 
   if (isGenerativeAiToolRequest(request)) {
     try {
-      return await submitGenerativeAiToolTask(request, context);
+      return await submitGenerativeAiToolTask(request, {
+        userId: context.userId,
+        client: requireAuthenticatedClient(context, providerStatus),
+      });
     } catch (error) {
       throw translateGenerativeProviderError(error, providerStatus, "AI 工具生图任务提交失败");
     }
@@ -411,8 +421,7 @@ function isValidHttpsBaseUrl(value: string | undefined) {
 
 export async function getAiToolTask(
   taskId: string,
-  context: {
-    userId: string;
+  context: AiToolProviderContext & {
     operation?: AiToolCreateRequest["operation"];
     requestId?: string;
   },
@@ -465,6 +474,7 @@ export async function getAiToolTask(
     try {
       return await getGenerativeAiToolTask(taskId, {
         userId: context.userId,
+        client: requireAuthenticatedClient(context, runtimeStatus),
         operation: context.operation,
         requestId: context.requestId,
       });
@@ -474,6 +484,19 @@ export async function getAiToolTask(
   }
 
   return getTaskFromProviderGateway(taskId, context, runtimeStatus, env);
+}
+
+function requireAuthenticatedClient(
+  context: AiToolProviderContext,
+  providerStatus: AiToolProviderStatus,
+) {
+  if (context.client) return context.client;
+  throw new AiToolProviderError("AI 工具生图任务缺少用户认证上下文，请刷新页面后重试", {
+    code: "AI_TOOL_AUTH_CONTEXT_MISSING",
+    status: 500,
+    retryable: true,
+    providerStatus,
+  });
 }
 
 function translateGenerativeProviderError(

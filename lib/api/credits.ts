@@ -230,6 +230,10 @@ function normalizeCreditRpcError(message = "", required: number) {
     return new CreditError("数据库缺少灵点事务函数，请先运行 supabase/atomic-credit-rpc.sql");
   }
 
+  if (/\bNOT_ALLOWED\b/i.test(message)) {
+    return new CreditError("登录状态校验失败，请刷新页面后重新登录", 401);
+  }
+
   return new CreditError(message || "灵点事务失败");
 }
 

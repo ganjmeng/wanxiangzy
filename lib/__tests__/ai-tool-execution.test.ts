@@ -5,6 +5,7 @@ import {
   AiToolBatchCancelledError,
   dimensionsForAiToolAspect,
   dimensionsForAiToolOutpaintAspect,
+  resolveAiToolOutpaintSourceScale,
   getAiToolTargetDimensionError,
   isAiToolReferenceFresh,
   requestJsonWithRateLimitRetry,
@@ -99,6 +100,18 @@ describe("AI tool target dimensions", () => {
 
     expect(dimensions).toEqual({ width: 2_560, height: 2_560 });
     expect(getAiToolTargetDimensionError(dimensions.width, dimensions.height)).toBeUndefined();
+  });
+
+  it("uses the same fitted source scale as the outpaint canvas before a transform is emitted", () => {
+    const scale = resolveAiToolOutpaintSourceScale({
+      sourceWidth: 1_280,
+      sourceHeight: 1_707,
+      targetWidth: 800,
+      targetHeight: 800,
+    });
+
+    expect(1_280 * scale).toBeLessThanOrEqual(800);
+    expect(1_707 * scale).toBeCloseTo(800);
   });
 
   it("keeps a 16:9 preset within edge and 32MP limits after a huge square", () => {

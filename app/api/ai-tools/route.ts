@@ -44,7 +44,7 @@ const AI_TOOLS_RATE_WINDOW_MS = 60_000;
 const AI_TOOLS_STATUS_RATE_LIMIT = 120;
 
 export async function GET(request: Request) {
-  const { user, response: authResponse } = await requireApiUser();
+  const { supabase, user, response: authResponse } = await requireApiUser();
   if (!user) return authResponse;
 
   const limit = await checkRateLimit(
@@ -82,6 +82,7 @@ export async function GET(request: Request) {
     }
     const providerResult = await getAiToolTask(taskId, {
       userId: user.id,
+      client: supabase,
       operation: durableTask?.operation,
       requestId: durableTask?.requestId,
     });
@@ -226,7 +227,10 @@ export async function POST(request: Request) {
       executionMode: providerStatus.execution_mode,
     });
     if (providerStatus.execution_mode === "mock") {
-      const providerResult = await submitAiToolTask(resolved.request, { userId: user.id });
+      const providerResult = await submitAiToolTask(resolved.request, {
+        userId: user.id,
+        client: supabase,
+      });
       const result = await persistCompletedAiToolOutputs(providerResult, { userId: user.id });
       return successResponse(result);
     }
@@ -251,6 +255,7 @@ export async function POST(request: Request) {
       }
       const providerResult = await getAiToolTask(submission.task.providerTaskId, {
         userId: user.id,
+        client: supabase,
         operation: submission.task.operation,
         requestId: submission.task.requestId,
       });
@@ -266,7 +271,10 @@ export async function POST(request: Request) {
 
     let providerResult: Awaited<ReturnType<typeof submitAiToolTask>>;
     try {
-      providerResult = await submitAiToolTask(resolved.request, { userId: user.id });
+      providerResult = await submitAiToolTask(resolved.request, {
+        userId: user.id,
+        client: supabase,
+      });
     } catch (error) {
       try {
         await markAiToolTaskSubmissionFailed(submission.task, submission.leaseToken, error);

@@ -65,6 +65,7 @@ import type { TaskQueueItem } from "@/lib/task-queue";
 import {
   dimensionsForAiToolAspect,
   dimensionsForAiToolOutpaintAspect,
+  resolveAiToolOutpaintSourceScale,
   getAiToolTargetDimensionError,
   isAiToolReferenceFresh,
   isAiToolBatchCancelled,
@@ -2267,9 +2268,16 @@ function buildToolOptions(input: {
     };
   }
   if (config.slug === "outpaint") {
-    const sourceScale = input.frameTransform?.kind === "outpaint"
-      && input.sourceDimensions
-      ? input.frameTransform.sourceRect.width / input.sourceDimensions.width
+    const sourceScale = input.sourceDimensions
+      ? resolveAiToolOutpaintSourceScale({
+          sourceWidth: input.sourceDimensions.width,
+          sourceHeight: input.sourceDimensions.height,
+          targetWidth: input.targetWidth,
+          targetHeight: input.targetHeight,
+          sourceRect: input.frameTransform?.kind === "outpaint"
+            ? input.frameTransform.sourceRect
+            : undefined,
+        })
       : 1;
     return {
       model: input.aiModel,

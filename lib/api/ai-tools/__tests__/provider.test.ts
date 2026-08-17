@@ -35,6 +35,11 @@ const LIVE_ENV = {
   SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
 } as const;
 
+const authenticatedClient = {
+  from: vi.fn(),
+  rpc: vi.fn(),
+};
+
 describe("AI tools provider adapter", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -311,10 +316,38 @@ describe("AI tools provider adapter", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    await submitAiToolTask(request, { userId: "user-1" }, LIVE_ENV);
+    await submitAiToolTask(request, { userId: "user-1", client: authenticatedClient }, LIVE_ENV);
 
-    expect(generativeMocks.submit).toHaveBeenCalledWith(request, { userId: "user-1" });
+    expect(generativeMocks.submit).toHaveBeenCalledWith(request, {
+      userId: "user-1",
+      client: authenticatedClient,
+    });
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("fails closed instead of using service-role credentials when user auth context is missing", async () => {
+    const request: AiToolCreateRequestFor<"outpaint"> = {
+      request_id: "request-auth-context-1234",
+      operation: "outpaint",
+      source_url: "https://assets.example.com/source.png",
+      reference_urls: [],
+      options: {
+        target_width: 1600,
+        target_height: 1200,
+        anchor: "center",
+        position_x: 0.5,
+        position_y: 0.5,
+        mask_feather: 8,
+        output_format: "png",
+      },
+    };
+
+    await expect(submitAiToolTask(request, { userId: "user-1" }, LIVE_ENV)).rejects.toMatchObject({
+      code: "AI_TOOL_AUTH_CONTEXT_MISSING",
+      status: 500,
+      retryable: true,
+    });
+    expect(generativeMocks.submit).not.toHaveBeenCalled();
   });
 
   it("polls generative tools from the owned generations record without calling the external gateway", async () => {
@@ -330,12 +363,14 @@ describe("AI tools provider adapter", () => {
 
     await expect(getAiToolTask(result.task_id, {
       userId: "user-1",
+      client: authenticatedClient,
       operation: "erase",
       requestId: "request-1234",
     }, LIVE_ENV)).resolves.toEqual(result);
 
     expect(generativeMocks.get).toHaveBeenCalledWith(result.task_id, {
       userId: "user-1",
+      client: authenticatedClient,
       operation: "erase",
       requestId: "request-1234",
     });
@@ -362,9 +397,12 @@ describe("AI tools provider adapter", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    await submitAiToolTask(request, { userId: "user-1" }, LIVE_ENV);
+    await submitAiToolTask(request, { userId: "user-1", client: authenticatedClient }, LIVE_ENV);
 
-    expect(generativeMocks.submit).toHaveBeenCalledWith(request, { userId: "user-1" });
+    expect(generativeMocks.submit).toHaveBeenCalledWith(request, {
+      userId: "user-1",
+      client: authenticatedClient,
+    });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -386,9 +424,12 @@ describe("AI tools provider adapter", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    await submitAiToolTask(request, { userId: "user-1" }, LIVE_ENV);
+    await submitAiToolTask(request, { userId: "user-1", client: authenticatedClient }, LIVE_ENV);
 
-    expect(generativeMocks.submit).toHaveBeenCalledWith(request, { userId: "user-1" });
+    expect(generativeMocks.submit).toHaveBeenCalledWith(request, {
+      userId: "user-1",
+      client: authenticatedClient,
+    });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

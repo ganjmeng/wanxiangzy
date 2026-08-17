@@ -83,6 +83,11 @@ import { AiToolOutputStorageError } from "@/lib/api/ai-tools/output-storage.serv
 import { AiToolInputOwnershipError } from "@/lib/api/ai-tools/input-ownership.server";
 import { AiToolTaskRepositoryError } from "@/lib/api/ai-tools/task-repository.server";
 
+const authenticatedSupabase = {
+  from: vi.fn(),
+  rpc: vi.fn(),
+};
+
 describe("AI tools API", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
@@ -90,7 +95,11 @@ describe("AI tools API", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.requireApiUser.mockResolvedValue({ supabase: {}, user: { id: "user-1" }, response: null });
+    mocks.requireApiUser.mockResolvedValue({
+      supabase: authenticatedSupabase,
+      user: { id: "user-1" },
+      response: null,
+    });
     mocks.checkRateLimit.mockResolvedValue({ ok: true });
     mocks.syncAiToolTaskQueueById.mockResolvedValue(undefined);
     mocks.persistCompletedAiToolOutputs.mockImplementation(async (result: unknown) => result);
@@ -338,6 +347,10 @@ describe("AI tools API", () => {
       expect.objectContaining({ source_url: "https://assets.example.com/source.png" }),
       {},
       expect.objectContaining({ userId: "user-1", executionMode: "live" }),
+    );
+    expect(mocks.submitAiToolTask).toHaveBeenCalledWith(
+      expect.objectContaining({ operation: "matting" }),
+      { userId: "user-1", client: authenticatedSupabase },
     );
   });
 
@@ -642,6 +655,7 @@ describe("AI tools API", () => {
     });
     expect(mocks.getAiToolTask).toHaveBeenCalledWith("task-12345678", {
       userId: "user-1",
+      client: authenticatedSupabase,
       operation: "matting",
       requestId: "request-1234",
     });

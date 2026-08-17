@@ -1,3 +1,8 @@
+import {
+  createScaledOutpaintSourceRect,
+  type FrameRect,
+} from "@/components/studio/image-editor/frame-geometry";
+
 export const AI_TOOL_TARGET_MAX_EDGE = 5_120;
 export const AI_TOOL_TARGET_MAX_PIXELS = 32_000_000;
 const AI_TOOL_TARGET_MIN_EDGE = 64;
@@ -98,6 +103,22 @@ export function dimensionsForAiToolOutpaintAspect(
 
   const preferredWidth = positiveDimension(sourceWidth) * 2;
   return scaleDimensionsWithinLimits(preferredWidth, preferredWidth / ratio, 1);
+}
+
+export function resolveAiToolOutpaintSourceScale(input: {
+  sourceWidth: number;
+  sourceHeight: number;
+  targetWidth: number;
+  targetHeight: number;
+  sourceRect?: FrameRect;
+}) {
+  if (input.sourceRect) return input.sourceRect.width / input.sourceWidth;
+  const defaultRect = createScaledOutpaintSourceRect(
+    { width: input.sourceWidth, height: input.sourceHeight },
+    { width: input.targetWidth, height: input.targetHeight },
+    { x: 0.5, y: 0.5 },
+  );
+  return defaultRect.width / input.sourceWidth;
 }
 
 export function getAiToolTargetDimensionError(width: number, height: number) {

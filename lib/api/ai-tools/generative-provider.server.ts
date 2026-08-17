@@ -13,7 +13,6 @@ import { startGenerationJob, type GenerationJobPayload } from "@/lib/api/generat
 import type { AspectRatio, ImageSize } from "@/lib/api/lingya";
 import { storeImage } from "@/lib/api/image-storage";
 import { fetchRemoteImageBuffer } from "@/lib/api/remote-image-fetch";
-import { getAdminClient } from "@/lib/supabase/admin";
 
 export const GENERATIVE_AI_TOOL_OPERATIONS = new Set<AiToolCreateRequest["operation"]>([
   "outpaint",
@@ -36,19 +35,35 @@ type GenerationRow = {
 };
 
 type GenerativeProviderDependencies = {
-  client: Pick<SupabaseClient, "from" | "rpc">;
   createGeneration: typeof createDebitedGeneration;
   startGeneration: typeof startGenerationJob;
   prepareInputs?: typeof prepareGenerativeAiToolInputs;
   getCreditCost?: typeof getConfiguredImageCreditCost;
 };
 
+type AuthenticatedGenerationContext = {
+  userId: string;
+  client: Pick<SupabaseClient, "from" | "rpc">;
+};
+
 const MAX_SOURCE_BYTES = 32 * 1024 * 1024;
 const MAX_SOURCE_PIXELS = 32_000_000;
 
+export class AiToolGenerativeInputError extends Error {
+  readonly code: string;
+  readonly status = 400;
+  readonly retryable = false;
+
+  constructor(message: string, code: string) {
+    super(message);
+    this.name = "AiToolGenerativeInputError";
+    this.code = code;
+  }
+}
+
 export async function submitGenerativeAiToolTask(
   request: GenerativeAiToolRequest,
-  context: { userId: string },
+  context: AuthenticatedGenerationContext,
   dependencies: GenerativeProviderDependencies = defaultDependencies(),
 ): Promise<AiToolSubmitResult> {
   const model = request.options.model || "nano-banana-2";
@@ -76,7 +91,7 @@ export async function submitGenerativeAiToolTask(
       nativeMaskUrl: preparedInputs.nativeMaskUrl,
     },
   };
-  const debit = await dependencies.createGeneration(dependencies.client, {
+  const debit = await dependencies.createGeneration(context.client, {
     userId: context.userId,
     clothingUrls: imageInputs,
     referenceUrl: request.source_url,
@@ -112,14 +127,12 @@ export async function submitGenerativeAiToolTask(
 
 export async function getGenerativeAiToolTask(
   taskId: string,
-  context: {
-    userId: string;
+  context: AuthenticatedGenerationContext & {
     operation: GenerativeAiToolRequest["operation"];
     requestId: string;
   },
-  dependencies: Pick<GenerativeProviderDependencies, "client"> = defaultDependencies(),
 ): Promise<AiToolSubmitResult> {
-  const query = await dependencies.client
+  const query = await context.client
     .from("generations")
     .select("status,result_urls,error_message,job_payload,completed_at,credits_cost")
     .eq("id", taskId)
@@ -387,7 +400,12 @@ export async function createOutpaintGuidanceBuffers(
   const placedHeight = Math.max(1, Math.round(sourceHeight * scale));
   const freeWidth = options.target_width - placedWidth;
   const freeHeight = options.target_height - placedHeight;
-  if (freeWidth < 0 || freeHeight < 0) throw new Error("扩图原图放置区域超出目标画布");
+  if (freeWidth < 0 || freeHeight < 0) {
+    throw new AiToolGenerativeInputError(
+      "目标画布必须完整容纳原图，请增大输出尺寸或在调整区域中缩小原图",
+      "AI_TOOL_OUTPAINT_SOURCE_OUT_OF_BOUNDS",
+    );
+  }
   const left = Math.round(freeWidth * options.position_x);
   const top = Math.round(freeHeight * options.position_y);
   const placedSource = await sharp(sourceBytes, {
@@ -476,7 +494,6 @@ function stringArray(value: unknown) {
 
 function defaultDependencies(): GenerativeProviderDependencies {
   return {
-    client: getAdminClient(),
     createGeneration: createDebitedGeneration,
     startGeneration: startGenerationJob,
   };

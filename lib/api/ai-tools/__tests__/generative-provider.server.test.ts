@@ -4,6 +4,7 @@ import sharp from "sharp";
 import type { AiToolCreateRequestFor } from "@/lib/ai-tools/types";
 import {
   buildGenerativeAiToolPrompt,
+  AiToolGenerativeInputError,
   createNativeInpaintMaskBuffer,
   createOutpaintGuidanceBuffers,
   getGenerativeAiToolTask,
@@ -36,8 +37,7 @@ describe("AI tool internal generative provider", () => {
     const client = {} as Pick<SupabaseClient, "from" | "rpc">;
     const nativeMaskUrl = "https://oss.example.com/native-source-mask.png";
 
-    const result = await submitGenerativeAiToolTask(request, { userId: "user-1" }, {
-      client,
+    const result = await submitGenerativeAiToolTask(request, { userId: "user-1", client }, {
       createGeneration,
       startGeneration,
       getCreditCost: vi.fn().mockResolvedValue(4),
@@ -148,6 +148,34 @@ describe("AI tool internal generative provider", () => {
     expect(rgbaAt(nativeMask, 4, 2, 1)[3]).toBe(255);
   });
 
+  it("rejects an outpaint placement that cannot fit before credit debit", async () => {
+    const source = await sharp({
+      create: {
+        width: 4,
+        height: 6,
+        channels: 4,
+        background: { r: 255, g: 0, b: 0, alpha: 1 },
+      },
+    }).png().toBuffer();
+
+    await expect(createOutpaintGuidanceBuffers(source, {
+      model: "nano-banana-2",
+      target_width: 3,
+      target_height: 3,
+      position_x: 0.5,
+      position_y: 0.5,
+      source_scale: 1,
+      anchor: "center",
+      mask_feather: 0,
+      prompt: "",
+      output_format: "png",
+    })).rejects.toEqual(expect.objectContaining<Partial<AiToolGenerativeInputError>>({
+      code: "AI_TOOL_OUTPAINT_SOURCE_OUT_OF_BOUNDS",
+      status: 400,
+      retryable: false,
+    }));
+  });
+
   it("converts semantic white edit pixels into transparent native mask pixels", async () => {
     const semanticMask = await sharp(Buffer.from([
       0, 0, 0,
@@ -172,8 +200,12 @@ describe("AI tool internal generative provider", () => {
 
     const result = await getGenerativeAiToolTask(
       "00000000-0000-4000-8000-000000000111",
-      { userId: "user-1", operation: "erase", requestId: "request-erase-1234" },
-      { client: { from: vi.fn(() => query) } as unknown as Pick<SupabaseClient, "from" | "rpc"> },
+      {
+        userId: "user-1",
+        client: { from: vi.fn(() => query) } as unknown as Pick<SupabaseClient, "from" | "rpc">,
+        operation: "erase",
+        requestId: "request-erase-1234",
+      },
     );
 
     expect(query.eq).toHaveBeenNthCalledWith(1, "id", "00000000-0000-4000-8000-000000000111");
