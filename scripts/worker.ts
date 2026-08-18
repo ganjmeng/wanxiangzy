@@ -27,6 +27,12 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { runNextGenerationJobs } from "@/lib/api/generation-jobs";
+import {
+  cleanupOssMirrorTransfers,
+  expireOssMirrorTransfers,
+  isAliyunOssMirrorEnabled,
+  processPendingOssMirrorTransfers,
+} from "@/lib/api/oss-mirror-transfer";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { parseWorkerConfig, type WorkerConfig } from "@/lib/worker/config";
 
@@ -174,6 +180,95 @@ async function runCleanup(supabase: ReturnType<typeof getAdminClient>) {
   } catch (err) {
     emitError("cleanup.rate_limit_buckets", err);
   }
+}
+
+/**
+ * Independent high-throughput recovery loop. Mirror retries never wait for a
+ * generation batch or the five-minute housekeeping interval, and multiple
+ * EC2 worker processes safely share work through SKIP LOCKED leases.
+ */
+export async function runOssMirrorRecoveryLoop(
+  supabase: ReturnType<typeof getAdminClient>,
+  clock: TickClock = createRealClock(),
+  signals: LoopSignals = createSignalHook(),
+) {
+  if (!isAliyunOssMirrorEnabled()) {
+    emit("oss_mirror.loop.disabled");
+    return;
+  }
+
+  const batchSize = parseBoundedEnv("ALIYUN_OSS_MIRROR_WORKER_BATCH_SIZE", 50, 1, 100);
+  const pollIntervalMs = parseBoundedEnv("ALIYUN_OSS_MIRROR_WORKER_POLL_INTERVAL_MS", 1_000, 100, 30_000);
+  const idleBackoffMaxMs = parseBoundedEnv("ALIYUN_OSS_MIRROR_WORKER_IDLE_BACKOFF_MAX_MS", 10_000, pollIntervalMs, 60_000);
+  const maxConsecutiveErrors = parseBoundedEnv("ALIYUN_OSS_MIRROR_WORKER_MAX_ERRORS", 20, 3, 100);
+  let emptyPolls = 0;
+  let consecutiveErrors = 0;
+  let errorBackoffMs = 1_000;
+  let lastExpiryAt = 0;
+  let lastRetentionAt = 0;
+  let lastHeartbeatAt = 0;
+  const totals = { claimed: 0, completed: 0, deferred: 0, failed: 0 };
+
+  emit("oss_mirror.loop.started", { batchSize, pollIntervalMs, idleBackoffMaxMs });
+  while (!signals.isStopRequested()) {
+    try {
+      const result = await processPendingOssMirrorTransfers(batchSize, supabase);
+      totals.claimed += result.claimed;
+      totals.completed += result.completed;
+      totals.deferred += result.deferred;
+      totals.failed += result.failed;
+      consecutiveErrors = 0;
+      errorBackoffMs = 1_000;
+      if (result.claimed > 0) {
+        emptyPolls = 0;
+        emit("oss_mirror.batch.complete", {
+          ...result,
+          saturated: result.claimed === batchSize,
+        });
+      } else {
+        emptyPolls += 1;
+      }
+
+      const now = clock.now();
+      if (now - lastExpiryAt >= 60_000) {
+        lastExpiryAt = now;
+        const expired = await expireOssMirrorTransfers(500, supabase);
+        if (expired > 0) emit("oss_mirror.expired", { count: expired });
+      }
+      if (now - lastRetentionAt >= HOUR_MS) {
+        lastRetentionAt = now;
+        const cleaned = await cleanupOssMirrorTransfers(supabase);
+        if (cleaned.metadataDeleted > 0 || cleaned.failedObjectsDeleted > 0) {
+          emit("oss_mirror.retention", cleaned);
+        }
+      }
+      if (now - lastHeartbeatAt >= 60_000) {
+        lastHeartbeatAt = now;
+        emit("oss_mirror.heartbeat", {
+          ...totals,
+          consecutiveErrors,
+          consecutiveEmptyPolls: emptyPolls,
+          rssMB: Math.round(process.memoryUsage().rss / 1024 / 1024),
+          heapUsedMB: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        });
+      }
+
+      if (result.claimed === 0) {
+        await sleepWithStop(
+          clock,
+          computeIdleSleepMs(emptyPolls, pollIntervalMs, idleBackoffMaxMs),
+          signals,
+        );
+      }
+    } catch (error) {
+      consecutiveErrors += 1;
+      emitError("oss_mirror.batch.error", error, { consecutiveErrors, maxConsecutiveErrors });
+      if (consecutiveErrors >= maxConsecutiveErrors) throw error;
+      await sleepWithStop(clock, errorBackoffMs, signals);
+      errorBackoffMs = Math.min(errorBackoffMs * 2, 30_000);
+    }
+  }
+  emit("oss_mirror.loop.stopped");
 }
 
 /**
@@ -408,6 +503,12 @@ function validateRequiredEnv() {
   }
 }
 
+function parseBoundedEnv(name: string, fallback: number, min: number, max: number) {
+  const parsed = Number(process.env[name] ?? fallback);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(min, Math.min(max, Math.trunc(parsed)));
+}
+
 async function bootstrap() {
   loadDotEnvIfPresent();
   validateRequiredEnv();
@@ -419,7 +520,11 @@ async function bootstrap() {
   // Touch the admin client once at boot so env validation happens before
   // we start the loop. getAdminClient throws if env is missing.
   const supabase = getAdminClient();
-  await runLoop(supabase, config);
+  const signals = createSignalHook();
+  await Promise.all([
+    runLoop(supabase, config, createRealClock(), signals),
+    runOssMirrorRecoveryLoop(supabase, createRealClock(), signals),
+  ]);
 }
 
 if (isMainModule) {

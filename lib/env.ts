@@ -162,6 +162,18 @@ const OPTIONAL_ENV: EnvContractEntry[] = [
   { name: "RESOURCE_LIBRARY_UPLOAD_TOKEN_SECRET", category: "optional", description: "Optional HMAC secret for short-lived resource-library upload receipts; defaults to the OSS access key secret." },
   { name: "ALIYUN_OSS_ENDPOINT", category: "optional", description: "OSS upload endpoint override, without protocol." },
   { name: "ALIYUN_OSS_SECURITY_TOKEN", category: "optional", description: "Optional STS security token for temporary OSS credentials." },
+  { name: "ALIYUN_OSS_MIRROR_ENABLED", category: "optional", description: "Use OSS mirror back-to-origin for generated provider URLs without downloading image bodies to EC2." },
+  { name: "ALIYUN_OSS_MIRROR_SIGNING_SECRET", category: "optional", description: "Server-only HMAC key for expiring OSS mirror object capabilities." },
+  { name: "ALIYUN_OSS_MIRROR_ALLOWED_HOSTS", category: "optional", description: "Required comma-separated provider image host allowlist; supports explicit *.example.com patterns." },
+  { name: "ALIYUN_OSS_MIRROR_RESOLVER_BASE_URL", category: "optional", description: "Public HTTPS OSS mirror resolver base URL; defaults to NEXT_PUBLIC_APP_URL/api/oss-mirror-source/." },
+  { name: "ALIYUN_OSS_MIRROR_PREFIX", category: "optional", description: "Object key prefix governed by the persistent OSS mirror rule." },
+  { name: "ALIYUN_OSS_MIRROR_TTL_SECONDS", category: "optional", description: "Lifetime of private provider URL mappings (300-86400 seconds)." },
+  { name: "ALIYUN_OSS_MIRROR_PREFLIGHT_TIMEOUT_MS", category: "optional", description: "Timeout for the bounded 64-byte provider validation probe (1000-30000ms)." },
+  { name: "ALIYUN_OSS_MIRROR_TRIGGER_TIMEOUT_MS", category: "optional", description: "Timeout for the one-byte OSS Range trigger (1000-60000ms)." },
+  { name: "ALIYUN_OSS_MIRROR_WAIT_TIMEOUT_MS", category: "optional", description: "Maximum synchronous wait for verified mirror publication (10000-900000ms)." },
+  { name: "ALIYUN_OSS_MIRROR_MAX_BYTES", category: "optional", description: "Maximum mirrored result object size (1MiB-512MiB)." },
+  { name: "ALIYUN_OSS_MIRROR_MAX_ATTEMPTS", category: "optional", description: "Maximum durable OSS mirror attempts (1-16)." },
+  { name: "ALIYUN_OSS_MIRROR_CONCURRENCY", category: "optional", description: "Per-process global mirror network concurrency (1-64)." },
   { name: "DOWNLOAD_IMAGE_ALLOWED_HOSTS", category: "optional", description: "Extra hosts allowed by /api/download-image." },
   { name: "API_PLATFORM_TEST_ALLOWED_HOSTS", category: "optional", description: "Allowlist for the API platform test proxy." },
   { name: "GENERATION_JOB_BATCH_SIZE", category: "optional", description: "Generation processor batch size." },
@@ -257,6 +269,8 @@ export function validateEnv(options: { log?: boolean; nodeEnv?: string } = {}): 
     }
   }
 
+  validateOssMirrorEnv({ issues, isProduction, imageStorageProvider });
+
   validateAiToolEnv({ issues, isProduction });
 
   const capacityMode = (process.env.AI_ROUTER_CAPACITY_MODE || "redis").trim().toLowerCase();
@@ -275,6 +289,82 @@ export function validateEnv(options: { log?: boolean; nodeEnv?: string } = {}): 
 
   if (options.log) logEnvIssues(issues);
   return issues;
+}
+
+function validateOssMirrorEnv(params: {
+  issues: EnvValidationIssue[];
+  isProduction: boolean;
+  imageStorageProvider: string;
+}) {
+  if (!/^(1|true|yes)$/i.test((process.env.ALIYUN_OSS_MIRROR_ENABLED || "").trim())) return;
+
+  const severity: EnvSeverity = params.isProduction ? "error" : "warning";
+  const report = (name: string, message: string) => {
+    params.issues.push({ name, category: "feature-required", severity, message });
+  };
+
+  if (params.imageStorageProvider !== "aliyun-oss") {
+    report("IMAGE_STORAGE_PROVIDER", "ALIYUN_OSS_MIRROR_ENABLED requires IMAGE_STORAGE_PROVIDER=aliyun-oss.");
+  }
+  if (!isStrongRuntimeSecret(process.env.ALIYUN_OSS_MIRROR_SIGNING_SECRET)) {
+    report(
+      "ALIYUN_OSS_MIRROR_SIGNING_SECRET",
+      "ALIYUN_OSS_MIRROR_SIGNING_SECRET must contain at least 32 non-placeholder characters.",
+    );
+  }
+  if (!/^(?:hex:)?[a-f0-9]{64}$/i.test((process.env.ADMIN_SECRETS_ENCRYPTION_KEY || "").trim())) {
+    report(
+      "ADMIN_SECRETS_ENCRYPTION_KEY",
+      "OSS mirror requires a 32-byte hex ADMIN_SECRETS_ENCRYPTION_KEY for encrypted source URLs.",
+    );
+  }
+  const allowedHosts = (process.env.ALIYUN_OSS_MIRROR_ALLOWED_HOSTS || "")
+    .split(",")
+    .map((host) => host.trim().toLowerCase())
+    .filter(Boolean);
+  if (!allowedHosts.length || allowedHosts.some((host) => (
+    host === "*"
+    || host.includes(":")
+    || host.includes("/")
+    || !/^(?:\*\.)?[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/.test(host)
+  ))) {
+    report(
+      "ALIYUN_OSS_MIRROR_ALLOWED_HOSTS",
+      "OSS mirror requires an explicit, valid provider hostname allowlist; a global wildcard is forbidden.",
+    );
+  }
+
+  const resolverUrl = process.env.ALIYUN_OSS_MIRROR_RESOLVER_BASE_URL
+    || (process.env.NEXT_PUBLIC_APP_URL
+      ? `${process.env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "")}/api/oss-mirror-source/`
+      : undefined);
+  if (!isValidConfiguredUrl(resolverUrl, true)) {
+    report(
+      "ALIYUN_OSS_MIRROR_RESOLVER_BASE_URL",
+      "OSS mirror requires a public HTTPS resolver URL (or a public HTTPS NEXT_PUBLIC_APP_URL).",
+    );
+  }
+
+  validateIntegerRange("ALIYUN_OSS_MIRROR_TTL_SECONDS", 300, 86_400, report);
+  validateIntegerRange("ALIYUN_OSS_MIRROR_PREFLIGHT_TIMEOUT_MS", 1_000, 30_000, report);
+  validateIntegerRange("ALIYUN_OSS_MIRROR_TRIGGER_TIMEOUT_MS", 1_000, 60_000, report);
+  validateIntegerRange("ALIYUN_OSS_MIRROR_WAIT_TIMEOUT_MS", 10_000, 900_000, report);
+  validateIntegerRange("ALIYUN_OSS_MIRROR_MAX_BYTES", 1_048_576, 536_870_912, report);
+  validateIntegerRange("ALIYUN_OSS_MIRROR_MAX_ATTEMPTS", 1, 16, report);
+  validateIntegerRange("ALIYUN_OSS_MIRROR_CONCURRENCY", 1, 64, report);
+  validateIntegerRange("ALIYUN_OSS_MIRROR_WORKER_BATCH_SIZE", 1, 100, report);
+}
+
+function validateIntegerRange(
+  name: string,
+  min: number,
+  max: number,
+  report: (name: string, message: string) => void,
+) {
+  const value = process.env[name]?.trim();
+  if (value && (!/^\d+$/.test(value) || Number(value) < min || Number(value) > max)) {
+    report(name, `${name} must be an integer from ${min} to ${max}.`);
+  }
 }
 
 function validateAiToolEnv(params: {

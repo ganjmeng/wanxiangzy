@@ -179,6 +179,7 @@ CREATE OR REPLACE FUNCTION public.task_queue_json_int(p_payload JSONB, p_keys TE
 RETURNS INTEGER
 LANGUAGE plpgsql
 IMMUTABLE
+SET search_path = pg_catalog
 AS $$
 DECLARE
   v_key TEXT;
@@ -278,6 +279,7 @@ CREATE OR REPLACE FUNCTION public.task_queue_generation_expected_count(
 RETURNS INTEGER
 LANGUAGE plpgsql
 IMMUTABLE
+SET search_path = pg_catalog
 AS $$
 DECLARE
   v_kind TEXT := coalesce(p_payload ->> 'kind', p_payload ->> 'module', '');
@@ -408,7 +410,13 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  PERFORM public.task_queue_upsert_generation(NEW);
+  -- task_queue_items is a derived read model. Projection drift must never
+  -- abort the durable generations write that billing and workers depend on.
+  BEGIN
+    PERFORM public.task_queue_upsert_generation(NEW);
+  EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING '[task-queue] generation % projection skipped: %', NEW.id, SQLERRM;
+  END;
   RETURN NEW;
 END;
 $$;
@@ -424,6 +432,8 @@ FROM public.generations AS g;
 
 -- These functions are internal trigger/migration helpers. Keep them out of the
 -- exposed PostgREST RPC surface while retaining service-role maintenance access.
+REVOKE ALL ON FUNCTION public.task_queue_generation_expected_count(JSONB, TEXT, INTEGER) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.task_queue_upsert_generation(public.generations) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.task_queue_sync_generation_trigger() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.task_queue_generation_expected_count(JSONB, TEXT, INTEGER) TO service_role;
 GRANT EXECUTE ON FUNCTION public.task_queue_upsert_generation(public.generations) TO service_role;

@@ -109,13 +109,16 @@ jobs:
 
           echo "::warning::ssh-keyscan failed; continuing with StrictHostKeyChecking=accept-new"
 
-      - name: Update AI router runtime secrets
+      - name: Update production runtime secrets
         env:
           ADMIN_SECRETS_ENCRYPTION_KEY: ${{ secrets.ADMIN_SECRETS_ENCRYPTION_KEY }}
           AI_TOOL_ASSET_REF_SECRET: ${{ secrets.AI_TOOL_ASSET_REF_SECRET }}
           RESOURCE_LIBRARY_UPLOAD_TOKEN_SECRET: ${{ secrets.RESOURCE_LIBRARY_UPLOAD_TOKEN_SECRET }}
           UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
           UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+          ALIYUN_OSS_MIRROR_SIGNING_SECRET: ${{ secrets.ALIYUN_OSS_MIRROR_SIGNING_SECRET }}
+          ALIYUN_OSS_MIRROR_ALLOWED_HOSTS: ${{ vars.ALIYUN_OSS_MIRROR_ALLOWED_HOSTS }}
+          ALIYUN_OSS_MIRROR_ENABLED: ${{ vars.ALIYUN_OSS_MIRROR_ENABLED || 'false' }}
         run: |
           set -euo pipefail
 
@@ -124,15 +127,22 @@ jobs:
             AI_TOOL_ASSET_REF_SECRET \
             RESOURCE_LIBRARY_UPLOAD_TOKEN_SECRET \
             UPSTASH_REDIS_REST_URL \
-            UPSTASH_REDIS_REST_TOKEN; do
+            UPSTASH_REDIS_REST_TOKEN \
+            ALIYUN_OSS_MIRROR_SIGNING_SECRET \
+            ALIYUN_OSS_MIRROR_ALLOWED_HOSTS; do
             if [[ -z "${!key:-}" ]]; then
               echo "::error::GitHub Actions secret is empty: $key"
               exit 1
             fi
           done
 
+          if [[ "$ALIYUN_OSS_MIRROR_ENABLED" != "true" && "$ALIYUN_OSS_MIRROR_ENABLED" != "false" ]]; then
+            echo "::error::ALIYUN_OSS_MIRROR_ENABLED must be true or false"
+            exit 1
+          fi
+
           quote() { printf '%q' "$1"; }
-          REMOTE_ENV="ADMIN_SECRETS_ENCRYPTION_KEY=$(quote "$ADMIN_SECRETS_ENCRYPTION_KEY") AI_TOOL_ASSET_REF_SECRET=$(quote "$AI_TOOL_ASSET_REF_SECRET") RESOURCE_LIBRARY_UPLOAD_TOKEN_SECRET=$(quote "$RESOURCE_LIBRARY_UPLOAD_TOKEN_SECRET") UPSTASH_REDIS_REST_URL=$(quote "$UPSTASH_REDIS_REST_URL") UPSTASH_REDIS_REST_TOKEN=$(quote "$UPSTASH_REDIS_REST_TOKEN")"
+          REMOTE_ENV="ADMIN_SECRETS_ENCRYPTION_KEY=$(quote "$ADMIN_SECRETS_ENCRYPTION_KEY") AI_TOOL_ASSET_REF_SECRET=$(quote "$AI_TOOL_ASSET_REF_SECRET") RESOURCE_LIBRARY_UPLOAD_TOKEN_SECRET=$(quote "$RESOURCE_LIBRARY_UPLOAD_TOKEN_SECRET") UPSTASH_REDIS_REST_URL=$(quote "$UPSTASH_REDIS_REST_URL") UPSTASH_REDIS_REST_TOKEN=$(quote "$UPSTASH_REDIS_REST_TOKEN") ALIYUN_OSS_MIRROR_SIGNING_SECRET=$(quote "$ALIYUN_OSS_MIRROR_SIGNING_SECRET") ALIYUN_OSS_MIRROR_ALLOWED_HOSTS=$(quote "$ALIYUN_OSS_MIRROR_ALLOWED_HOSTS") ALIYUN_OSS_MIRROR_ENABLED=$(quote "$ALIYUN_OSS_MIRROR_ENABLED")"
 
           ssh -p "$AWS_PORT_NORM" -i ~/.ssh/aws_deploy_key \
             -o StrictHostKeyChecking=accept-new \
@@ -169,10 +179,13 @@ jobs:
           set_env_var RESOURCE_LIBRARY_UPLOAD_TOKEN_SECRET "$RESOURCE_LIBRARY_UPLOAD_TOKEN_SECRET"
           set_env_var UPSTASH_REDIS_REST_URL "$UPSTASH_REDIS_REST_URL"
           set_env_var UPSTASH_REDIS_REST_TOKEN "$UPSTASH_REDIS_REST_TOKEN"
+          set_env_var ALIYUN_OSS_MIRROR_SIGNING_SECRET "$ALIYUN_OSS_MIRROR_SIGNING_SECRET"
+          set_env_var ALIYUN_OSS_MIRROR_ALLOWED_HOSTS "$ALIYUN_OSS_MIRROR_ALLOWED_HOSTS"
+          set_env_var ALIYUN_OSS_MIRROR_ENABLED "$ALIYUN_OSS_MIRROR_ENABLED"
           set_env_var AI_ROUTER_CAPACITY_MODE redis
           set_env_var AI_TOOLS_EXECUTION_MODE live
           set_env_var AI_TOOLS_PROVIDER_OPERATIONS ""
-          echo "Updated AI router and AI toolbox runtime configuration in $ENV_FILE"
+          echo "Updated production runtime configuration in $ENV_FILE"
           REMOTE
 
       - name: Fetch .env.production from EC2
@@ -192,7 +205,7 @@ jobs:
 
           # Verify required keys exist (Next.js auto-loads .env.production at build time)
           missing=0
-          for key in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY NEXT_PUBLIC_APP_URL ADMIN_SECRETS_ENCRYPTION_KEY UPSTASH_REDIS_REST_URL UPSTASH_REDIS_REST_TOKEN AI_ROUTER_CAPACITY_MODE; do
+          for key in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY NEXT_PUBLIC_APP_URL ADMIN_SECRETS_ENCRYPTION_KEY UPSTASH_REDIS_REST_URL UPSTASH_REDIS_REST_TOKEN AI_ROUTER_CAPACITY_MODE ALIYUN_OSS_MIRROR_SIGNING_SECRET ALIYUN_OSS_MIRROR_ALLOWED_HOSTS ALIYUN_OSS_MIRROR_ENABLED; do
             if grep -Eq "^${key}=.+$" .env.production; then
               echo "  ✓ $key"
             else
@@ -260,6 +273,17 @@ jobs:
 
       - name: Run release checks
         run: npm run check:release
+
+      - name: Configure and verify OSS mirror rule
+        run: |
+          set -euo pipefail
+          MIRROR_FLAG="$(node --env-file=.env.production -e 'process.stdout.write((process.env.ALIYUN_OSS_MIRROR_ENABLED || "false").trim().toLowerCase())')"
+          if [[ "$MIRROR_FLAG" == "true" ]]; then
+            npm run oss:configure-mirror
+            npm run oss:configure-mirror -- --check
+          else
+            echo "OSS mirror rollout is disabled for this deployment; resolver code will still be deployed."
+          fi
 
       - name: Create deployment archive
         run: |

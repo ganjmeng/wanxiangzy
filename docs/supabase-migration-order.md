@@ -182,3 +182,19 @@ psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/ai-routing-queue-backpres
 ```
 
 `ai-control-plane.sql` 依赖 `admin_config_versions`，并创建供应商健康、路由尝试、用户偏好、原子 RPC、BRIN 时序索引及每小时遥测维护 Cron（脚本会启用 `pg_cron`）。`ai-routing-queue-backpressure.sql` 依赖 `generations` 与 `atomic-credit-rpc.sql`，为临时容量饱和增加延迟重试而不消耗业务失败次数。详细运维说明见 `docs/ai-model-control-plane.md`。
+
+## OSS mirror cloud-pull
+
+生产启用 OSS 云侧直拉前，按时间顺序应用以下两条迁移；第二条禁止明文 Provider
+URL、增加幂等登记和多 worker 租约 RPC，不能省略：
+
+```text
+supabase/migrations/20260818025519_oss_mirror_transfers.sql
+supabase/migrations/20260818032422_harden_oss_mirror_transfers.sql
+```
+
+应用后验证 `public.oss_mirror_transfers` 存在，且下列 RPC 均只授权给
+`service_role`：`register_oss_mirror_transfer`、`claim_oss_mirror_transfer`、
+`claim_oss_mirror_transfers`、`complete_oss_mirror_transfer`、
+`defer_oss_mirror_transfer`、`expire_oss_mirror_transfers`、
+`cleanup_oss_mirror_transfers`。完整启用顺序见 `docs/oss-mirror-cloud-pull.md`。

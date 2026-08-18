@@ -406,6 +406,18 @@ ensure_node_version
 ensure_build_swap
 install_dependencies
 
+# Never switch traffic to a mirror-enabled release until the currently live
+# resolver and the persistent Bucket Website rule pass an exact, read-only
+# check. First-time rollout must therefore be staged with the flag disabled,
+# then configured, then enabled in a later release.
+OSS_MIRROR_FLAG="$(node --env-file-if-exists=.env.production -e 'process.stdout.write(process.env.ALIYUN_OSS_MIRROR_ENABLED || "false")')"
+if [[ "${OSS_MIRROR_FLAG,,}" =~ ^(1|true|yes)$ ]]; then
+  if ! npm run oss:configure-mirror -- --check; then
+    echo "Pre-deploy OSS mirror configuration check failed for $APP_NAME from tag $TAG" >&2
+    exit 1
+  fi
+fi
+
 ln -sfn "$RELEASE_DIR" "$BASE_DIR/current"
 start_app "$BASE_DIR/current"
 
@@ -414,6 +426,17 @@ if ! healthcheck_app; then
   pm2 logs "$APP_NAME" --lines 80 --nostream >&2 || true
   rollback_previous_release
   exit 1
+fi
+
+# Once cloud-pull is enabled, every release must prove the persistent Bucket
+# rule still matches the deployed resolver. This is read-only and fails the
+# release before it can serve generated results with a missing mirror rule.
+if [[ "${OSS_MIRROR_FLAG,,}" =~ ^(1|true|yes)$ ]]; then
+  if ! npm run oss:configure-mirror -- --check; then
+    echo "OSS mirror configuration check failed for $APP_NAME from tag $TAG" >&2
+    rollback_previous_release
+    exit 1
+  fi
 fi
 
 pm2 save

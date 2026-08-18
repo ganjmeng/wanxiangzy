@@ -17,10 +17,12 @@ describe("result image storage", () => {
   const originalOssFavoritePrefix = process.env.ALIYUN_OSS_FAVORITE_PREFIX;
   const originalOssSiteAssetPrefix = process.env.ALIYUN_OSS_SITE_ASSET_PREFIX;
   const originalOssTempPrefix = process.env.ALIYUN_OSS_TEMP_PREFIX;
+  const originalOssMirrorEnabled = process.env.ALIYUN_OSS_MIRROR_ENABLED;
   const tinyAvifBase64 = "AAAAHGZ0eXBhdmlmAAAAAG1pZjFhdmlmbWlhZgAAANZtZXRhAAAAAAAAACFoZGxyAAAAAAAAAABwaWN0AAAAAAAAAAAAAAAAAAAAAA5waXRtAAAAAAABAAAAImlsb2MAAAAAREAAAQABAAAAAAD6AAEAAAAAAAAAHgAAACNpaW5mAAAAAAABAAAAFWluZmUCAAAAAAEAAGF2MDEAAAAAVmlwcnAAAAA4aXBjbwAAAAxhdjFDgSACAAAAABRpc3BlAAAAAAAAAAIAAAACAAAAEHBpeGkAAAAAAwgICAAAABZpcG1hAAAAAAAAAAEAAQOBAgMAAAAmbWRhdBIACgc4ADYQENBpMhEWQAYYYYQAAHlM2KcgXkzU8A==";
 
   beforeEach(() => {
     delete process.env.IMAGE_STORAGE_PROVIDER;
+    delete process.env.ALIYUN_OSS_MIRROR_ENABLED;
     process.env.IMGBB_API_KEY = "test-key";
   });
 
@@ -43,6 +45,7 @@ describe("result image storage", () => {
     restoreEnv("ALIYUN_OSS_FAVORITE_PREFIX", originalOssFavoritePrefix);
     restoreEnv("ALIYUN_OSS_SITE_ASSET_PREFIX", originalOssSiteAssetPrefix);
     restoreEnv("ALIYUN_OSS_TEMP_PREFIX", originalOssTempPrefix);
+    restoreEnv("ALIYUN_OSS_MIRROR_ENABLED", originalOssMirrorEnabled);
   });
 
   it("returns already-persisted ImgBB URLs without reuploading", async () => {
@@ -90,6 +93,21 @@ describe("result image storage", () => {
       "[result-image-storage] generated image storage failed; falling back to provider URL:",
       "图片上传失败: ImgBB HTTP 400"
     );
+  });
+
+  it("never persists a temporary provider URL when strict OSS mirror mode fails", async () => {
+    process.env.IMAGE_STORAGE_PROVIDER = "aliyun-oss";
+    process.env.ALIYUN_OSS_MIRROR_ENABLED = "true";
+    delete process.env.ALIYUN_OSS_ACCESS_KEY_ID;
+    delete process.env.ALIYUN_OSS_ACCESS_KEY_SECRET;
+    delete process.env.ALIYUN_OSS_BUCKET;
+    delete process.env.ALIYUN_OSS_REGION;
+    delete process.env.ALIYUN_OSS_PUBLIC_BASE_URL;
+
+    await expect(persistGeneratedImageUrls(
+      ["https://provider.example/result.png"],
+      "gen-strict-mirror",
+    )).rejects.toThrow();
   });
 
   it("preserves generated result naming with start indexes", async () => {

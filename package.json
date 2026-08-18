@@ -17,6 +17,7 @@
     "typecheck": "tsc --noEmit --pretty false --incremental false",
     "check:ssr-size": "node scripts/check-next-ssr-size.js",
     "check:prompts": "node scripts/prompt-regression-check.js",
+    "oss:configure-mirror": "node --env-file-if-exists=.env.production --env-file-if-exists=.env.local scripts/configure-oss-mirror.mjs",
     "oss:upload-site-assets": "node scripts/upload-site-assets-to-oss.mjs",
     "test": "vitest run",
     "test:watch": "vitest",

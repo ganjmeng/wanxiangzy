@@ -40,6 +40,15 @@ describe("environment contract", () => {
     delete process.env.AI_TOOL_ASSET_REF_SECRET;
     delete process.env.RESOURCE_LIBRARY_UPLOAD_TOKEN_SECRET;
     delete process.env.AI_TOOL_MASK_REF_TTL_SECONDS;
+    delete process.env.ALIYUN_OSS_MIRROR_ENABLED;
+    delete process.env.ALIYUN_OSS_MIRROR_RESOLVER_SECRET;
+    delete process.env.ALIYUN_OSS_MIRROR_SIGNING_SECRET;
+    delete process.env.ALIYUN_OSS_MIRROR_ALLOWED_HOSTS;
+    delete process.env.ALIYUN_OSS_MIRROR_RESOLVER_BASE_URL;
+    delete process.env.ALIYUN_OSS_MIRROR_TTL_SECONDS;
+    delete process.env.ALIYUN_OSS_MIRROR_TRIGGER_TIMEOUT_MS;
+    delete process.env.ALIYUN_OSS_MIRROR_MAX_BYTES;
+    delete process.env.ALIYUN_OSS_MIRROR_MAX_ATTEMPTS;
   });
 
   afterEach(() => {
@@ -258,5 +267,33 @@ describe("environment contract", () => {
         expect.objectContaining({ name: expect.stringMatching(/^AI_TOOL/) }),
       ])
     );
+  });
+
+  it("requires a strong public OSS mirror configuration when enabled", () => {
+    process.env.IMAGE_STORAGE_PROVIDER = "aliyun-oss";
+    process.env.ALIYUN_OSS_MIRROR_ENABLED = "true";
+    process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000";
+    process.env.ALIYUN_OSS_MIRROR_SIGNING_SECRET = "short";
+    process.env.ALIYUN_OSS_MIRROR_ALLOWED_HOSTS = "*";
+    process.env.ADMIN_SECRETS_ENCRYPTION_KEY = "short";
+    process.env.ALIYUN_OSS_MIRROR_MAX_ATTEMPTS = "99";
+
+    expect(validateEnv({ nodeEnv: "production" })).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: "ALIYUN_OSS_MIRROR_SIGNING_SECRET", severity: "error" }),
+      expect.objectContaining({ name: "ALIYUN_OSS_MIRROR_ALLOWED_HOSTS", severity: "error" }),
+      expect.objectContaining({ name: "ADMIN_SECRETS_ENCRYPTION_KEY", severity: "error" }),
+      expect.objectContaining({ name: "ALIYUN_OSS_MIRROR_RESOLVER_BASE_URL", severity: "error" }),
+      expect.objectContaining({ name: "ALIYUN_OSS_MIRROR_MAX_ATTEMPTS", severity: "error" }),
+    ]));
+
+    process.env.NEXT_PUBLIC_APP_URL = "https://app.example.com";
+    process.env.ALIYUN_OSS_MIRROR_SIGNING_SECRET = "m".repeat(40);
+    process.env.ALIYUN_OSS_MIRROR_ALLOWED_HOSTS = "provider.example.com,*.trusted.example.com";
+    process.env.ADMIN_SECRETS_ENCRYPTION_KEY = "a".repeat(64);
+    process.env.ALIYUN_OSS_MIRROR_MAX_ATTEMPTS = "8";
+    const issues = validateEnv({ nodeEnv: "production" });
+    expect(issues).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: expect.stringMatching(/^ALIYUN_OSS_MIRROR_/) }),
+    ]));
   });
 });
