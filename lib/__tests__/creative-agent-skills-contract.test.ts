@@ -65,6 +65,8 @@ describe("complete Agent Skill migration contract", () => {
   it("supports reference roles in Agent and Canvas plus audited system governance", () => {
     expect(agent).toContain("skillReferenceRoleAssetIds");
     expect(agent).toContain("AgentSkillWorkspace");
+    expect(agent).toContain("buildAgentGenerationIdempotencyKey(clientRequestId, index)");
+    expect(agent).not.toContain("`agent:${clientRequestId}");
     expect(canvas).toContain("skillRoleAssignments");
     expect(canvas).toContain("selectCanvasRoleAssets");
     expect(adminApi).toContain('requireAdminApi("prompts:write")');

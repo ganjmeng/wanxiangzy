@@ -14,6 +14,7 @@ import { useTaskQueueGeneration } from "@/components/studio/useTaskQueueGenerati
 import { useStudioAuth } from "@/components/studio/useStudioAuth";
 import { useResourcePicker, assetUrls, type ResourceAsset } from "@/features/resource-library";
 import { uploadLocalResources } from "@/features/resource-library/api";
+import { buildAgentGenerationIdempotencyKey } from "@/lib/agent-generation-idempotency";
 import type { CreativeRunClient } from "@/lib/creative-runs.server";
 import {
   AgentComposerControls,
@@ -432,7 +433,7 @@ export function AgentExperience() {
               ...(runId ? { creative_run_id: runId, creative_step_key: `image-${index + 1}`, creative_step_title: `${selectedSkill?.name || "Agent 主视觉"} · ${currentModel.name}` } : {}),
             };
         const generationResponse = await fetch(generationEndpoint, {
-          method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": `agent:${clientRequestId}:${currentModel.id}` },
+          method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": buildAgentGenerationIdempotencyKey(clientRequestId, index) },
           body: JSON.stringify(generationBody),
         });
         const generation = await generationResponse.json().catch(() => ({})) as { generation_id?: string; credits_remaining?: number; error?: string };
