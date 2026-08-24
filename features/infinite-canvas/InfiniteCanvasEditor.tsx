@@ -648,8 +648,13 @@ export function InfiniteCanvasEditor({ projectId }: { projectId: string }) {
     commitDocument((current) => ({ ...current, nodes: [...current.nodes, placeholder] }));
     setSelectedNodeIds(new Set([outputNodeId]));
     const roleAssets = Object.values(skillRoleAssignments).flat();
-    const selectedReference = selectedNode && ["image", "panorama"].includes(selectedNode.type) && selectedNode.content ? [{ id: selectedNode.id, url: selectedNode.content, title: selectedNode.title, mediaType: "image" as const }] : [];
-    const references = Array.from(new Map([...roleAssets, ...selectedReference].map((asset) => [asset.id, asset])).values());
+    const selectedReferences = documentRef.current.nodes
+      .filter((node) => selectedNodeIds.has(node.id) && ["image", "panorama"].includes(node.type) && node.content)
+      .map((node) => ({ id: node.id, url: node.content, title: node.title, mediaType: "image" as const }));
+    const mentionedReferences = documentRef.current.nodes
+      .filter((node) => intent.includes(`@${node.title}`) && ["image", "panorama"].includes(node.type) && node.content)
+      .map((node) => ({ id: node.id, url: node.content, title: node.title, mediaType: "image" as const }));
+    const references = Array.from(new Map([...roleAssets, ...selectedReferences, ...mentionedReferences].map((asset) => [asset.url, asset])).values());
     try {
       const clientRequestId = crypto.randomUUID();
       const runResponse = await fetch("/api/creative-runs", {

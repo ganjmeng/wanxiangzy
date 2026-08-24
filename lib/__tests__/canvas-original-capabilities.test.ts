@@ -28,6 +28,8 @@ describe("VOZEB canvas capability migration", () => {
 
   it("exposes original composer references, prompt library, skill and generation settings", () => {
     expect(chrome).toContain("@ 引用");
+    expect(editor).toContain("mentionedReferences");
+    expect(editor).toContain("selectedReferences");
     expect(chrome).toContain('href="/prompts"');
     expect(chrome).toContain("选择画布 Skill");
     expect(chrome).toContain("画面比例");
