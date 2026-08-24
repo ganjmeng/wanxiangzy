@@ -79,6 +79,10 @@ describe("standard Redis production contract", () => {
       "get_generation_service_entitlement",
       "redrive_generation_outbox",
       "claim_generation_job",
+      "create_creative_run",
+      "attach_generation_to_creative_run",
+      "checkpoint_generation_execution",
+      "mark_generation_needs_review",
       "settle_generation_for_ai_capacity",
       "settle_generation_for_retryable_error",
       "admin_retry_generation",
@@ -94,8 +98,9 @@ describe("standard Redis production contract", () => {
     expect(deploy.indexOf('"redrive_generation_outbox"')).toBeLessThan(
       deploy.indexOf("const missing = required.filter"),
     );
-    expect(manifest.contractVersion).toBe("2026-08-22.7");
-    expect(manifest.contractHash).toBe("d55a0cf49e5deb81aedc516300b9648447a2bd25421426d2d035f680163e2dff");
+    expect(manifest.contractVersion).toBe("2026-08-25.2");
+    expect(manifest.contractHash).toBe("9f9bc9c13f693c7297cc81e9a946a8c89d9e52dfef2c890c46604ce99f02946c");
+    expect(deploy).toContain('"creative_canvas_projects"');
     expect(deploy).toContain('JSON.parse(readFileSync("runtime-contract.json", "utf8"))');
     expect(deploy).toContain("/rest/v1/rpc/get_runtime_contract_version");
     expect(deploy).toContain("contract?.contract_version !== expectedContractVersion");

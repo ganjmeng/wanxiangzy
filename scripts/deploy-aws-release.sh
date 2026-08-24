@@ -627,6 +627,10 @@ const required = [
   "get_admin_dashboard_period",
   "get_admin_billing_summary",
   "claim_generation_job",
+  "create_creative_run",
+  "attach_generation_to_creative_run",
+  "checkpoint_generation_execution",
+  "mark_generation_needs_review",
   "heartbeat_generation_job",
   "defer_generation_for_ai_capacity",
   "settle_generation_for_ai_capacity",
@@ -664,6 +668,16 @@ const required = [
   "nack_media_asset_cleanup",
   "get_media_asset_lifecycle_health",
 ];
+const requiredTables = [
+  "creative_agent_skills",
+  "creative_agent_skill_versions",
+  "creative_canvas_projects",
+  "creative_runs",
+  "creative_run_steps",
+  "creative_user_skills",
+  "resource_library_assets",
+  "user_prompts",
+];
 if (!url || !serviceKey) {
   console.error("Migration gate: missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.production.");
   process.exit(1);
@@ -691,8 +705,13 @@ if (!url || !serviceKey) {
   const schema = await response.json();
   const paths = schema && typeof schema.paths === "object" ? schema.paths : {};
   const missing = required.filter((name) => !Object.prototype.hasOwnProperty.call(paths, `/rpc/${name}`));
+  const missingTables = requiredTables.filter((name) => !Object.prototype.hasOwnProperty.call(paths, `/${name}`));
   if (missing.length > 0) {
     console.error(`Migration gate: missing RPCs (${missing.join(", ")}). Apply the corresponding migration first.`);
+    process.exit(1);
+  }
+  if (missingTables.length > 0) {
+    console.error(`Migration gate: missing tables (${missingTables.join(", ")}). Apply the corresponding migration first.`);
     process.exit(1);
   }
 

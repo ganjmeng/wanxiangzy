@@ -87,7 +87,7 @@ REPLICATE_API_TOKEN=
 - Feature required: 对应功能实际被调用时必须设置，例如阿里云 OSS 环境变量用于上传，`JOB_PROCESSOR_SECRET` 或 `CRON_SECRET` 用于后台任务处理器。生图 / 视觉识别 / 文本 / 视频供应商不再依赖环境变量，统一在 `/admin/providers` 配置并加密入库。
 - Optional: base URL、模型名、批处理大小、allowlist、legacy provider token 等可按部署需要覆盖。`GPT_TRYON_PROMPT_TEMPLATE=legacy` 可将服装上身的 GPT 提示词回滚到旧模板；默认 `banana`。模块导入只会提示缺失项；具体运行路径需要某个值时才会报错。
 
-生产环境的任务处理器密钥必须使用至少 32 个随机字符，不能使用 `change-me`、`secret`、`password` 等默认或弱值。`AGENT_WORKFLOW_PROCESSOR_SECRET` 和 `AGENT_EVAL_PROCESSOR_SECRET` 可作为 route-specific 覆盖；未设置时会回退到 `JOB_PROCESSOR_SECRET` 或 `CRON_SECRET`。
+生产环境的任务处理器密钥必须使用至少 32 个随机字符，不能使用 `change-me`、`secret`、`password` 等默认或弱值。
 
 ### 3. 初始化 Supabase
 
@@ -98,7 +98,7 @@ REPLICATE_API_TOKEN=
 - `supabase/atomic-credit-rpc.sql`
 - 其余功能脚本按 [Supabase SQL 执行顺序](docs/supabase-migration-order.md) 继续执行
 
-> 注：`supabase/agent-workflows.sql` 虽然属于智能 Agent 模块基础表，但当前任务轨道 `task-queue-items.sql` 依赖 `public.agent_workflows`，新环境仍需先执行它。`supabase/agent-conversations.sql` 和 `supabase/agent-brain-traces.sql` 只有恢复 Agent 功能时再运行。
+VOZEB 创意运行时通过 Supabase migrations 安装；`creative_runs` 只负责 Agent/画布编排，子生成任务继续复用 `generations`、现有账户积分和 BullMQ 队列。
 
 当前上传和生成结果通过存储适配器保存。本地开发可使用 ImgBB；生产用户上传必须使用阿里云 OSS 客户端直传，服务端只签发短时、用户/用途/大小/MIME/Key 绑定的 PostObject policy，不向浏览器下发长期 AccessKey Secret：
 
@@ -169,13 +169,11 @@ pm2 stop ${APP_NAME}-worker                  # 临时停止消费；Outbox/BullM
 pm2 start npm --name ${APP_NAME}-worker-2 -- run worker  # 启动第二个 worker 进程扩容
 ```
 
-> 智能 Agent 模块当前临时下线，对应的 `/api/jobs/process-agent-workflows` 和 `/api/jobs/run-agent-evals` 路由返回 no-op（含 `disabled: "agent module disabled"`），保留鉴权和路径以便恢复时不破坏 cron 配置。模块完整代码在 `refactor/extract-agent-module` 分支，恢复时合并该分支即可。
+生成 worker 的自动视觉修复默认关闭；需要时可用 `GENERATION_AUTO_REGENERATE_ENABLED=true` 启用。
 
-生成 worker 当前不调用智能体视觉评估，结果完成后不再做自动重生修复提示词。如未来重新引入智能体评估，可用 `AGENT_VISUAL_AUTO_REGENERATE_ENABLED=false` 控制。
+### 6. AWS 本地部署与手动回退
 
-### 6. AWS Tag 自动部署
-
-仓库内置 GitHub Actions：PR 和分支 push 会先运行 release gates；推送任意 Git tag 时，部署 workflow 会在上传发布包前运行同一组 gates，然后自动部署到 EC2。
+生产发布从本地 Mac 执行 `scripts/deploy-from-local.sh <tag> [worker_instances]`，并在本地构建 `.next`。GitHub Actions 的 AWS workflow 只接受 `workflow_dispatch`，用于人工回退，不会在推送 tag 时自动部署。
 
 先在 GitHub 仓库 `Settings -> Secrets and variables -> Actions` 添加：
 

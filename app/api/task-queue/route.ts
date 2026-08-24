@@ -74,13 +74,14 @@ type WorkflowRow = {
   status: string;
   intent?: string | null;
   summary?: string | null;
-  input_images?: unknown[] | null;
+  input_images?: unknown;
   final_outputs?: Record<string, unknown> | null;
   cost_reserved?: number | null;
   cost_settled?: number | null;
   error_message?: string | null;
   created_at: string;
   updated_at?: string | null;
+  completed_at?: string | null;
 };
 
 type QueueSummaryData = {
@@ -102,7 +103,7 @@ const EMPTY_SUMMARY: QueueSummaryData = {
 };
 
 const RUNNING_WORKFLOW_STATUSES = ["queued", "running"];
-const FAILED_WORKFLOW_STATUSES = ["failed", "cancelled", "canceled"];
+const FAILED_WORKFLOW_STATUSES = ["failed", "cancelled", "canceled", "needs_review"];
 const RUNNING_TASK_STALE_MS = getRunningTaskStaleMs();
 const AUTH_CLAIMS_TIMEOUT_MS = 2_500;
 const AUTH_USER_FALLBACK_TIMEOUT_MS = 5_000;
@@ -335,7 +336,7 @@ async function loadIndexedTaskQueueResponse(args: {
   // A successful zero from the read model is not enough to prove that the user
   // has no history: deployments can briefly have an empty/stale Redis summary
   // or an index that has not been backfilled for this user yet. Let the legacy
-  // generations/agent_workflows path verify zero instead of returning fake
+  // generations/creative_runs path verifies zero instead of returning fake
   // empty history.
   if (args.includeSummary && summary.totalTaskNum === 0) {
     logTaskQueueWarning("empty indexed summary; verifying source tables", args.userId);
@@ -426,14 +427,14 @@ async function loadQueueSummary(supabase: Awaited<ReturnType<typeof createServer
     loadRunningGenerationBuckets(supabase, userId),
     countRows(
       supabase
-        .from("agent_workflows")
+        .from("creative_runs")
         .select("id", { count: "planned", head: true })
         .eq("user_id", userId),
       "workflows total"
     ),
     countRows(
       supabase
-        .from("agent_workflows")
+        .from("creative_runs")
         .select("id", { count: "planned", head: true })
         .eq("user_id", userId)
         .in("status", FAILED_WORKFLOW_STATUSES),
@@ -501,7 +502,7 @@ async function loadRunningWorkflowBuckets(supabase: Awaited<ReturnType<typeof cr
   try {
     const { data, error } = await withTimeout(
       supabase
-        .from("agent_workflows")
+        .from("creative_runs")
         .select(SUMMARY_WORKFLOW_COLUMNS)
         .eq("user_id", userId)
         .in("status", RUNNING_WORKFLOW_STATUSES)
@@ -694,8 +695,8 @@ async function loadWorkflowRows(
   limit: number
 ) {
   let query = supabase
-    .from("agent_workflows")
-    .select("id,status,intent,summary,input_images,final_outputs,cost_reserved,cost_settled,error_message,created_at,updated_at")
+    .from("creative_runs")
+    .select("id,status,intent,summary,input_images:input_payload,final_outputs:output_payload,error_message,created_at,updated_at,completed_at")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
@@ -709,14 +710,14 @@ async function loadWorkflowRows(
     );
 
     if (error) {
-      logTaskQueueWarning("agent workflows unavailable", error.message);
+      logTaskQueueWarning("creative runs unavailable", error.message);
       return [];
     }
 
     const workflows = (Array.isArray(data) ? data : []) as unknown as WorkflowRow[];
     return workflows.map(normalizeWorkflowRow);
   } catch (error) {
-    logTaskQueueWarning("agent workflows unavailable", toLogMessage(error));
+    logTaskQueueWarning("creative runs unavailable", toLogMessage(error));
     return [];
   }
 }
@@ -769,8 +770,8 @@ async function loadRunningWorkflowRows(
   try {
     const { data, error } = await withTimeout(
       supabase
-        .from("agent_workflows")
-        .select("id,status,intent,summary,input_images,final_outputs,cost_reserved,cost_settled,error_message,created_at,updated_at")
+        .from("creative_runs")
+        .select("id,status,intent,summary,input_images:input_payload,final_outputs:output_payload,error_message,created_at,updated_at,completed_at")
         .eq("user_id", userId)
         .in("status", RUNNING_WORKFLOW_STATUSES)
         .order("created_at", { ascending: false })
@@ -844,14 +845,14 @@ function normalizeWorkflowRow(row: WorkflowRow): TaskQueueItem {
   const resultThumbnails = getWorkflowResultThumbnails(row);
   return {
     id: row.id,
-    module: "workflow",
+    module: "creativeRun",
     title: row.summary || workflowLabel(row.intent || ""),
     status: staleRunning && statusGroup === "running" ? "processing_delayed" : row.status,
     statusGroup,
-    time: formatDuration(row.created_at, isTaskCompleteLike(statusGroup) ? row.updated_at : null),
+    time: formatDuration(row.created_at, isTaskCompleteLike(statusGroup) ? row.completed_at || row.updated_at : null),
     createdAt: row.created_at,
     updatedAt: row.updated_at || row.created_at,
-    completedAt: row.updated_at,
+    completedAt: row.completed_at || (isTaskCompleteLike(statusGroup) ? row.updated_at || null : null),
     error: row.error_message || "",
     progress: statusGroup === "completed" ? 100 : statusGroup === "failed" ? 100 : 15,
     expectedCount: Math.max(1, resultThumbnails.length || inputThumbnails.length || 1),
@@ -859,7 +860,7 @@ function normalizeWorkflowRow(row: WorkflowRow): TaskQueueItem {
     inputThumbnails,
     resultThumbnails,
     thumbnails: getDisplayThumbnails(resultThumbnails, inputThumbnails),
-    applyUrl: `/history?detail=${encodeURIComponent(row.id)}`,
+    applyUrl: `/agent?run=${encodeURIComponent(row.id)}`,
   };
 }
 
@@ -994,11 +995,23 @@ function getInputThumbnails(row: QueueRow, payload: Record<string, unknown>) {
 }
 
 function getWorkflowInputThumbnails(row: WorkflowRow) {
-  return Array.isArray(row.input_images)
+  const payload = row.input_images && typeof row.input_images === "object" && !Array.isArray(row.input_images)
+    ? row.input_images as Record<string, unknown>
+    : {};
+  const imageRows = Array.isArray(row.input_images)
     ? row.input_images
-        .map((image) => image && typeof image === "object" && "url" in image ? (image as { url?: unknown }).url : "")
-        .filter((url): url is string => typeof url === "string" && url.length > 0)
-    : [];
+    : Array.isArray(payload.images)
+      ? payload.images
+      : [];
+  return Array.from(new Set([
+    ...imageRows.map((image) => image && typeof image === "object" && "url" in image ? (image as { url?: unknown }).url : image),
+    ...stringArray(payload.inputUrls),
+    ...stringArray(payload.referenceUrls),
+    ...stringArray(payload.imageUrls),
+    stringValue(payload.inputUrl),
+    stringValue(payload.referenceUrl),
+    stringValue(payload.imageUrl),
+  ].filter((url): url is string => typeof url === "string" && url.length > 0))).slice(0, 8);
 }
 
 function getWorkflowResultThumbnails(row: WorkflowRow) {

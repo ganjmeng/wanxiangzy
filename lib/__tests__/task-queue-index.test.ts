@@ -4,12 +4,37 @@ import {
   applyStaleRunningFallback,
   indexRowToTaskQueueItem,
   normalizeAiToolTaskQueueItem,
+  normalizeCreativeRunTaskQueueItem,
   normalizeGenerationTaskQueueItem,
   taskQueueItemToIndexWrite,
 } from "../task-queue-index";
 import type { TaskQueueItem } from "../task-queue";
 
 describe("task queue index", () => {
+  it("projects creative runs into the shared task rail and treats review as terminal", () => {
+    const item = normalizeCreativeRunTaskQueueItem({
+      id: "run_1",
+      user_id: "user_1",
+      status: "needs_review",
+      intent: "生成一套商品视觉",
+      summary: "夏季商品套图",
+      input_images: { inputUrls: ["https://example.com/input.png"] },
+      final_outputs: { resultUrls: ["https://example.com/result.png"] },
+      error_message: "需要确认上游任务是否已创建",
+      created_at: "2026-08-24T10:00:00.000Z",
+      updated_at: "2026-08-24T10:01:00.000Z",
+    });
+
+    expect(item).toMatchObject({
+      module: "creativeRun",
+      title: "夏季商品套图",
+      statusGroup: "failed",
+      applyUrl: "/agent?run=run_1",
+      inputThumbnails: ["https://example.com/input.png"],
+      resultThumbnails: ["https://example.com/result.png"],
+    });
+  });
+
   it("never exposes diagnostic errors while a task is queued or running", () => {
     const queued = {
       id: "queued-task",

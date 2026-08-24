@@ -1,5 +1,6 @@
 import {
   Bot,
+  BookOpenText,
   Box,
   Building2,
   Camera,
@@ -8,12 +9,14 @@ import {
   Expand,
   Footprints,
   GalleryHorizontalEnd,
+  GalleryVerticalEnd,
   Hand,
   Heart,
   History,
   Home,
   Images,
   ImagePlus,
+  LayoutTemplate,
   Languages,
   PackageOpen,
   PackageSearch,
@@ -35,6 +38,7 @@ export type AppModuleKey =
   | "aiShoots"
   | "productImages"
   | "assistant"
+  | "canvas"
   | "tools"
   | "toolbox"
   | "enterprise"
@@ -44,6 +48,10 @@ export type AppModuleKey =
 export type FeatureKey =
   | "home"
   | "agent"
+  | "infiniteCanvas"
+  | "prompts"
+  | "plaza"
+  | "assets"
   | "tryon"
   | "outfitFusion"
   | "faceSwap"
@@ -116,6 +124,13 @@ export const TOP_MODULES: TopModuleNavItem[] = [
     labelKey: "Header.modules.assistant",
     icon: Bot,
     badgeLabelKey: "Header.featuresBadge.upgrade",
+  },
+  {
+    key: "canvas",
+    href: "/canvas",
+    label: "无限画布",
+    icon: LayoutTemplate,
+    badge: "NEW",
   },
   { key: "aiShoots", href: "/create", label: "模特图", labelKey: "Header.modules.aiShoots", icon: Camera },
   {
@@ -321,6 +336,42 @@ export const FEATURE_ITEMS: FeatureNavItem[] = [
     shortLabel: "助手",
     description: "聊天、分析与工作流执行",
     icon: Bot,
+  },
+  {
+    key: "prompts",
+    module: "assistant",
+    href: "/prompts",
+    label: "提示词",
+    shortLabel: "提示词",
+    description: "官方灵感词库与我的提示词",
+    icon: BookOpenText,
+  },
+  {
+    key: "plaza",
+    module: "assistant",
+    href: "/plaza",
+    label: "创作广场",
+    shortLabel: "广场",
+    description: "浏览案例并一键带入 Agent",
+    icon: GalleryVerticalEnd,
+  },
+  {
+    key: "assets",
+    module: "assistant",
+    href: "/resource-library",
+    label: "素材库",
+    shortLabel: "素材",
+    description: "上传素材、生成结果与提示词资产",
+    icon: Images,
+  },
+  {
+    key: "infiniteCanvas",
+    module: "canvas",
+    href: "/canvas",
+    label: "无限画布",
+    shortLabel: "画布",
+    description: "自由组织灵感、素材和生成结果",
+    icon: LayoutTemplate,
   },
   {
     key: "textToImage",

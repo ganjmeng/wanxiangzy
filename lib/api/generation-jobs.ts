@@ -34,12 +34,17 @@ import {
 } from "@/lib/ai-control-plane/router.server";
 import { getAiControlPlaneConfig } from "@/lib/ai-control-plane/server";
 import {
+  isGenerationSubmissionOutcomeUnknownError,
   isRetryableGenerationError,
   isStaleExecutionFenceError,
   RetryableGenerationError,
   sanitizeGenerationErrorMessage,
   StaleExecutionFenceError,
 } from "@/lib/api/generation-errors";
+import {
+  checkpointGenerationExecution,
+  markGenerationNeedsReview,
+} from "@/lib/api/generation-execution";
 import {
   attachGenerationMediaAssetReferences,
   collectGenerationInputMediaAssetIds,
@@ -281,6 +286,7 @@ export type GenerationJobPayload = GenerationJobPayloadBase & (
       aiModel: LingyaModel;
       aspectRatio: AspectRatio;
       imageSize: ImageSize;
+      userPrompt?: string;
       prompt: string;
       genCount: number;
       aiTool?: {
@@ -705,8 +711,24 @@ async function runClaimedJob(
       return persistedModules;
     };
 
+    const existingUpstream = readExistingAsyncTask(payload);
+    await checkpointGenerationExecution(supabase, generationFence(job), {
+      phase: existingUpstream.taskId ? "polling" : "submitting",
+      upstreamTaskId: existingUpstream.taskId,
+      upstreamRequestId: existingUpstream.requestId,
+      upstreamDeploymentId: stringField(existingUpstream.providerDetails, "deploymentId"),
+      upstreamStatus: existingUpstream.status || (existingUpstream.taskId ? "resuming" : "submitting"),
+    });
+
     const execution = await executePayload(payload, async (update) => {
       if (update.moduleResults?.length) {
+        await checkpointFromProgress(supabase, job, update);
+        if (update.resultUrls.some(Boolean) || update.moduleResults.some((item) => Boolean(item.resultUrl))) {
+          await checkpointGenerationExecution(supabase, generationFence(job), {
+            phase: "persisting",
+            resultPayload: { resultCount: update.resultUrls.filter(Boolean).length },
+          });
+        }
         const persistedModules = await persistModuleResults(update.moduleResults);
         const nextProgress = typeof update.progress === "number" ? update.progress : lastProgress;
         partialPromptTrace.splice(0, partialPromptTrace.length, ...update.promptTrace);
@@ -734,6 +756,13 @@ async function runClaimedJob(
       );
       if (!hasNextRawUrls && update.promptTrace.length === partialPromptTrace.length && nextProgress === lastProgress && !hasExternalChange) return;
 
+      await checkpointFromProgress(supabase, job, update);
+      if (hasNextRawUrls) {
+        await checkpointGenerationExecution(supabase, generationFence(job), {
+          phase: "persisting",
+          resultPayload: { resultCount: nextRawUrls.filter(Boolean).length },
+        });
+      }
       const persistedNextUrls = hasNextRawUrls ? await persistOrderedResultUrls(nextRawUrls) : nextRawUrls;
       partialResultUrls.splice(0, partialResultUrls.length, ...persistedNextUrls);
       partialPromptTrace.splice(0, partialPromptTrace.length, ...update.promptTrace);
@@ -753,6 +782,20 @@ async function runClaimedJob(
         providerDetails: update.providerDetails,
       });
     }, job.user_id, job.id);
+    await checkpointGenerationExecution(supabase, generationFence(job), {
+      phase: "result_ready",
+      upstreamTaskId: execution.externalTaskId,
+      upstreamRequestId: execution.externalRequestId,
+      upstreamStatus: execution.externalStatus || "result_ready",
+      resultPayload: {
+        resultCount: execution.resultUrls.filter(Boolean).length,
+        expectedCount: getExpectedResultCount(payload),
+      },
+    });
+    await checkpointGenerationExecution(supabase, generationFence(job), {
+      phase: "persisting",
+      resultPayload: { resultCount: execution.resultUrls.filter(Boolean).length },
+    });
     if (payload.kind === "productRetouch" && execution.hardValidation) {
       await assertProductRetouchResultUnique(supabase, payload, execution.hardValidation);
     }
@@ -823,6 +866,10 @@ async function runClaimedJob(
       assetIds: finalUrls.map(parseCanonicalMediaAssetId).filter((id): id is string => Boolean(id)),
       role: "generation_result",
     });
+    await checkpointGenerationExecution(supabase, generationFence(job), {
+      phase: "settling",
+      resultPayload: { resultCount: finalUrls.length, expectedCount },
+    });
     await completeGenerationRecord(supabase, job, finalUrls, finalPayload, {
       refundAmount,
       errorMessage: settlementError,
@@ -833,6 +880,16 @@ async function runClaimedJob(
       return { businessFailed: false, deferred: false, stale: true };
     }
     const message = sanitizeGenerationErrorMessage(err, "生成失败");
+    if (isGenerationSubmissionOutcomeUnknownError(err)) {
+      await markGenerationNeedsReview(
+        supabase,
+        generationFence(job),
+        message,
+        "submission_outcome_unknown",
+      );
+      await syncGenerationQueueIndex(job.id, "needs-review");
+      return { businessFailed: true, deferred: false };
+    }
     if (isAiTenantCapacityUnavailableError(err)) {
       const outcome = await deferGenerationForTenantCapacity(supabase, job, err.retryAfterSeconds, message);
       return { businessFailed: outcome === "failed", deferred: outcome === "deferred" };
@@ -2839,7 +2896,7 @@ function createSkippedVisualQualityEvaluation(payload: GenerationJobPayload): Vi
 }
 
 function isAutoRegenerationEnabled() {
-  return process.env.AGENT_VISUAL_AUTO_REGENERATE_ENABLED === "true";
+  return process.env.GENERATION_AUTO_REGENERATE_ENABLED === "true";
 }
 
 function repairPayloadPrompt(payload: GenerationJobPayload, quality: VisualQualityEvaluation): GenerationJobPayload {
@@ -3184,6 +3241,47 @@ async function writeGenerationProgress(
   if (error) throw new Error(`更新任务进度失败: ${error.message}`);
   if (!data) throw new StaleExecutionFenceError("任务执行租约已丢失");
   await syncGenerationQueueIndex(job.id, "progress");
+}
+
+function generationFence(job: ClaimedJob) {
+  return {
+    generationId: job.id,
+    deliveryVersion: job.delivery_version,
+    executionToken: job.execution_token,
+  };
+}
+
+async function checkpointFromProgress(
+  supabase: ReturnType<typeof createAdminClient>,
+  job: ClaimedJob,
+  update: GenerationProgressUpdate,
+) {
+  const hasResult = update.resultUrls.some(Boolean)
+    || Boolean(update.moduleResults?.some((item) => Boolean(item.resultUrl)));
+  const status = String(update.externalStatus || "").trim().toLowerCase();
+  const phase = hasResult
+    ? "result_ready" as const
+    : update.externalTaskId
+      ? status === "queued" || status === "submitted"
+        ? "submitted" as const
+        : "polling" as const
+      : null;
+  if (!phase) return;
+  await checkpointGenerationExecution(supabase, generationFence(job), {
+    phase,
+    upstreamTaskId: update.externalTaskId,
+    upstreamRequestId: update.externalRequestId,
+    upstreamProvider: stringField(update.providerDetails, "providerId")
+      || stringField(update.providerDetails, "provider"),
+    upstreamDeploymentId: stringField(update.providerDetails, "deploymentId"),
+    upstreamStatus: update.externalStatus,
+    resultPayload: hasResult ? { resultCount: update.resultUrls.filter(Boolean).length } : undefined,
+  });
+}
+
+function stringField(value: Record<string, unknown> | undefined, key: string) {
+  const field = value?.[key];
+  return typeof field === "string" && field.trim() ? field.trim() : undefined;
 }
 
 function appendResumableBatchProgress<T extends GenerationJobPayload>(

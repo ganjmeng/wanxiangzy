@@ -50,7 +50,7 @@ const moduleOptions = [
   { value: "allCategoryProductImage", label: "全品类商品图" },
   { value: "outfitFusion", label: "搭配融图" },
   { value: "video", label: "AI 视频" },
-  { value: "workflow", label: "历史工作流" },
+  { value: "creative_run", label: "创意任务" },
 ];
 
 const TASK_PAGE_SIZE_OPTIONS = [20, 50] as const;
@@ -98,7 +98,7 @@ export function AdminTasksClient({ tasks, q, status, module, stale, page, pageSi
     { title: "灵点", dataIndex: "credits", width: 80, sorter: (a, b) => (a.credits || 0) - (b.credits || 0), render: (value) => <span className="tabular-nums">{value ?? "-"}</span> },
     { title: "处理状态", dataIndex: "isStale", width: 150, filters: [{ text: "长时间未完成", value: true }], onFilter: (value, row) => row.isStale === value, render: (_, row) => row.isStale ? <Tag color="orange"><span className="tabular-nums">{row.staleMinutes}</span> 分钟无进展</Tag> : "正常" },
     { title: "创建", dataIndex: "createdAt", width: 130, render: formatDateTime },
-    { title: "操作", width: 270, render: (_, row) => <AdminTaskActions id={row.sourceId} sourceType={row.sourceType} statusGroup={row.statusGroup} isStale={row.isStale} compact canOperate={canOperate} /> },
+    { title: "操作", width: 270, render: (_, row) => <AdminTaskActions id={row.sourceId} sourceType={row.sourceType} statusGroup={row.statusGroup} status={row.status} isStale={row.isStale} compact canOperate={canOperate} /> },
     { title: "错误", dataIndex: "errorMessage", width: 360, className: "admin-task-error-cell", render: renderTaskError },
   ], [canOperate]);
   const taskRows = Array.isArray(tasks.rows) ? tasks.rows : [];
@@ -223,7 +223,7 @@ function statusLabel(status: string, group: TaskStatusGroup) {
 }
 
 function sourceTypeLabel(value: string) {
-  if (value === "workflow") return "工作流任务";
+  if (value === "creative_run") return "创意任务";
   return "生成任务";
 }
 

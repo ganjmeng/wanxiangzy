@@ -1,6 +1,6 @@
 # AWS EC2 发布检查表
 
-本项目生产部署由 GitHub Actions 触发，目标是 AWS EC2。工作流文件是 `.github/workflows/deploy-aws-on-tag.yml`；当推送任意 Git tag 时，CI 会先运行 `npm run check:release`，再打包源码并通过 SSH 上传到 EC2，最后执行 `scripts/deploy-aws-release.sh`。
+本项目生产部署从本地 Mac 执行 `scripts/deploy-from-local.sh <tag> [worker_instances]`，目标是 AWS EC2，`.next` 必须在本地构建。`.github/workflows/deploy-aws-on-tag.yml` 只用于 `workflow_dispatch` 人工回退，不会因推送 tag 自动部署。
 
 ## 发布前
 
@@ -26,7 +26,6 @@
    supabase/credits-update.sql
    supabase/set-signup-credits-50.sql
    supabase/atomic-credit-rpc.sql
-   supabase/agent-workflows.sql
    supabase/task-queue-items.sql
    supabase/admin-console.sql
    supabase/migrations/20260818072132_bullmq_generation_outbox.sql
@@ -38,9 +37,15 @@
    supabase/migrations/20260819101500_admin_dashboard_period_aggregate.sql
    supabase/migrations/20260819112000_admin_billing_summary.sql
    supabase/migrations/20260821123000_generation_capacity_backpressure.sql
+   supabase/migrations/20260822100000_generation_service_entitlements.sql
+   supabase/migrations/20260822190000_generation_parent_state_consistency.sql
+   supabase/migrations/20260824153558_vozeb_creative_runtime_foundation.sql
+   supabase/migrations/20260824193939_complete_agent_skill_runtime.sql
+   supabase/migrations/20260824203735_creative_runtime_fk_indexes.sql
+   supabase/migrations/20260825030000_creative_user_skills.sql
    ```
 
-   前四个时间戳迁移是 clean-slate 破坏性迁移：先备份，在停写维护窗口严格顺序执行，随后只允许向前修复。统一模型、Worker 控制面、后台经营指标聚合和生成容量退避迁移是非破坏性的，必须在发布前紧随其后执行。部署会精确校验 runtime contract 和所需 RPC，旧签名同名 RPC 不能通过。
+   前四个时间戳迁移会清理旧 generation 队列数据，VOZEB foundation 迁移会永久删除旧 Agent v1 表：先备份，在停写维护窗口严格顺序执行，随后再应用三个 Skill 迁移。部署会精确校验 runtime contract、所需 RPC 和 Skill 表，缺少任一项都不能切流。
 
 4. 检查生产环境变量。EC2 上的文件位于 `AWS_APP_DIR`（未配置时默认 `~/apps/wanxiangzy`）下：
 

@@ -36,7 +36,7 @@ CREATE TRIGGER generations_set_updated_at
 CREATE TABLE IF NOT EXISTS public.task_queue_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  source_type TEXT NOT NULL CHECK (source_type IN ('generation', 'workflow', 'ai_tool')),
+  source_type TEXT NOT NULL CHECK (source_type IN ('generation', 'creative_run', 'ai_tool')),
   source_id UUID NOT NULL,
   module TEXT NOT NULL DEFAULT 'tryon',
   title TEXT NOT NULL DEFAULT U&'\4EFB\52A1',
@@ -60,7 +60,7 @@ ALTER TABLE public.task_queue_items
   DROP CONSTRAINT IF EXISTS task_queue_items_source_type_check;
 ALTER TABLE public.task_queue_items
   ADD CONSTRAINT task_queue_items_source_type_check
-  CHECK (source_type IN ('generation', 'workflow', 'ai_tool'));
+  CHECK (source_type IN ('generation', 'creative_run', 'ai_tool'));
 
 CREATE INDEX IF NOT EXISTS task_queue_items_user_module_created_idx
   ON public.task_queue_items(user_id, module, created_at DESC);
@@ -86,7 +86,7 @@ AS $$
 DECLARE
   v_status TEXT := lower(coalesce(p_status, ''));
 BEGIN
-  IF v_status IN ('failed', 'timeout', 'canceled', 'cancelled') THEN
+  IF v_status IN ('failed', 'timeout', 'canceled', 'cancelled', 'needs_review') THEN
     RETURN 'failed';
   END IF;
   IF v_status IN ('completed', 'succeeded', 'success', 'partially_completed') THEN
@@ -123,7 +123,7 @@ BEGIN
   IF v IN ('toolbox', 'ai-tool', 'ai_tools', 'ai-tools') THEN RETURN 'toolbox'; END IF;
   IF v IN ('grass', 'seeding') THEN RETURN 'grass'; END IF;
   IF v LIKE '%pose%' THEN RETURN 'pose'; END IF;
-  IF v = '' THEN RETURN 'workflow'; END IF;
+  IF v = '' THEN RETURN 'creativeRun'; END IF;
   RETURN p_value;
 END;
 $$;
@@ -145,7 +145,7 @@ BEGIN
     WHEN 'pose' THEN RETURN U&'\59FF\52BF\88C2\53D8';
     WHEN 'garment3d' THEN RETURN U&'\670D\88C5 3D';
     WHEN 'generalImage' THEN RETURN U&'\521B\610F\751F\56FE';
-    WHEN 'workflow' THEN RETURN U&'\5DE5\4F5C\6D41';
+    WHEN 'creativeRun' THEN RETURN U&'\521B\610F\4EFB\52A1';
     WHEN 'toolbox' THEN RETURN U&'AI \5DE5\5177\7BB1';
     ELSE RETURN U&'AI \4EFB\52A1';
   END CASE;

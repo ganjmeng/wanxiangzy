@@ -101,8 +101,8 @@ describe("AWS EC2 zero-downtime PM2 deployment contract", () => {
 
     expect(manifest).toEqual({
       schemaVersion: 1,
-      contractVersion: "2026-08-22.7",
-      contractHash: "d55a0cf49e5deb81aedc516300b9648447a2bd25421426d2d035f680163e2dff",
+      contractVersion: "2026-08-25.2",
+      contractHash: "9f9bc9c13f693c7297cc81e9a946a8c89d9e52dfef2c890c46604ce99f02946c",
     });
     expect(deploy).toContain("release_matches_runtime_contract()");
     expect(deploy).toContain('if ! release_matches_runtime_contract "$PREVIOUS_TARGET"; then');
@@ -112,5 +112,20 @@ describe("AWS EC2 zero-downtime PM2 deployment contract", () => {
     expect(deploy.indexOf('if ! release_matches_runtime_contract "$PREVIOUS_TARGET"; then')).toBeLessThan(
       deploy.indexOf('ln -sfn "$PREVIOUS_TARGET" "$BASE_DIR/current"'),
     );
+  });
+
+  it("blocks release cutover until the complete Agent Skill schema is present", () => {
+    const releaseDeploy = read("scripts/deploy-aws-release.sh");
+    const localDeploy = read("scripts/deploy-from-local.sh");
+
+    for (const table of [
+      "creative_agent_skills",
+      "creative_agent_skill_versions",
+      "creative_user_skills",
+    ]) {
+      expect(releaseDeploy).toContain(`"${table}"`);
+      expect(localDeploy).toContain(`"${table}"`);
+    }
+    expect(localDeploy).toContain("Apply the Agent Skill migrations first.");
   });
 });

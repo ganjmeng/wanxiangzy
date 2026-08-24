@@ -16,7 +16,7 @@ export const TASK_QUEUE_MODULE_CACHE_LIMIT = 100;
 export const TASK_QUEUE_RUNNING_STALE_MS = 60 * 60 * 1000;
 export const TASK_RESULT_THUMBNAIL_LIMIT = 4;
 
-export type TaskQueueSourceType = "generation" | "workflow" | "ai_tool";
+export type TaskQueueSourceType = "generation" | "creative_run" | "ai_tool";
 
 export type TaskQueueGenerationSourceRow = {
   id: string;
@@ -34,14 +34,14 @@ export type TaskQueueGenerationSourceRow = {
   reference_url?: string | null;
 };
 
-export type TaskQueueWorkflowSourceRow = {
+export type TaskQueueCreativeRunSourceRow = {
   id: string;
   user_id: string;
   status: string | null;
   generation_type?: string | null;
   intent?: string | null;
   summary?: string | null;
-  input_images?: unknown[] | null;
+  input_images?: unknown;
   error_message?: string | null;
   created_at: string | null;
   updated_at?: string | null;
@@ -113,6 +113,7 @@ const MODULE_LABELS: Record<string, string> = {
   videoMotion: "动作模仿",
   videoFirstLastFrame: "首尾帧",
   workflow: "工作流",
+  creativeRun: "创意任务",
   toolbox: "AI工具箱",
 };
 
@@ -137,6 +138,7 @@ export const TASK_QUEUE_MODULE_LABEL_KEYS: Record<string, string> = {
   videoMotion: "LibShared.taskQueue.module.videoMotion",
   videoFirstLastFrame: "LibShared.taskQueue.module.videoFirstLastFrame",
   workflow: "LibShared.taskQueue.module.workflow",
+  creativeRun: "LibShared.taskQueue.module.workflow",
 };
 
 export const TASK_QUEUE_FALLBACK_TITLE = "任务";
@@ -165,6 +167,7 @@ const MODULE_PATHS: Record<string, string> = {
   videoMotion: "/video/motion-control",
   videoFirstLastFrame: "/video/first-last-frame",
   workflow: "/workflow",
+  creativeRun: "/agent",
   toolbox: "/ai-tools",
 };
 
@@ -180,7 +183,7 @@ export function emptyTaskQueueSummary(): TaskQueueSummary {
 
 export function taskQueueStatusGroup(status: string | null | undefined, resultCount = 0): TaskStatusGroup {
   const normalized = String(status || "").toLowerCase();
-  if (normalized === "failed" || normalized === "timeout" || normalized === "canceled" || normalized === "cancelled") {
+  if (normalized === "failed" || normalized === "timeout" || normalized === "canceled" || normalized === "cancelled" || normalized === "needs_review") {
     return "failed";
   }
   if (normalized === "completed" || normalized === "succeeded" || normalized === "success") {
@@ -260,13 +263,13 @@ export function inferGenerationModule(row: TaskQueueGenerationSourceRow): string
   return "tryon";
 }
 
-export function inferWorkflowModule(row: TaskQueueWorkflowSourceRow): string {
+export function inferCreativeRunModule(row: TaskQueueCreativeRunSourceRow): string {
   const payload = row.workflow_payload || {};
-  const explicit = row.generation_type || stringValue(payload.module) || stringValue(payload.kind) || row.intent || "";
+  const explicit = row.generation_type || stringValue(payload.module) || stringValue(payload.kind) || "";
   if (explicit) {
     return normalizeModule(explicit);
   }
-  return "workflow";
+  return "creativeRun";
 }
 
 export function normalizeModule(module: string): string {
@@ -416,8 +419,8 @@ export function normalizeAiToolTaskQueueItem(row: TaskQueueAiToolSourceRow): Tas
   return isPersistingOutput ? item : applyStaleRunningFallback(item);
 }
 
-export function normalizeWorkflowTaskQueueItem(row: TaskQueueWorkflowSourceRow): TaskQueueItem {
-  const module = inferWorkflowModule(row);
+export function normalizeCreativeRunTaskQueueItem(row: TaskQueueCreativeRunSourceRow): TaskQueueItem {
+  const module = inferCreativeRunModule(row);
   const resultThumbnails = extractWorkflowResultThumbnails(row.final_outputs);
   const statusGroup = taskQueueStatusGroup(row.status, resultThumbnails.length);
   const createdAt = row.created_at || new Date().toISOString();
@@ -439,7 +442,7 @@ export function normalizeWorkflowTaskQueueItem(row: TaskQueueWorkflowSourceRow):
     inputThumbnails: extractWorkflowInputThumbnails(row.workflow_payload, row.input_images),
     resultThumbnails,
     thumbnails: resultThumbnails,
-    applyUrl: `${modulePath(module)}?workflow=${encodeURIComponent(row.id)}`,
+    applyUrl: `/agent?run=${encodeURIComponent(row.id)}`,
   };
   return applyStaleRunningFallback(item);
 }
@@ -585,11 +588,9 @@ function aiToolOperation(payload?: Record<string, unknown> | null): AiToolSlug |
 
 function extractWorkflowInputThumbnails(
   payload: Record<string, unknown> | null | undefined,
-  inputImages?: unknown[] | null,
+  inputImages?: unknown,
 ): string[] {
-  const imageUrls = Array.isArray(inputImages)
-    ? inputImages.flatMap((image) => extractUrlsFromUnknown(image))
-    : [];
+  const imageUrls = extractUrlsFromUnknown(inputImages);
   if (!payload) {
     return uniqueStrings(imageUrls).slice(0, 8);
   }
@@ -631,6 +632,11 @@ function extractUrlsFromUnknown(value: unknown): string[] {
       ...arrayOfStrings(record.urls),
       ...arrayOfStrings(record.images),
       ...arrayOfStrings(record.resultUrls),
+      ...arrayOfStrings(record.inputUrls),
+      ...arrayOfStrings(record.referenceUrls),
+      ...arrayOfStrings(record.imageUrls),
+      stringValue(record.inputUrl),
+      stringValue(record.referenceUrl),
     ].filter(Boolean);
   }
   return [];

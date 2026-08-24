@@ -155,6 +155,7 @@ export default async function AdminTaskDetailPage({ params }: PageProps) {
               id={task.sourceId}
               sourceType={task.sourceType}
               statusGroup={task.statusGroup}
+              status={task.status}
               isStale={task.isStale}
               canOperate={hasAdminPermission(admin.role, "tasks:operate")}
             />
@@ -198,7 +199,7 @@ export default async function AdminTaskDetailPage({ params }: PageProps) {
         />
       </AdminSection>
 
-      {detail.sourceType === "workflow" && (
+      {detail.sourceType === "creative_run" && (
         <div className="grid gap-5 xl:grid-cols-2">
           <JsonRows title="工作流步骤" rows={detail.workflowSteps} empty="暂无步骤" />
           <JsonRows title="工作流事件" rows={detail.workflowEvents} empty="暂无事件" />

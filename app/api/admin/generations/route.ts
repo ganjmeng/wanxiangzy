@@ -31,6 +31,6 @@ export async function GET(request: Request) {
   return NextResponse.json({ ...tasks, query }, { headers: { "Cache-Control": "no-store" } });
 }
 
-function normalizeSourceType(value: string | null): "generation" | "workflow" | "all" {
-  return value === "generation" || value === "workflow" ? value : "all";
+function normalizeSourceType(value: string | null): "generation" | "creative_run" | "all" {
+  return value === "generation" || value === "creative_run" ? value : "all";
 }

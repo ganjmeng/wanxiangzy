@@ -22,6 +22,9 @@ import {
 import { getEnabledVideoProviders } from "@/lib/api/video-provider";
 import { normalizeVideoProviderName } from "@/lib/api/video-provider-registry";
 import { getConfiguredVideoCreditCost } from "@/lib/ai-control-plane/server";
+import { attachGenerationToCreativeRun } from "@/lib/api/creative-runtime";
+import { getAdminClient } from "@/lib/supabase/admin";
+import { getCreativeRunExecutionContext } from "@/lib/creative-skills.server";
 
 export const maxDuration = 60;
 
@@ -39,14 +42,23 @@ export async function POST(request: NextRequest) {
     catch { return NextResponse.json({ error: "请求格式无效" }, { status: 400 }); }
 
     const imageUrl = typeof body.imageUrl === "string" ? body.imageUrl.trim() : "";
-    const prompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
+    let prompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
+    let runVideoPreferences: Record<string, unknown> = {};
+    const creativeRunId = typeof body.creative_run_id === "string" ? body.creative_run_id.trim() : "";
+    if (creativeRunId) {
+      const execution = await getCreativeRunExecutionContext(getAdminClient(), { userId: user.id, runId: creativeRunId, fallbackPrompt: prompt });
+      prompt = execution.prompt;
+      runVideoPreferences = execution.generationPreferences.video && typeof execution.generationPreferences.video === "object"
+        ? execution.generationPreferences.video as Record<string, unknown>
+        : {};
+    }
     const requestedMode = normalizeAiVideoModelMode(body.modelMode, "videoImageToVideo");
-    const requestedResolution = normalizeAiVideoResolution(body.resolution, requestedMode);
-    const duration = normalizeAiVideoDuration(body.duration);
-    const genCount = normalizeAiVideoGenCount(body.genCount);
+    const requestedResolution = normalizeAiVideoResolution(runVideoPreferences.resolution ?? body.resolution, requestedMode);
+    const duration = normalizeAiVideoDuration(runVideoPreferences.seconds ?? body.duration);
+    const genCount = normalizeAiVideoGenCount(runVideoPreferences.count ?? body.genCount);
     const templateId = Number(body.templateId || 0) || undefined;
-    const aspectRatio = normalizeAiVideoAspectRatio(body.aspectRatio);
-    const audioMode = normalizeAiVideoAudioMode(body.audioMode);
+    const aspectRatio = normalizeAiVideoAspectRatio(runVideoPreferences.aspectRatio ?? body.aspectRatio);
+    const audioMode = normalizeAiVideoAudioMode(typeof runVideoPreferences.generateAudio === "boolean" ? (runVideoPreferences.generateAudio ? "generate" : "off") : body.audioMode);
     const audioUrl = typeof body.audioUrl === "string" ? body.audioUrl.trim() : "";
     const audioPrompt = typeof body.audioPrompt === "string" ? body.audioPrompt.trim() : "";
     const template = getAiVideoTemplate(templateId);
@@ -111,6 +123,10 @@ export async function POST(request: NextRequest) {
       publicBaseUrl: jobPayload.publicBaseUrl,
     });
 
+    await attachVideoCreativeRun(body, user.id, debit.generationId, {
+      provider, modelMode, resolution, duration: effectiveDuration, genCount, aspectRatio,
+    });
+
     startGenerationJob(debit.generationId);
 
     return NextResponse.json({
@@ -134,4 +150,20 @@ function getAudioReasonLabel(audioMode: string) {
 
 export async function GET(request: NextRequest) {
   return handleGenerationStatusGet(request.nextUrl.searchParams.get("generation_id"));
+}
+
+async function attachVideoCreativeRun(body: Record<string, unknown>, userId: string, generationId: string, inputPayload: Record<string, unknown>) {
+  const runId = typeof body.creative_run_id === "string" ? body.creative_run_id.trim() : "";
+  if (!runId) return;
+  try {
+    await attachGenerationToCreativeRun(getAdminClient(), {
+      userId, runId, generationId,
+      stepKey: typeof body.creative_step_key === "string" && /^[A-Za-z0-9._:-]{1,120}$/.test(body.creative_step_key) ? body.creative_step_key : `video-${Date.now()}`,
+      stepType: "video.generate",
+      title: typeof body.creative_step_title === "string" ? body.creative_step_title.slice(0, 300) : "Agent 视频生成",
+      inputPayload,
+    });
+  } catch (error) {
+    console.error("[video:image-to-video] creative run attach failed:", error instanceof Error ? error.message : error);
+  }
 }

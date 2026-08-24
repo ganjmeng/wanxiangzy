@@ -127,7 +127,7 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
             { key: "thumbs", label: "图像", render: (row) => <ThumbnailStrip urls={row.resultThumbnails.length ? row.resultThumbnails : row.inputThumbnails} /> },
             { key: "module", label: "模块", render: (row) => <span className="text-sm font-bold text-[var(--admin-fg)]">{row.moduleLabel}</span> },
             { key: "stale", label: "处理状态", render: (row) => <span className={`whitespace-nowrap text-xs font-black ${row.isStale ? "text-orange-700" : "text-[var(--admin-faint)]"}`}>{row.isStale ? `长时间未完成 ${row.staleMinutes} 分钟` : "正常"}</span> },
-            { key: "actions", label: "操作", render: (row) => <AdminTaskActions id={row.sourceId} sourceType={row.sourceType} statusGroup={row.statusGroup} isStale={row.isStale} compact canOperate={canOperateTasks} /> },
+            { key: "actions", label: "操作", render: (row) => <AdminTaskActions id={row.sourceId} sourceType={row.sourceType} statusGroup={row.statusGroup} status={row.status} isStale={row.isStale} compact canOperate={canOperateTasks} /> },
             { key: "time", label: "时间", render: (row) => <span className="whitespace-nowrap text-xs font-semibold text-[var(--admin-muted)]">{formatDateTime(row.createdAt)}</span> },
           ]}
         />

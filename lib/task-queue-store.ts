@@ -8,14 +8,14 @@ import {
   type TaskQueueGenerationSourceRow,
   type TaskQueueIndexRow,
   type TaskQueueIndexWrite,
-  type TaskQueueWorkflowSourceRow,
+  type TaskQueueCreativeRunSourceRow,
   applyStaleRunningFallback,
   emptyTaskQueueSummary,
   indexRowToTaskQueueItem,
   normalizeGenerationTaskQueueItem,
   normalizeAiToolTaskQueueItem,
   normalizeModule,
-  normalizeWorkflowTaskQueueItem,
+  normalizeCreativeRunTaskQueueItem,
   taskQueueItemToIndexWrite,
 } from "@/lib/task-queue-index";
 import { toLogMessage } from "@/lib/utils";
@@ -57,17 +57,18 @@ const GENERATION_INDEX_SOURCE_COLUMNS = [
   "reference_url",
 ].join(",");
 
-const WORKFLOW_INDEX_SOURCE_COLUMNS = [
+const CREATIVE_RUN_INDEX_SOURCE_COLUMNS = [
   "id",
   "user_id",
   "status",
   "intent",
   "summary",
-  "input_images",
+  "input_images:input_payload",
   "error_message",
   "created_at",
   "updated_at",
-  "final_outputs",
+  "completed_at",
+  "final_outputs:output_payload",
 ].join(",");
 
 const AI_TOOL_INDEX_SOURCE_COLUMNS = [
@@ -229,23 +230,23 @@ export async function syncGenerationTaskQueueById(generationId: string): Promise
   );
 }
 
-export async function syncWorkflowTaskQueueById(workflowId: string): Promise<void> {
+export async function syncCreativeRunTaskQueueById(runId: string): Promise<void> {
   const supabase = getAdminClient();
   const { data, error } = await supabase
-    .from("agent_workflows")
-    .select(WORKFLOW_INDEX_SOURCE_COLUMNS)
-    .eq("id", workflowId)
+    .from("creative_runs")
+    .select(CREATIVE_RUN_INDEX_SOURCE_COLUMNS)
+    .eq("id", runId)
     .maybeSingle();
 
   if (error || !data) {
-    console.warn("[task-queue-index] workflow source unavailable:", error?.message || workflowId);
+    console.warn("[task-queue-index] creative run source unavailable:", error?.message || runId);
     return;
   }
 
-  const row = data as unknown as TaskQueueWorkflowSourceRow;
-  const item = normalizeWorkflowTaskQueueItem(row);
+  const row = data as unknown as TaskQueueCreativeRunSourceRow;
+  const item = normalizeCreativeRunTaskQueueItem(row);
   await upsertTaskQueueIndexItem(
-    taskQueueItemToIndexWrite(item, { userId: row.user_id, sourceType: "workflow", sourceId: row.id }),
+    taskQueueItemToIndexWrite(item, { userId: row.user_id, sourceType: "creative_run", sourceId: row.id }),
   );
 }
 

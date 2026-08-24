@@ -3,7 +3,7 @@ import { requireAdminApi } from "@/lib/admin/auth";
 import { writeAdminAuditLog } from "@/lib/admin/audit";
 import { getAdminTaskDetail } from "@/lib/admin/data";
 import { getAdminClient } from "@/lib/supabase/admin";
-import { syncGenerationTaskQueueById, syncWorkflowTaskQueueById } from "@/lib/task-queue-store";
+import { syncCreativeRunTaskQueueById, syncGenerationTaskQueueById } from "@/lib/task-queue-store";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -41,7 +41,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     reason?: unknown;
   };
   const action = normalizeTaskAction(body.action);
-  const sourceType = body.sourceType === "workflow" ? "workflow" : body.sourceType === "generation" ? "generation" : "";
+  const sourceType = body.sourceType === "creative_run" ? "creative_run" : body.sourceType === "generation" ? "generation" : "";
   const reason = typeof body.reason === "string" && body.reason.trim()
     ? body.reason.trim()
     : defaultReason(action);
@@ -51,8 +51,8 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "操作原因需要 4-240 个字符" }, { status: 400 });
   }
 
-  const result = sourceType === "workflow"
-    ? await operateWorkflowTask(id, action, reason)
+  const result = sourceType === "creative_run"
+    ? await operateCreativeRunTask(id, action, reason)
     : sourceType === "generation"
       ? await operateGenerationTask(id, action, reason)
       : await operateAnyTask(id, action, reason);
@@ -88,7 +88,7 @@ function isUuid(value: string) {
 type TaskAction = "retry" | "mark_failed_refund" | "mark_failed_no_refund" | "cancel_refund";
 
 type TaskOperationResult =
-  | { ok: true; sourceType: "generation" | "workflow"; metadata: Record<string, unknown> }
+  | { ok: true; sourceType: "generation" | "creative_run"; metadata: Record<string, unknown> }
   | { ok: false; status: number; error: string };
 
 type GenerationOperationRow = {
@@ -102,18 +102,16 @@ type GenerationOperationRow = {
   execution_lease_expires_at: string | null;
 };
 
-type WorkflowOperationRow = {
+type CreativeRunOperationRow = {
   id: string;
   user_id: string;
   status: string | null;
-  cost_reserved: number | null;
-  cost_settled: number | null;
 };
 
 async function operateAnyTask(id: string, action: TaskAction, reason: string): Promise<TaskOperationResult> {
   const generationResult = await operateGenerationTask(id, action, reason, true);
   if (generationResult.ok || generationResult.status !== 404) return generationResult;
-  return operateWorkflowTask(id, action, reason);
+  return operateCreativeRunTask(id, action, reason);
 }
 
 async function operateGenerationTask(
@@ -199,74 +197,86 @@ async function operateGenerationTask(
   };
 }
 
-async function operateWorkflowTask(id: string, action: TaskAction, reason: string): Promise<TaskOperationResult> {
+async function operateCreativeRunTask(id: string, action: TaskAction, reason: string): Promise<TaskOperationResult> {
   const admin = getAdminClient();
   const { data, error } = await admin
-    .from("agent_workflows")
-    .select("id,user_id,status,cost_reserved,cost_settled")
+    .from("creative_runs")
+    .select("id,user_id,status")
     .eq("id", id)
     .maybeSingle();
 
   if (error) return { ok: false, status: 400, error: error.message };
   if (!data) return { ok: false, status: 404, error: "任务不存在" };
 
-  const row = data as WorkflowOperationRow;
+  const row = data as CreativeRunOperationRow;
   const status = String(row.status || "").toLowerCase();
   if (action === "retry") {
-    if (isCompletedStatus(status)) return { ok: false, status: 409, error: "已完成 workflow 不能重新入队" };
+    if (isCompletedStatus(status)) return { ok: false, status: 409, error: "已完成创意任务不能重新入队" };
     const update = await admin
-      .from("agent_workflows")
-      .update({ status: "queued", error_message: null, updated_at: new Date().toISOString() })
+      .from("creative_runs")
+      .update({ status: "queued", review_reason: null, error_message: null, completed_at: null, updated_at: new Date().toISOString() })
       .eq("id", id);
     if (update.error) return { ok: false, status: 400, error: update.error.message };
     await admin
-      .from("agent_workflow_steps")
+      .from("creative_run_steps")
       .update({ status: "ready", error_message: null, started_at: null, completed_at: null, updated_at: new Date().toISOString() })
-      .eq("workflow_id", id)
-      .in("status", ["queued", "running", "failed"]);
-    await appendWorkflowAdminEvent(id, "workflow_queued", `Admin retried workflow: ${reason}`, { reason });
-    await syncWorkflowTaskQueueById(id);
-    return { ok: true, sourceType: "workflow", metadata: { previousStatus: row.status, nextStatus: "queued" } };
+      .eq("run_id", id)
+      .in("status", ["queued", "running", "needs_review", "failed"]);
+    await appendCreativeRunAdminEvent(row, "run_queued", `Admin retried creative run: ${reason}`, { reason });
+    await syncCreativeRunTaskQueueById(id);
+    return { ok: true, sourceType: "creative_run", metadata: { previousStatus: row.status, nextStatus: "queued" } };
   }
 
   if (isCompletedStatus(status) || status === "failed" || status === "cancelled") {
-    return { ok: false, status: 409, error: "workflow 已结束，不能重复操作" };
+    return { ok: false, status: 409, error: "创意任务已结束，不能重复操作" };
   }
 
   const shouldRefund = action === "mark_failed_refund" || action === "cancel_refund";
-  const releaseAmount = shouldRefund
-    ? Math.max(0, Math.floor(Number(row.cost_reserved || 0) - Number(row.cost_settled || 0)))
-    : 0;
-  if (releaseAmount > 0) {
-    const release = await admin.rpc("release_agent_workflow_credits", {
-      p_user_id: row.user_id,
-      p_workflow_id: id,
-      p_amount: releaseAmount,
-      p_reason: action === "cancel_refund" ? `Admin workflow cancel release (${id})` : `Admin workflow failed release (${id})`,
-    });
-    if (release.error) return { ok: false, status: 400, error: release.error.message || "释放 workflow 灵点失败" };
+  if (shouldRefund) {
+    return {
+      ok: false,
+      status: 409,
+      error: "创意父任务不直接结算积分；请在对应子 generation 上执行退款",
+    };
   }
-
-  const nextStatus = action === "cancel_refund" ? "cancelled" : "failed";
+  const nextStatus = "failed";
   const update = await admin
-    .from("agent_workflows")
-    .update({ status: nextStatus, error_message: reason, updated_at: new Date().toISOString() })
+    .from("creative_runs")
+    .update({ status: nextStatus, error_message: reason, completed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
     .eq("id", id);
   if (update.error) return { ok: false, status: 400, error: update.error.message };
   await admin
-    .from("agent_workflow_steps")
+    .from("creative_run_steps")
     .update({ status: nextStatus, error_message: reason, completed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-    .eq("workflow_id", id)
+    .eq("run_id", id)
     .in("status", ["pending", "ready", "queued", "running"]);
-  await appendWorkflowAdminEvent(id, nextStatus === "cancelled" ? "workflow_cancelled" : "workflow_failed", reason, { releaseAmount });
-  await syncWorkflowTaskQueueById(id);
-  return { ok: true, sourceType: "workflow", metadata: { previousStatus: row.status, nextStatus, released: releaseAmount } };
+  await appendCreativeRunAdminEvent(row, "run_failed", reason, {
+    creditSettlement: shouldRefund ? "delegated_to_child_generations" : "unchanged",
+  });
+  await syncCreativeRunTaskQueueById(id);
+  return {
+    ok: true,
+    sourceType: "creative_run",
+    metadata: {
+      previousStatus: row.status,
+      nextStatus,
+      refunded: 0,
+      message: shouldRefund
+        ? "创意任务已结束；积分由各子 generation 的原子结算链路处理"
+        : "创意任务已结束，子 generation 积分状态保持不变",
+    },
+  };
 }
 
-async function appendWorkflowAdminEvent(workflowId: string, type: string, message: string, payload: Record<string, unknown>) {
+async function appendCreativeRunAdminEvent(
+  run: CreativeRunOperationRow,
+  type: string,
+  message: string,
+  metadata: Record<string, unknown>,
+) {
   await getAdminClient()
-    .from("agent_workflow_events")
-    .insert({ workflow_id: workflowId, type, message, payload });
+    .from("creative_run_events")
+    .insert({ run_id: run.id, user_id: run.user_id, event_type: type, message, metadata });
 }
 
 function normalizeTaskAction(value: unknown): TaskAction | "" {

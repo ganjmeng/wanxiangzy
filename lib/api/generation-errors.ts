@@ -13,6 +13,30 @@ export class RetryableGenerationError extends Error {
   }
 }
 
+/**
+ * The provider request may have been accepted, but the local process did not
+ * durably receive/bind an upstream task id. Retrying automatically can create
+ * a second billable generation, so this outcome must stop in needs_review.
+ */
+export class GenerationSubmissionOutcomeUnknownError extends Error {
+  readonly code = "GENERATION_SUBMISSION_OUTCOME_UNKNOWN";
+
+  constructor(message = "上游任务提交结果未知，需要人工确认", options?: { cause?: unknown }) {
+    super(sanitizeGenerationErrorMessage(message), options);
+    this.name = "GenerationSubmissionOutcomeUnknownError";
+  }
+}
+
+export function isGenerationSubmissionOutcomeUnknownError(
+  error: unknown,
+): error is GenerationSubmissionOutcomeUnknownError {
+  if (error instanceof GenerationSubmissionOutcomeUnknownError) return true;
+  if (!error || typeof error !== "object") return false;
+  const candidate = error as { name?: unknown; code?: unknown };
+  return candidate.name === "GenerationSubmissionOutcomeUnknownError"
+    || candidate.code === "GENERATION_SUBMISSION_OUTCOME_UNKNOWN";
+}
+
 /** A provider/customer decision that must never enter a retry budget. */
 export class NonRetryableGenerationError extends Error {
   readonly code: string;
@@ -102,15 +126,20 @@ export function sanitizeGenerationErrorMessage(value: unknown, fallback = "生�
     .replace(URL_PATTERN, "[redacted-url]")
     .replace(BEARER_PATTERN, "Bearer [redacted]")
     .replace(SECRET_PAIR_PATTERN, (_match, key: string) => `${key}=[redacted]`)
-    .replace(OSS_QUERY_PATTERN, (_match, key: string) => `${key}=[redacted]`)
-    .replace(/[\u0000-\u001f\u007f]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-  return (sanitized || fallback).slice(0, Math.max(1, maxLength));
+    .replace(OSS_QUERY_PATTERN, (_match, key: string) => `${key}=[redacted]`);
+  return (replaceControlCharacters(sanitized) || fallback).slice(0, Math.max(1, maxLength));
+}
+
+function replaceControlCharacters(value: string) {
+  return Array.from(value, (character) => {
+    const code = character.charCodeAt(0);
+    return code <= 31 || code === 127 ? " " : character;
+  }).join("").replace(/\s+/g, " ").trim();
 }
 
 export function isRetryableGenerationError(error: unknown) {
   if (isStaleExecutionFenceError(error)) return false;
+  if (isGenerationSubmissionOutcomeUnknownError(error)) return false;
   if (error instanceof NonRetryableGenerationError) return false;
   if (error instanceof RetryableGenerationError) return true;
   if (!error || typeof error !== "object") return false;

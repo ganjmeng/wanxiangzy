@@ -178,7 +178,7 @@ type AdminBillingSummary = {
 export type AdminTaskListItem = {
   id: string;
   sourceId: string;
-  sourceType: "generation" | "workflow";
+  sourceType: "generation" | "creative_run";
   userId: string;
   module: string;
   moduleLabel: string;
@@ -408,7 +408,7 @@ export type AdminUserDetail = {
 
 export type AdminTaskDetail = {
   id: string;
-  sourceType: "generation" | "workflow";
+  sourceType: "generation" | "creative_run";
   task: AdminTaskListItem | null;
   userEmail: string | null;
   payload: Record<string, unknown>;
@@ -424,7 +424,7 @@ export type AdminTaskDetail = {
 };
 
 export type AdminWorkerProcessor = {
-  key: "generations" | "agent-workflows" | "agent-evals";
+  key: "generations";
   label: string;
   endpoint: string;
   configured: boolean;
@@ -545,14 +545,14 @@ const WORKFLOW_COLUMNS = [
   "status",
   "intent",
   "summary",
-  "input_images",
-  "final_outputs",
+  "input_images:input_payload",
+  "final_outputs:output_payload",
   "error_message",
   "created_at",
   "updated_at",
   "completed_at",
-  "cost_reserved",
-  "cost_settled",
+  "surface",
+  "review_reason",
 ].join(",");
 const CREDIT_LOG_COLUMNS = "id,user_id,amount,balance,reason,generation_id,created_at";
 const ADMIN_MEMBER_COLUMNS = "user_id,email,role,status,enabled,display_name,created_at,updated_at";
@@ -864,7 +864,7 @@ export async function listAdminTasks(args: {
   q?: string;
   module?: string;
   status?: string;
-  sourceType?: "generation" | "workflow" | "all";
+  sourceType?: "generation" | "creative_run" | "all";
   stale?: boolean;
   page?: number;
   pageSize?: number;
@@ -1527,7 +1527,7 @@ export async function getAdminTaskDetail(id: string): Promise<AdminTaskDetail> {
     ]);
     return {
       id,
-      sourceType: "workflow",
+      sourceType: "creative_run",
       task,
       userEmail: task.userId ? emails.get(task.userId) || null : null,
       payload: workflow.row,
@@ -1784,7 +1784,7 @@ async function loadUserTasks(userId: string, warnings: string[]) {
     ),
     runQuery<Record<string, unknown>[]>(
       getAdminClient()
-        .from("agent_workflows")
+        .from("creative_runs")
         .select(WORKFLOW_COLUMNS)
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
@@ -1894,7 +1894,7 @@ async function loadWorkflowDetail(id: string, warnings: string[]) {
   const localWarnings: string[] = [];
   const result = await runQuery<Record<string, unknown>[]>(
     getAdminClient()
-      .from("agent_workflows")
+      .from("creative_runs")
       .select(WORKFLOW_COLUMNS)
       .eq("id", id)
       .limit(1),
@@ -1964,9 +1964,9 @@ async function loadAuditLogsByResource(resourceId: string, warnings: string[]) {
 async function loadWorkflowSteps(workflowId: string, warnings: string[]) {
   const result = await runQuery<Record<string, unknown>[]>(
     getAdminClient()
-      .from("agent_workflow_steps")
-      .select("id,workflow_id,step_key,type,title,status,depends_on,input,params,output,quality,error_message,retry_count,started_at,completed_at,created_at")
-      .eq("workflow_id", workflowId)
+      .from("creative_run_steps")
+      .select("id,workflow_id:run_id,step_key,type:step_type,title,status,depends_on:depends_on_step_ids,input:input_payload,output:output_payload,error_message,retry_count:attempt_no,started_at,completed_at,created_at")
+      .eq("run_id", workflowId)
       .order("created_at", { ascending: true })
       .limit(80),
     "workflow detail steps",
@@ -1979,9 +1979,9 @@ async function loadWorkflowSteps(workflowId: string, warnings: string[]) {
 async function loadWorkflowEvents(workflowId: string, warnings: string[]) {
   const result = await runQuery<Record<string, unknown>[]>(
     getAdminClient()
-      .from("agent_workflow_events")
-      .select("id,workflow_id,event_type,step_id,message,metadata,created_at")
-      .eq("workflow_id", workflowId)
+      .from("creative_run_events")
+      .select("id,workflow_id:run_id,event_type,step_id,generation_id,message,metadata,created_at")
+      .eq("run_id", workflowId)
       .order("created_at", { ascending: false })
       .limit(80),
     "workflow detail events",
@@ -2656,7 +2656,7 @@ async function loadTaskQueueModuleStats(
     const moduleKey = stringValue(row.module) || "unknown";
     const statusGroup = normalizeTaskStatusGroup(stringValue(row.status_group));
     const sourceType = stringValue(row.source_type);
-    if (sourceType === "workflow") continue; // workflow is tracked separately; moduleStats is for content modules
+    if (sourceType === "creative_run") continue; // creative runs are tracked separately; moduleStats is for content modules
     bumpBreakdown(moduleMap, moduleKey, moduleLabel(moduleKey), statusGroup, 0);
   }
 
@@ -2707,7 +2707,7 @@ async function loadUserWorkflowStats(userIds: string[], warnings: string[]) {
 
   const result = await runQuery<Record<string, unknown>[]>(
     getAdminClient()
-      .from("agent_workflows")
+      .from("creative_runs")
       .select("user_id")
       .in("user_id", userIds)
       .limit(Math.min(Math.max(userIds.length * 40, 120), 800)),
@@ -2790,7 +2790,7 @@ async function loadFallbackTasks(
   const offset = (args.page - 1) * args.pageSize;
   const fetchLimit = Math.min(1000, Math.max(args.page * args.pageSize * 2, args.pageSize));
   const loadGenerations = !args.sourceType || args.sourceType === "generation";
-  const loadWorkflows = !args.sourceType || args.sourceType === "workflow";
+  const loadWorkflows = !args.sourceType || args.sourceType === "creative_run";
 
   if (loadGenerations) {
     let query = getAdminClient()
@@ -2806,7 +2806,7 @@ async function loadFallbackTasks(
   if (loadWorkflows && !args.module) {
     const workflowResult = await runQuery<Record<string, unknown>[]>(
       getAdminClient()
-        .from("agent_workflows")
+        .from("creative_runs")
         .select(WORKFLOW_COLUMNS, { count: "exact" })
         .order("created_at", { ascending: false })
         .limit(fetchLimit),
@@ -2830,8 +2830,8 @@ async function loadFallbackTasks(
 }
 
 function mapTaskQueueRow(row: Record<string, unknown>): AdminTaskListItem {
-  const sourceType = stringValue(row.source_type) === "workflow" ? "workflow" : "generation";
-  const module = normalizeModuleFilter(stringValue(row.module)) || (sourceType === "workflow" ? "workflow" : "unknown");
+  const sourceType = stringValue(row.source_type) === "creative_run" ? "creative_run" : "generation";
+  const module = normalizeModuleFilter(stringValue(row.module)) || (sourceType === "creative_run" ? "creativeRun" : "unknown");
   const resultCount = Math.max(0, numberValue(row.result_count));
   const statusGroup = normalizeTaskStatusGroup(stringValue(row.status_group) || stringValue(row.status), resultCount);
   const createdAt = nullableString(row.created_at);
@@ -2876,7 +2876,7 @@ async function hydrateTaskPreviewThumbnails(rows: AdminTaskListItem[], warnings:
     ...needsResultHydration.filter((row) => row.sourceType === "generation").map((row) => row.sourceId),
     ...needsInputHydration.map((row) => row.sourceId),
   ]);
-  const workflowIds = needsResultHydration.filter((row) => row.sourceType === "workflow").map((row) => row.sourceId).filter(Boolean);
+  const workflowIds = needsResultHydration.filter((row) => row.sourceType === "creative_run").map((row) => row.sourceId).filter(Boolean);
   const resultUrlsById = new Map<string, string[]>();
   const inputUrlsById = new Map<string, string[]>();
 
@@ -2900,8 +2900,8 @@ async function hydrateTaskPreviewThumbnails(rows: AdminTaskListItem[], warnings:
   if (workflowIds.length) {
     const result = await runQuery<Record<string, unknown>[]>(
       getAdminClient()
-        .from("agent_workflows")
-        .select("id,final_outputs")
+        .from("creative_runs")
+        .select("id,final_outputs:output_payload")
         .in("id", workflowIds),
       "task preview workflow thumbnails",
       warnings,
@@ -2975,11 +2975,11 @@ function mapWorkflowRow(row: Record<string, unknown>): AdminTaskListItem {
   return {
     id: stringValue(row.id),
     sourceId: stringValue(row.id),
-    sourceType: "workflow",
+    sourceType: "creative_run",
     userId: stringValue(row.user_id),
-    module: "workflow",
-    moduleLabel: "Agent 工作流",
-    title: stringValue(row.summary) || stringValue(row.intent) || "Agent 工作流",
+    module: "creativeRun",
+    moduleLabel: "创意任务",
+    title: stringValue(row.summary) || stringValue(row.intent) || "创意任务",
     status,
     statusGroup,
     progress: statusGroup === "completed" ? 100 : statusGroup === "failed" ? 0 : 25,
@@ -2988,11 +2988,11 @@ function mapWorkflowRow(row: Record<string, unknown>): AdminTaskListItem {
     inputThumbnails: extractUrls(row.input_images).slice(0, ADMIN_TASK_PREVIEW_LIMIT),
     resultThumbnails,
     errorMessage: nullableString(row.error_message),
-    applyUrl: `/agent?workflow=${encodeURIComponent(stringValue(row.id))}`,
+    applyUrl: `/agent?run=${encodeURIComponent(stringValue(row.id))}`,
     createdAt,
     updatedAt,
     completedAt: nullableString(row.completed_at),
-    credits: numberValue(row.cost_settled) || numberValue(row.cost_reserved),
+    credits: null,
     ...staleTaskMeta(statusGroup, createdAt, updatedAt, resultThumbnails.length),
   };
 }
@@ -3432,7 +3432,7 @@ export function moduleLabel(module: string) {
     allCategoryProductImage: "全品类商品图",
     outfitFusion: "搭配融图",
     video: "AI 视频",
-    workflow: "Agent 工作流",
+    creativeRun: "创意任务",
     image: "图生图",
     unknown: "未知任务",
   };
@@ -3457,7 +3457,7 @@ export function moduleRoute(module: string) {
     allCategoryProductImage: "/all-category-product-image",
     outfitFusion: "/outfit-fusion",
     video: "/video",
-    workflow: "/agent",
+    creativeRun: "/agent",
   };
   return routes[module] || "/history";
 }

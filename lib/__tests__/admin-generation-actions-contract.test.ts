@@ -22,4 +22,11 @@ describe("admin generation action contract", () => {
     expect(actions).toContain("disabled={Boolean(loadingAction)}");
     expect(actions).toContain("setLastOutcome(outcome)");
   });
+
+  it("keeps manual-review resolution visible and never refunds at the creative parent", () => {
+    expect(actions).toContain('status.toLowerCase() === "needs_review"');
+    expect(actions).toContain('sourceType === "generation" ? ["mark_failed_refund", "mark_failed_no_refund"]');
+    expect(route).toContain("创意父任务不直接结算积分");
+    expect(route).not.toContain("release_agent_workflow_credits");
+  });
 });

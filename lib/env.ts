@@ -69,16 +69,6 @@ const FEATURE_REQUIRED_ENV: EnvContractEntry[] = [
     category: "feature-required",
     description: "Required by /api/jobs/process-generations.",
   },
-  {
-    name: "AGENT_WORKFLOW_PROCESSOR_SECRET or JOB_PROCESSOR_SECRET or CRON_SECRET",
-    category: "feature-required",
-    description: "Required by /api/jobs/process-agent-workflows.",
-  },
-  {
-    name: "AGENT_EVAL_PROCESSOR_SECRET or JOB_PROCESSOR_SECRET or CRON_SECRET",
-    category: "feature-required",
-    description: "Required by /api/jobs/run-agent-evals.",
-  },
 ];
 
 const ALIYUN_OSS_REQUIRED_ENV: EnvContractEntry[] = [
@@ -179,12 +169,7 @@ const OPTIONAL_ENV: EnvContractEntry[] = [
   { name: "API_PLATFORM_TEST_ALLOWED_HOSTS", category: "optional", description: "Allowlist for the API platform test proxy." },
   { name: "GENERATION_JOB_BATCH_SIZE", category: "optional", description: "Generation processor batch size." },
   { name: "GENERATION_JOB_STALE_MINUTES", category: "optional", description: "Generation job stale timeout." },
-  { name: "AGENT_WORKFLOW_BATCH_SIZE", category: "optional", description: "Agent workflow processor batch size." },
-  { name: "AGENT_EVAL_MAX_USERS", category: "optional", description: "Maximum users evaluated per scheduled eval run." },
-  { name: "AGENT_VISUAL_AUTO_REGENERATE_ENABLED", category: "optional", description: "Toggle automatic visual repair regeneration." },
-  { name: "AGENT_WORKFLOW_SELF_REPAIR_ENABLED", category: "optional", description: "Toggle agent workflow self-repair." },
-  { name: "AGENT_BRAIN_V2_ROLLOUT", category: "optional", description: "Agent brain v2 rollout toggle." },
-  { name: "AGENT_BRAIN_V2_ROLLOUT_PERCENT", category: "optional", description: "Agent brain v2 percentage rollout." },
+  { name: "GENERATION_AUTO_REGENERATE_ENABLED", category: "optional", description: "Toggle automatic visual repair regeneration." },
   { name: "FASHN_API_KEY", category: "optional", description: "Legacy FASHN provider token." },
   { name: "REPLICATE_API_TOKEN", category: "optional", description: "Legacy Replicate provider token." },
 ];

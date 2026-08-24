@@ -4,6 +4,7 @@ import {
   generateNewApiFirstLastFrame,
   generateNewApiImageToVideo,
 } from "@/lib/api/newapi-video";
+import { isGenerationSubmissionOutcomeUnknownError } from "@/lib/api/generation-errors";
 
 const ORIGINAL_ENV = { ...process.env };
 
@@ -100,6 +101,14 @@ describe("newapi video adapter (new.bi gateway)", () => {
 
     const headers = (fetchMock.mock.calls[0]?.[1] as RequestInit).headers as Record<string, string>;
     expect(headers["Idempotency-Key"]).toBe("gen-6ba7b810-9dad-41d1-80b4-00c04fd430c8-video-0");
+  });
+
+  it("quarantines a transport failure after submission because the provider outcome is unknown", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("fetch failed: connection reset")));
+
+    const error = await generateNewApiImageToVideo(minimaxInput(), minimaxProvider).catch((cause) => cause);
+
+    expect(isGenerationSubmissionOutcomeUnknownError(error)).toBe(true);
   });
 
   it("resumes polling a persisted provider task without resubmitting", async () => {

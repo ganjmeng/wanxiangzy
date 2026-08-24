@@ -6,6 +6,7 @@ describe("top module navigation contract", () => {
     expect(VISIBLE_TOP_MODULES.map((item) => item.key)).toEqual([
       "home",
       "assistant",
+      "canvas",
       "aiShoots",
       "productImages",
       "aiVideo",
@@ -13,6 +14,12 @@ describe("top module navigation contract", () => {
       "toolbox",
       "enterprise",
     ]);
+  });
+
+  it("opens Agent and infinite canvas as adjacent top-level workspaces", () => {
+    expect(getActiveTopModule("/agent")).toBe("assistant");
+    expect(getActiveTopModule("/canvas")).toBe("canvas");
+    expect(getActiveTopModule("/canvas/project-id")).toBe("canvas");
   });
 
   it("resolves general-image routes to the tools module", () => {

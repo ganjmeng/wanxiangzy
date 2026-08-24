@@ -7,6 +7,9 @@ export async function updateSession(request: NextRequest) {
   const protectedPaths = [
     "/admin",
     "/agent",
+    "/canvas",
+    "/prompts",
+    "/plaza",
     "/dashboard",
     "/create",
     "/face-swap",

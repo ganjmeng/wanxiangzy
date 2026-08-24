@@ -8,7 +8,6 @@ import {
 import {
   clampVideoDuration,
   resolveUpstreamVideoModel,
-  type VideoProviderName,
 } from "@/lib/api/video-catalog";
 import type {
   NewApiVideoProviderConfig,
@@ -20,6 +19,7 @@ import type {
   VideoTaskResume,
 } from "@/lib/api/video-types";
 import {
+  GenerationSubmissionOutcomeUnknownError,
   isRetryableGenerationError,
   RetryableGenerationError,
   sanitizeGenerationErrorMessage,
@@ -218,13 +218,27 @@ async function runTask(
       providerDetails: buildProviderDetails({ requestBody: body }),
     });
 
-    const submitted = await submitJson(
-      `${provider.apiBase}${SUBMIT_PATH}`,
-      provider.apiKey,
-      body,
-      normalizeIdempotencyKey(idempotencyKey),
-      abortSignal,
-    );
+    let submitted: unknown;
+    try {
+      submitted = await submitJson(
+        `${provider.apiBase}${SUBMIT_PATH}`,
+        provider.apiKey,
+        body,
+        normalizeIdempotencyKey(idempotencyKey),
+        abortSignal,
+      );
+    } catch (error) {
+      // A completed HTTP response is a known provider decision. A transport
+      // failure after POST started is ambiguous: the provider may already have
+      // accepted and billed the task, so automatic redelivery is unsafe.
+      if (isAmbiguousSubmissionTransportError(error)) {
+        throw new GenerationSubmissionOutcomeUnknownError(
+          "视频任务提交连接中断，无法确认上游是否已创建任务",
+          { cause: error },
+        );
+      }
+      throw error;
+    }
     const video = extractVideoObject(submitted) || {};
     taskId = typeof video.task_id === "string" && video.task_id ? video.task_id : extractTaskId(submitted);
     if (!taskId) throw new Error(`视频接口未返回 task_id，响应字段: ${describeResponseKeys(submitted)}`);
@@ -310,6 +324,21 @@ async function runTask(
     `视频任务已提交，轮询窗口结束，将从持久断点继续。task_id: ${lastState.taskId}`,
     "VIDEO_POLL_RESUME_REQUIRED",
   );
+}
+
+function isAmbiguousSubmissionTransportError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const candidate = error as { name?: unknown; code?: unknown; message?: unknown };
+  const name = typeof candidate.name === "string" ? candidate.name : "";
+  const code = typeof candidate.code === "string" ? candidate.code.toUpperCase() : "";
+  const message = typeof candidate.message === "string" ? candidate.message.toLowerCase() : "";
+  return name === "AbortError"
+    || name === "TimeoutError"
+    || /^(ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|UND_ERR_)/.test(code)
+    || message.includes("fetch failed")
+    || message.includes("network error")
+    || message.includes("connection reset")
+    || message.includes("timed out");
 }
 
 function normalizePollState(json: unknown, fallbackTaskId: string, fallbackRequestId: string | undefined): PollState {
