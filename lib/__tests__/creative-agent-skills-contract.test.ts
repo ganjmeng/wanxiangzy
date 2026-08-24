@@ -68,7 +68,9 @@ describe("complete Agent Skill migration contract", () => {
     expect(agent).toContain("buildAgentGenerationIdempotencyKey(clientRequestId, index)");
     expect(agent).not.toContain("`agent:${clientRequestId}");
     expect(canvas).toContain("skillRoleAssignments");
-    expect(canvas).toContain("selectCanvasRoleAssets");
+    expect(canvas).toContain("selectRoleAssets");
+    expect(canvas).toContain("buildCanvasGenerationIdempotencyKey(clientRequestId)");
+    expect(canvas).not.toContain("`canvas:${clientRequestId}");
     expect(adminApi).toContain('requireAdminApi("prompts:write")');
     expect(adminApi).toContain("writeAdminAuditLog");
     expect(adminApi).toContain("saveSystemCreativeSkill");

@@ -34,4 +34,17 @@ describe("canvas contract", () => {
     expect(normalizeCanvasTitle("  Campaign board ")).toBe("Campaign board");
     expect(() => normalizeCanvasTitle(" ")).toThrow("1-120");
   });
+
+  it("preserves the original canvas media and config node types", () => {
+    const document = normalizeCanvasDocument({
+      nodes: [
+        { id: "panorama-1", type: "panorama", content: "https://assets.example.com/panorama.jpg" },
+        { id: "video-1", type: "video", content: "https://assets.example.com/video.mp4" },
+        { id: "audio-1", type: "audio", content: "https://assets.example.com/audio.mp3" },
+        { id: "config-1", type: "config", content: "{\"model\":\"smart\"}" },
+      ],
+      edges: [],
+    });
+    expect(document.nodes.map((node) => node.type)).toEqual(["panorama", "video", "audio", "config"]);
+  });
 });

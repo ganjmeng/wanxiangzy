@@ -20,3 +20,17 @@ export function buildAgentGenerationIdempotencyKey(clientRequestId: string, slot
   return key;
 }
 
+export function buildCanvasGenerationIdempotencyKey(clientRequestId: string, slotIndex = 0) {
+  if (!UUID_PATTERN.test(clientRequestId)) {
+    throw new Error("画布请求 ID 无效");
+  }
+  if (!Number.isSafeInteger(slotIndex) || slotIndex < 0) {
+    throw new Error("画布生成槽位无效");
+  }
+
+  const key = `canvas-${clientRequestId}-${slotIndex + 1}`;
+  if (!GENERATION_IDEMPOTENCY_KEY_PATTERN.test(key)) {
+    throw new Error("画布生成幂等键无效");
+  }
+  return key;
+}

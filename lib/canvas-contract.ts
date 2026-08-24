@@ -4,7 +4,8 @@ export type CanvasViewport = {
   scale: number;
 };
 
-export type CanvasNodeType = "text" | "image";
+export type CanvasNodeType = "text" | "image" | "panorama" | "video" | "audio" | "config";
+export type CanvasBackgroundMode = "dots" | "lines" | "blank";
 
 export type CanvasNode = {
   id: string;
@@ -29,6 +30,7 @@ export type CanvasDocument = {
   nodes: CanvasNode[];
   edges: CanvasEdge[];
   viewport: CanvasViewport;
+  background: CanvasBackgroundMode;
 };
 
 export type CanvasProject = {
@@ -47,6 +49,7 @@ export const EMPTY_CANVAS_DOCUMENT: CanvasDocument = {
   nodes: [],
   edges: [],
   viewport: { x: 0, y: 0, scale: 1 },
+  background: "lines",
 };
 
 const MAX_NODES = 5000;
@@ -79,7 +82,8 @@ export function normalizeCanvasDocument(value: unknown): CanvasDocument {
   if (nodeIds.size !== nodes.length) throw new CanvasContractError("画布节点 ID 重复");
   const edges = rawEdges.map(normalizeCanvasEdge).filter((edge) => nodeIds.has(edge.from) && nodeIds.has(edge.to));
   const viewport = normalizeViewport(input.viewport);
-  const document: CanvasDocument = { version: 1, nodes, edges, viewport };
+  const background: CanvasBackgroundMode = input.background === "dots" || input.background === "blank" ? input.background : "lines";
+  const document: CanvasDocument = { version: 1, nodes, edges, viewport, background };
   if (new TextEncoder().encode(JSON.stringify(document)).byteLength > MAX_DOCUMENT_BYTES) {
     throw new CanvasContractError("画布内容超过 2MB，请拆分为多个项目");
   }
@@ -89,14 +93,15 @@ export function normalizeCanvasDocument(value: unknown): CanvasDocument {
 function normalizeCanvasNode(value: unknown, index: number): CanvasNode {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new CanvasContractError("画布节点格式无效");
   const item = value as Record<string, unknown>;
-  const type: CanvasNodeType = item.type === "image" ? "image" : "text";
+  const type = normalizeNodeType(item.type);
   const id = boundedIdentifier(item.id, `node-${index + 1}`);
-  const width = boundedNumber(item.width, type === "image" ? 320 : 280, 120, 1600);
-  const height = boundedNumber(item.height, type === "image" ? 240 : 180, 80, 1200);
-  const title = boundedText(item.title, type === "image" ? "图片素材" : "灵感便笺", 120);
-  const content = boundedText(item.content, "", type === "image" ? 1600 : 12_000);
+  const mediaNode = ["image", "panorama", "video", "audio"].includes(type);
+  const width = boundedNumber(item.width, mediaNode ? 320 : 280, 120, 1600);
+  const height = boundedNumber(item.height, type === "audio" ? 150 : mediaNode ? 240 : 180, 80, 1200);
+  const title = boundedText(item.title, defaultNodeTitle(type), 120);
+  const content = boundedText(item.content, "", mediaNode ? 1600 : 12_000);
   const assetId = typeof item.assetId === "string" && item.assetId.trim() ? item.assetId.trim().slice(0, 160) : undefined;
-  if (type === "image" && !/^https:\/\//i.test(content)) throw new CanvasContractError("图片节点必须引用 HTTPS 素材");
+  if (mediaNode && content && !/^https:\/\//i.test(content)) throw new CanvasContractError("媒体节点必须引用 HTTPS 素材");
   return {
     id,
     type,
@@ -108,6 +113,21 @@ function normalizeCanvasNode(value: unknown, index: number): CanvasNode {
     content,
     ...(assetId ? { assetId } : {}),
   };
+}
+
+function normalizeNodeType(value: unknown): CanvasNodeType {
+  return value === "image" || value === "panorama" || value === "video" || value === "audio" || value === "config"
+    ? value
+    : "text";
+}
+
+function defaultNodeTitle(type: CanvasNodeType) {
+  if (type === "image") return "图片素材";
+  if (type === "panorama") return "全景图";
+  if (type === "video") return "视频素材";
+  if (type === "audio") return "音频素材";
+  if (type === "config") return "生成配置";
+  return "灵感便笺";
 }
 
 function normalizeCanvasEdge(value: unknown, index: number): CanvasEdge {

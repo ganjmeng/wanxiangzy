@@ -7,8 +7,9 @@ import { Check, Download, FileUp, Loader2, Pencil, Plus, Trash2, X } from "lucid
 import { toast } from "sonner";
 import { useStudioAuth } from "@/components/studio/useStudioAuth";
 import type { CanvasDocument, CanvasProject } from "@/lib/canvas-contract";
+import { replaceLegacyCanvasBrand, SITE_NAME } from "@/lib/site-brand";
 
-/** VOZEB-PRO /canvas library, adapted to the host canvas project API. */
+/** Pixel Diffusion canvas library, adapted to the host canvas project API. */
 export function CanvasLibrary() {
   const { authChecked, isAuthenticated } = useStudioAuth();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -27,7 +28,7 @@ export function CanvasLibrary() {
       if (response.status === 401) { setProjects([]); return; }
       const payload = await response.json().catch(() => ({})) as { projects?: CanvasProject[]; error?: string };
       if (!response.ok) throw new Error(payload.error || "画布列表加载失败");
-      setProjects(Array.isArray(payload.projects) ? payload.projects : []);
+      setProjects(Array.isArray(payload.projects) ? payload.projects.map((project) => ({ ...project, title: replaceLegacyCanvasBrand(project.title) })) : []);
     } catch (error) { toast.error(error instanceof Error ? error.message : "画布列表加载失败"); }
     finally { setLoading(false); }
   }, []);
@@ -38,7 +39,7 @@ export function CanvasLibrary() {
     void loadProjects();
   }, [authChecked, isAuthenticated, loadProjects]);
 
-  const createProject = async (title = `VOZEB PRO 画布 ${projects.length + 1}`, document?: CanvasDocument) => {
+  const createProject = async (title = `${SITE_NAME} 画布 ${projects.length + 1}`, document?: CanvasDocument) => {
     if (!isAuthenticated) { window.location.href = `/login?next=${encodeURIComponent("/canvas")}`; return null; }
     setCreating(true);
     try {
@@ -89,7 +90,7 @@ export function CanvasLibrary() {
     setWorking(true);
     try {
       const zip = new JSZip();
-      zip.file("projects.json", JSON.stringify({ app: "wanxiang-vozeb-canvas", version: 1, projects: selected.map(({ id: _id, ...project }) => project) }, null, 2));
+      zip.file("projects.json", JSON.stringify({ app: "pixel-diffusion-canvas", version: 1, projects: selected.map(({ id: _id, ...project }) => project) }, null, 2));
       const blob = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
