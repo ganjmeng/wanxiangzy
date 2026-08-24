@@ -42,9 +42,43 @@ describe("canvas contract", () => {
         { id: "video-1", type: "video", content: "https://assets.example.com/video.mp4" },
         { id: "audio-1", type: "audio", content: "https://assets.example.com/audio.mp3" },
         { id: "config-1", type: "config", content: "{\"model\":\"smart\"}" },
+        { id: "brief-1", type: "brief", content: "Campaign brief" },
+        { id: "task-1", type: "task", content: "Generate variants" },
+        { id: "brand-kit-1", type: "brand-kit", content: "Brand rules" },
       ],
       edges: [],
     });
-    expect(document.nodes.map((node) => node.type)).toEqual(["panorama", "video", "audio", "config"]);
+    expect(document.nodes.map((node) => node.type)).toEqual(["panorama", "video", "audio", "config", "brief", "task", "brand-kit"]);
+  });
+
+  it("persists resumable generation and node editing metadata", () => {
+    const document = normalizeCanvasDocument({
+      nodes: [{
+        id: "image-loading",
+        type: "image",
+        content: "",
+        metadata: {
+          status: "loading",
+          prompt: "Campaign key visual",
+          generationId: "generation-123",
+          creativeRunId: "run-123",
+          operation: "mask",
+          model: "nano-banana-2",
+          aspectRatio: "16:9",
+          imageSize: "2K",
+          fontSize: 20,
+          freeResize: true,
+        },
+      }],
+      edges: [],
+    });
+    expect(document.nodes[0].metadata).toMatchObject({
+      status: "loading",
+      generationId: "generation-123",
+      operation: "mask",
+      aspectRatio: "16:9",
+      imageSize: "2K",
+      freeResize: true,
+    });
   });
 });

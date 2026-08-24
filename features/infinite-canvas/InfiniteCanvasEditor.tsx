@@ -27,8 +27,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useResourcePicker, type ResourceAsset } from "@/features/resource-library";
-import { uploadLocalResources } from "@/features/resource-library/api";
+import { registerGeneratedResources, uploadLocalResources } from "@/features/resource-library/api";
 import { uploadAudio } from "@/lib/utils";
+import { downloadMediaFile } from "@/lib/media-download";
 import { buildCanvasGenerationIdempotencyKey } from "@/lib/agent-generation-idempotency";
 import {
   EMPTY_CANVAS_DOCUMENT,
@@ -52,11 +53,13 @@ import {
   type CanvasTool,
 } from "./CanvasWorkbenchChrome";
 import styles from "./infinite-canvas.module.css";
+import { CanvasNodeContextMenu, CanvasNodeHoverTools, CanvasNodeToolDialog, type CanvasNodeTool } from "./CanvasNodeWorkbenchTools";
 
 type PanState = { pointerId: number; clientX: number; clientY: number; origin: CanvasViewport } | null;
 type SelectionState = { pointerId: number; startX: number; startY: number; x: number; y: number } | null;
 type CanvasReference = Pick<ResourceAsset, "id" | "url" | "title" | "mediaType">;
 type ReferenceRole = NonNullable<AgentSkill["referenceRoles"]>[number];
+type CanvasGenerationPreferences = { aspectRatio: string; imageSize: string; count: number };
 
 const NODE_DEFAULTS: Record<CanvasNodeType, { title: string; width: number; height: number }> = {
   text: { title: "文本", width: 320, height: 210 },
@@ -65,6 +68,9 @@ const NODE_DEFAULTS: Record<CanvasNodeType, { title: string; width: number; heig
   video: { title: "视频节点", width: 380, height: 260 },
   audio: { title: "音频节点", width: 340, height: 150 },
   config: { title: "生成配置", width: 300, height: 210 },
+  brief: { title: "创作简报", width: 360, height: 260 },
+  task: { title: "Agent 任务", width: 340, height: 220 },
+  "brand-kit": { title: "品牌规范", width: 360, height: 260 },
 };
 
 export function InfiniteCanvasEditor({ projectId }: { projectId: string }) {
@@ -97,6 +103,12 @@ export function InfiniteCanvasEditor({ projectId }: { projectId: string }) {
   const [skillRoleAssignments, setSkillRoleAssignments] = useState<Record<string, CanvasReference[]>>({});
   const [runs, setRuns] = useState<CreativeRunClient[]>([]);
   const [generating, setGenerating] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{ kind: "node" | "edge"; id: string; x: number; y: number } | null>(null);
+  const [toolDialog, setToolDialog] = useState<{ nodeId: string; tool: CanvasNodeTool } | null>(null);
+  const [toolPrompt, setToolPrompt] = useState("");
+  const [toolBusy, setToolBusy] = useState(false);
+  const [uploadTargetNodeId, setUploadTargetNodeId] = useState<string | null>(null);
+  const [generationPreferences, setGenerationPreferences] = useState<CanvasGenerationPreferences>({ aspectRatio: "auto", imageSize: "1K", count: 1 });
 
   useEffect(() => { documentRef.current = document; }, [document]);
   useEffect(() => { titleRef.current = title; }, [title]);
@@ -154,6 +166,10 @@ export function InfiniteCanvasEditor({ projectId }: { projectId: string }) {
     setSaveState("dirty");
   }, []);
 
+  const updateNode = useCallback((nodeId: string, patch: Partial<CanvasNode>, recordHistory = false) => {
+    commitDocument((current) => ({ ...current, nodes: current.nodes.map((node) => node.id === nodeId ? { ...node, ...patch } : node) }), recordHistory);
+  }, [commitDocument]);
+
   const undo = useCallback(() => {
     const previous = pastRef.current.pop();
     if (!previous) return;
@@ -206,6 +222,41 @@ export function InfiniteCanvasEditor({ projectId }: { projectId: string }) {
     const timer = window.setTimeout(() => void saveProject(), 1100);
     return () => window.clearTimeout(timer);
   }, [document, saveProject, saveState, title]);
+
+  const pendingGenerationKey = useMemo(() => document.nodes
+    .filter((node) => node.metadata?.status === "loading" && node.metadata.generationId)
+    .map((node) => `${node.id}:${node.metadata?.generationId}`)
+    .sort()
+    .join("|"), [document.nodes]);
+
+  useEffect(() => {
+    if (!pendingGenerationKey) return;
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      const pending = documentRef.current.nodes.filter((node) => node.metadata?.status === "loading" && node.metadata.generationId);
+      await Promise.all(pending.map(async (node) => {
+        try {
+          const response = await fetch(`/api/general-image?generation_id=${encodeURIComponent(node.metadata?.generationId || "")}`, { cache: "no-store" });
+          const payload = await response.json().catch(() => ({})) as { status?: string; status_group?: string; result_urls?: string[]; error?: string };
+          if (cancelled) return;
+          if (!response.ok) throw new Error(payload.error || "任务状态查询失败");
+          if (payload.status_group === "completed" || payload.status === "completed") {
+            const urls = Array.isArray(payload.result_urls) ? payload.result_urls.filter(Boolean) : [];
+            updateNode(node.id, { content: urls[0] || node.content, metadata: { ...node.metadata, status: "success", errorDetails: undefined } });
+            if (urls.length > 1) {
+              const siblings = urls.slice(1).map((url, index): CanvasNode => ({ ...node, id: `image-${crypto.randomUUID()}`, x: node.x + (index + 1) * 36, y: node.y + (index + 1) * 36, content: url, metadata: { ...node.metadata, status: "success", errorDetails: undefined } }));
+              commitDocument((current) => ({ ...current, nodes: [...current.nodes, ...siblings] }), false);
+            }
+          } else if (payload.status_group === "failed" || ["failed", "cancelled", "needs_review"].includes(payload.status || "")) {
+            updateNode(node.id, { metadata: { ...node.metadata, status: payload.status === "cancelled" ? "cancelled" : payload.status === "needs_review" ? "needs_review" : "error", errorDetails: payload.error || "生成失败" } });
+          }
+        } catch (error) {
+          if (!cancelled) updateNode(node.id, { metadata: { ...node.metadata, status: "error", errorDetails: error instanceof Error ? error.message : "任务恢复失败" } });
+        }
+      }));
+    }, 2200);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [commitDocument, pendingGenerationKey, updateNode]);
 
   const centerPosition = useCallback(() => {
     const rect = surfaceRef.current?.getBoundingClientRect();
@@ -272,22 +323,24 @@ export function InfiniteCanvasEditor({ projectId }: { projectId: string }) {
     try {
       if (visualFiles.length) {
         const result = await uploadLocalResources(visualFiles);
-        appendAssetNodes(result.assets);
+        if (uploadTargetNodeId && result.assets[0]) {
+          const asset = result.assets[0];
+          updateNode(uploadTargetNodeId, { type: asset.mediaType === "video" ? "video" : "image", content: asset.url, title: asset.title || "媒体素材", assetId: asset.id, metadata: { status: "success" } }, true);
+        } else appendAssetNodes(result.assets);
         result.errors.forEach((error) => toast.error(error.message));
       }
       for (const file of audioFiles) {
         const uploaded = await uploadAudio(file);
-        addNode("audio", uploaded.url, file.name);
+        if (uploadTargetNodeId) updateNode(uploadTargetNodeId, { type: "audio", content: uploaded.url, title: file.name, metadata: { status: "success" } }, true);
+        else addNode("audio", uploaded.url, file.name);
       }
       toast.success("素材已加入画布", { id: toastId });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "素材上传失败", { id: toastId });
+    } finally {
+      setUploadTargetNodeId(null);
     }
-  }, [addNode, appendAssetNodes]);
-
-  const updateNode = useCallback((nodeId: string, patch: Partial<CanvasNode>, recordHistory = false) => {
-    commitDocument((current) => ({ ...current, nodes: current.nodes.map((node) => node.id === nodeId ? { ...node, ...patch } : node) }), recordHistory);
-  }, [commitDocument]);
+  }, [addNode, appendAssetNodes, updateNode, uploadTargetNodeId]);
 
   const deleteNodes = useCallback((ids: Set<string>) => {
     if (!ids.size) return;
@@ -431,6 +484,119 @@ export function InfiniteCanvasEditor({ projectId }: { projectId: string }) {
   const selectedNode = document.nodes.find((node) => selectedNodeIds.has(node.id));
   const nodesById = useMemo(() => new Map(document.nodes.map((node) => [node.id, node])), [document.nodes]);
 
+  const duplicateNode = useCallback((nodeId: string) => {
+    const source = documentRef.current.nodes.find((node) => node.id === nodeId);
+    if (!source) return;
+    const copy: CanvasNode = { ...source, id: `${source.type}-${crypto.randomUUID()}`, x: source.x + 34, y: source.y + 34, title: `${source.title} 副本`, metadata: source.metadata ? { ...source.metadata, generationId: undefined, creativeRunId: undefined } : undefined };
+    commitDocument((current) => ({ ...current, nodes: [...current.nodes, copy] }));
+    setSelectedNodeIds(new Set([copy.id]));
+  }, [commitDocument]);
+
+  const openNodeTool = useCallback(async (node: CanvasNode, tool: CanvasNodeTool) => {
+    if (tool === "download") {
+      if (!node.content) return toast.info("当前节点没有可下载内容");
+      try { await downloadMediaFile(node.content, node.title || `canvas-${node.type}`); } catch (error) { toast.error(error instanceof Error ? error.message : "下载失败"); }
+      return;
+    }
+    if (tool === "save-asset") {
+      if (!node.metadata?.generationId) return toast.success(node.assetId ? "该素材已在资源库中" : "上传素材已由资源库统一管理");
+      try {
+        const assets = await registerGeneratedResources({ generationId: node.metadata.generationId });
+        const asset = assets.find((item) => item.url === node.content) || assets[0];
+        if (asset) updateNode(node.id, { assetId: asset.id });
+        toast.success("已加入我的素材");
+      } catch (error) { toast.error(error instanceof Error ? error.message : "加入素材失败"); }
+      return;
+    }
+    if (tool === "replace") {
+      setUploadTargetNodeId(node.id);
+      window.setTimeout(() => uploadRef.current?.click(), 0);
+      return;
+    }
+    if (tool === "copy-prompt") {
+      const value = node.metadata?.prompt || node.title;
+      await navigator.clipboard.writeText(value);
+      toast.success("提示词已复制");
+      return;
+    }
+    if (tool === "font-down" || tool === "font-up") {
+      const fontSize = Math.min(72, Math.max(12, (node.metadata?.fontSize || 16) + (tool === "font-up" ? 2 : -2)));
+      updateNode(node.id, { metadata: { ...node.metadata, fontSize } }, true);
+      return;
+    }
+    if (tool === "toggle-resize") {
+      updateNode(node.id, { metadata: { ...node.metadata, freeResize: !node.metadata?.freeResize } }, true);
+      toast.success(node.metadata?.freeResize ? "已锁定原始比例" : "已开启自由缩放");
+      return;
+    }
+    const initialPrompt = tool === "edit" ? node.content : tool === "retry" ? node.metadata?.prompt || "" : tool === "generate-image" ? node.content : "";
+    setToolPrompt(initialPrompt);
+    setToolDialog({ nodeId: node.id, tool });
+  }, [updateNode]);
+
+  const confirmNodeTool = useCallback(async () => {
+    if (!toolDialog || toolBusy || !project) return;
+    const source = documentRef.current.nodes.find((node) => node.id === toolDialog.nodeId);
+    if (!source) return setToolDialog(null);
+    const tool = toolDialog.tool;
+    if (tool === "edit") {
+      updateNode(source.id, { content: toolPrompt }, true);
+      setToolDialog(null);
+      return;
+    }
+    setToolBusy(true);
+    if (tool === "reverse-prompt") {
+      try {
+        const response = await fetch("/api/general-image/image-to-prompt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image_url: source.content }) });
+        const payload = await response.json().catch(() => ({})) as { prompt?: string; error?: string };
+        if (!response.ok || !payload.prompt) throw new Error(payload.error || "反推提示词失败");
+        const node: CanvasNode = { id: `text-${crypto.randomUUID()}`, type: "text", x: source.x + source.width + 70, y: source.y, width: 360, height: 240, title: `${source.title} · 反推提示词`, content: payload.prompt, metadata: { status: "success", operation: tool, prompt: payload.prompt } };
+        commitDocument((current) => ({ ...current, nodes: [...current.nodes, node], edges: [...current.edges, { id: `edge-${crypto.randomUUID()}`, from: source.id, to: node.id }] }));
+        setSelectedNodeIds(new Set([node.id]));
+        setToolDialog(null);
+        toast.success("反推提示词已创建为文本节点");
+      } catch (error) { toast.error(error instanceof Error ? error.message : "反推提示词失败"); }
+      finally { setToolBusy(false); }
+      return;
+    }
+
+    const outputNodeId = `image-${crypto.randomUUID()}`;
+    const operationPrompt = buildNodeToolPrompt(tool, toolPrompt, source.metadata?.prompt || source.title);
+    const sourceReference = ["image", "panorama"].includes(source.type) && source.content ? source.content : "";
+    const count = tool === "layers" ? 3 : tool === "angle" ? Math.min(4, generationPreferences.count || 4) : tool === "split" ? splitOutputCount(toolPrompt) : generationPreferences.count;
+    const placeholder: CanvasNode = { id: outputNodeId, type: "image", x: source.x + source.width + 70, y: source.y, width: 360, height: 300, title: `${source.title} · ${canvasToolLabel(tool)}`, content: "", metadata: { status: "loading", prompt: operationPrompt, operation: tool, model: "nano-banana-2", aspectRatio: generationPreferences.aspectRatio, imageSize: generationPreferences.imageSize } };
+    commitDocument((current) => ({ ...current, nodes: [...current.nodes, placeholder], edges: [...current.edges, { id: `edge-${crypto.randomUUID()}`, from: source.id, to: placeholder.id }] }));
+    setSelectedNodeIds(new Set([placeholder.id]));
+    try {
+      const clientRequestId = crypto.randomUUID();
+      const runResponse = await fetch("/api/creative-runs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ intent: operationPrompt, mode: "image", surface: "canvas", projectId: project.id, clientRequestId, selectedSkillIds: [], skillRunMode: "quick", generationPreferences: { image: { ...generationPreferences, count } } }) });
+      const runPayload = await runResponse.json().catch(() => ({})) as { run?: { id?: string }; error?: string };
+      if (!runResponse.ok || !runPayload.run?.id) throw new Error(runPayload.error || "画布任务创建失败");
+      const runId = runPayload.run.id;
+      const response = await fetch("/api/general-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Idempotency-Key": buildCanvasGenerationIdempotencyKey(clientRequestId) },
+        body: JSON.stringify({ mode: sourceReference ? "image-to-image" : "text-to-image", prompt: operationPrompt, user_prompt: toolPrompt || operationPrompt, reference_urls: sourceReference ? [sourceReference] : [], ai_model: "nano-banana-2", aspect_ratio: generationPreferences.aspectRatio, image_size: generationPreferences.imageSize, gen_count: count, creative_run_id: runId, creative_step_key: `canvas-${tool}`, creative_step_title: canvasToolLabel(tool), canvas_node_id: outputNodeId }),
+      });
+      const payload = await response.json().catch(() => ({})) as { generation_id?: string; error?: string };
+      if (!response.ok || !payload.generation_id) throw new Error(payload.error || "图片处理任务提交失败");
+      updateNode(outputNodeId, { metadata: { ...placeholder.metadata, generationId: payload.generation_id, creativeRunId: runId } });
+      const urls = await pollCanvasGeneration(payload.generation_id);
+      const results = urls.map((url, index): CanvasNode => index === 0
+        ? { ...placeholder, content: url, metadata: { ...placeholder.metadata, generationId: payload.generation_id, creativeRunId: runId, status: "success" } }
+        : { ...placeholder, id: `image-${crypto.randomUUID()}`, x: placeholder.x + index * 36, y: placeholder.y + index * 36, content: url, metadata: { ...placeholder.metadata, generationId: payload.generation_id, creativeRunId: runId, status: "success" } });
+      commitDocument((current) => ({ ...current, nodes: [...current.nodes.filter((node) => node.id !== outputNodeId), ...results] }));
+      setSelectedNodeIds(new Set(results.map((node) => node.id)));
+      setToolDialog(null);
+      await loadRuns();
+      toast.success(`${canvasToolLabel(tool)}完成`);
+    } catch (error) {
+      updateNode(outputNodeId, { metadata: { ...placeholder.metadata, status: "error", errorDetails: error instanceof Error ? error.message : "图片处理失败" } });
+      toast.error(error instanceof Error ? error.message : "图片处理失败");
+      await loadRuns().catch(() => undefined);
+    } finally { setToolBusy(false); }
+  }, [commitDocument, generationPreferences, loadRuns, project, toolBusy, toolDialog, toolPrompt, updateNode]);
+
   const selectRoleAssets = async (role: ReferenceRole) => {
     const current = skillRoleAssignments[role.id] || [];
     const selected = await openResourcePicker({
@@ -447,12 +613,26 @@ export function InfiniteCanvasEditor({ projectId }: { projectId: string }) {
     setSkillRoleAssignments((value) => ({ ...value, [role.id]: [...(value[role.id] || []), ...selected.map(({ id, url, title, mediaType }) => ({ id, url, title, mediaType }))].slice(0, role.maxCount) }));
   };
 
-  const assignSelectedToRole = (role: ReferenceRole) => {
+  const assignSelectedToRole = async (role: ReferenceRole) => {
     if (!selectedNode || !["image", "panorama", "video"].includes(selectedNode.type) || !selectedNode.content) return toast.info("请先选中一个媒体节点");
+    let resourceId = selectedNode.assetId;
+    if (!resourceId && selectedNode.metadata?.generationId) {
+      try {
+        const assets = await registerGeneratedResources({ generationId: selectedNode.metadata.generationId });
+        const asset = assets.find((item) => item.url === selectedNode.content) || assets[0];
+        if (asset) {
+          resourceId = asset.id;
+          updateNode(selectedNode.id, { assetId: asset.id });
+        }
+      } catch (error) {
+        return toast.error(error instanceof Error ? error.message : "素材登记失败");
+      }
+    }
+    if (!resourceId) return toast.info("该节点需要先加入素材库，再用于 Skill 角色");
     setSkillRoleAssignments((value) => {
       const current = value[role.id] || [];
-      if (current.some((asset) => asset.id === selectedNode.id) || current.length >= role.maxCount) return value;
-      return { ...value, [role.id]: [...current, { id: selectedNode.id, url: selectedNode.content, title: selectedNode.title, mediaType: selectedNode.type === "video" ? "video" : "image" }] };
+      if (current.some((asset) => asset.id === resourceId) || current.length >= role.maxCount) return value;
+      return { ...value, [role.id]: [...current, { id: resourceId, url: selectedNode.content, title: selectedNode.title, mediaType: selectedNode.type === "video" ? "video" : "image" }] };
     });
   };
 
@@ -463,6 +643,10 @@ export function InfiniteCanvasEditor({ projectId }: { projectId: string }) {
     if (requiredMissing) return toast.error(`Skill「${activeSkill?.name}」缺少必填素材：${requiredMissing.label}`);
     setGenerating(true);
     const outputNodeId = `image-${crypto.randomUUID()}`;
+    const base = centerPosition();
+    const placeholder: CanvasNode = { id: outputNodeId, type: "image", x: base.x, y: base.y, width: 360, height: 300, title: intent.slice(0, 48), content: "", metadata: { status: "loading", prompt: intent, operation: "agent-generate", model: "nano-banana-2", aspectRatio: generationPreferences.aspectRatio, imageSize: generationPreferences.imageSize } };
+    commitDocument((current) => ({ ...current, nodes: [...current.nodes, placeholder] }));
+    setSelectedNodeIds(new Set([outputNodeId]));
     const roleAssets = Object.values(skillRoleAssignments).flat();
     const selectedReference = selectedNode && ["image", "panorama"].includes(selectedNode.type) && selectedNode.content ? [{ id: selectedNode.id, url: selectedNode.content, title: selectedNode.title, mediaType: "image" as const }] : [];
     const references = Array.from(new Map([...roleAssets, ...selectedReference].map((asset) => [asset.id, asset])).values());
@@ -480,11 +664,12 @@ export function InfiniteCanvasEditor({ projectId }: { projectId: string }) {
           selectedSkillIds: selectedSkillId ? [selectedSkillId] : [],
           skillRunMode: "professional",
           skillReferenceRoleAssetIds: Object.fromEntries(Object.entries(skillRoleAssignments).map(([key, assets]) => [key, assets.map((asset) => asset.id)])),
-          generationPreferences: { image: { aspectRatio: "auto", imageSize: "1K", quality: "smart", count: 1 } },
+          generationPreferences: { image: { ...generationPreferences, quality: "smart" } },
         }),
       });
       const runPayload = await runResponse.json().catch(() => ({})) as { run?: { id?: string }; error?: string };
       if (!runResponse.ok || !runPayload.run?.id) throw new Error(runPayload.error || "画布 Agent Run 创建失败");
+      const runId = runPayload.run.id;
       const generationResponse = await fetch("/api/general-image", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Idempotency-Key": buildCanvasGenerationIdempotencyKey(clientRequestId) },
@@ -494,10 +679,10 @@ export function InfiniteCanvasEditor({ projectId }: { projectId: string }) {
           user_prompt: intent,
           reference_urls: references.map((asset) => asset.url),
           ai_model: "nano-banana-2",
-          aspect_ratio: "auto",
-          image_size: "1K",
-          gen_count: 1,
-          creative_run_id: runPayload.run.id,
+          aspect_ratio: generationPreferences.aspectRatio,
+          image_size: generationPreferences.imageSize,
+          gen_count: generationPreferences.count,
+          creative_run_id: runId,
           creative_step_key: "canvas-primary-image",
           creative_step_title: "画布 Agent 生成",
           canvas_node_id: outputNodeId,
@@ -505,16 +690,17 @@ export function InfiniteCanvasEditor({ projectId }: { projectId: string }) {
       });
       const generation = await generationResponse.json().catch(() => ({})) as { generation_id?: string; error?: string };
       if (!generationResponse.ok || !generation.generation_id) throw new Error(generation.error || "画布生成提交失败");
+      updateNode(outputNodeId, { metadata: { ...placeholder.metadata, generationId: generation.generation_id, creativeRunId: runId } });
       const urls = await pollCanvasGeneration(generation.generation_id);
-      const base = centerPosition();
-      const nodes = urls.map((url, index): CanvasNode => ({ id: index ? `image-${crypto.randomUUID()}` : outputNodeId, type: "image", x: base.x + index * 36, y: base.y + index * 36, width: 360, height: 300, title: intent.slice(0, 48), content: url }));
-      commitDocument((current) => ({ ...current, nodes: [...current.nodes, ...nodes] }));
+      const nodes = urls.map((url, index): CanvasNode => ({ ...placeholder, id: index ? `image-${crypto.randomUUID()}` : outputNodeId, x: base.x + index * 36, y: base.y + index * 36, content: url, metadata: { ...placeholder.metadata, generationId: generation.generation_id, creativeRunId: runId, status: "success" } }));
+      commitDocument((current) => ({ ...current, nodes: [...current.nodes.filter((node) => node.id !== outputNodeId), ...nodes] }));
       setSelectedNodeIds(new Set(nodes.map((node) => node.id)));
       setAgentPrompt("");
       setSkillRoleAssignments({});
       await loadRuns();
       toast.success("生成结果已加入画布");
     } catch (error) {
+      updateNode(outputNodeId, { metadata: { ...placeholder.metadata, status: "error", errorDetails: error instanceof Error ? error.message : "画布生成失败" } });
       toast.error(error instanceof Error ? error.message : "画布生成失败");
       await loadRuns().catch(() => undefined);
     } finally {
@@ -555,13 +741,15 @@ export function InfiniteCanvasEditor({ projectId }: { projectId: string }) {
           onPointerUp={finishSurfaceGesture}
           onPointerCancel={finishSurfaceGesture}
           onWheel={onWheel}
+          onClick={() => setContextMenu(null)}
+          onContextMenu={(event) => { if (!(event.target as HTMLElement).closest("[data-canvas-node],[data-canvas-edge]")) { event.preventDefault(); setContextMenu(null); } }}
         >
           <div className={styles.canvasWorld} style={{ transform: `translate(${document.viewport.x}px,${document.viewport.y}px) scale(${document.viewport.scale})` }}>
             <svg className={styles.edgeLayer} aria-hidden="true">
               {document.edges.map((edge) => {
                 const from = nodesById.get(edge.from);
                 const to = nodesById.get(edge.to);
-                return from && to ? <path key={edge.id} d={edgePath(from, to)} /> : null;
+                return from && to ? <path key={edge.id} data-canvas-edge d={edgePath(from, to)} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); setContextMenu({ kind: "edge", id: edge.id, x: event.clientX, y: event.clientY }); }} /> : null;
               })}
             </svg>
             {document.nodes.map((node) => (
@@ -576,6 +764,8 @@ export function InfiniteCanvasEditor({ projectId }: { projectId: string }) {
                 onDelete={() => deleteNodes(new Set([node.id]))}
                 onStartConnection={() => setConnectingFrom(node.id)}
                 onFinishConnection={() => connectNodes(node.id)}
+                onTool={(tool) => void openNodeTool(node, tool)}
+                onContextMenu={(x, y) => setContextMenu({ kind: "node", id: node.id, x, y })}
               />
             ))}
           </div>
@@ -598,6 +788,8 @@ export function InfiniteCanvasEditor({ projectId }: { projectId: string }) {
             onBackgroundChange={(background) => commitDocument((current) => ({ ...current, background }))}
           />
           <input ref={uploadRef} type="file" accept="image/*,video/*,audio/*" multiple hidden onChange={(event) => void handleUpload(event)} />
+          {contextMenu ? <CanvasNodeContextMenu x={contextMenu.x} y={contextMenu.y} kind={contextMenu.kind} onDuplicate={contextMenu.kind === "node" ? () => duplicateNode(contextMenu.id) : undefined} onDelete={() => contextMenu.kind === "node" ? deleteNodes(new Set([contextMenu.id])) : commitDocument((current) => ({ ...current, edges: current.edges.filter((edge) => edge.id !== contextMenu.id) }))} onClose={() => setContextMenu(null)} /> : null}
+          <CanvasNodeToolDialog node={toolDialog ? nodesById.get(toolDialog.nodeId) || null : null} tool={toolDialog?.tool || null} prompt={toolPrompt} busy={toolBusy} onPromptChange={setToolPrompt} onClose={() => { if (!toolBusy) setToolDialog(null); }} onConfirm={() => void confirmNodeTool()} />
         </div>
         <CanvasAgentPanel
           open={agentOpen}
@@ -608,7 +800,9 @@ export function InfiniteCanvasEditor({ projectId }: { projectId: string }) {
           skills={agentSkills}
           selectedSkillId={selectedSkillId}
           selectedNodeTitle={selectedNode?.title}
+          nodes={document.nodes}
           nodeCount={document.nodes.length}
+          generationPreferences={generationPreferences}
           skillWorkspace={activeSkill ? <CanvasSkillWorkspace skill={activeSkill} assignments={skillRoleAssignments} onSelectRole={selectRoleAssets} onAssignSelected={assignSelectedToRole} onRemove={(roleId, assetId) => setSkillRoleAssignments((value) => ({ ...value, [roleId]: (value[roleId] || []).filter((asset) => asset.id !== assetId) }))} /> : undefined}
           onClose={() => setAgentOpen(false)}
           onTabChange={setAgentTab}
@@ -618,13 +812,14 @@ export function InfiniteCanvasEditor({ projectId }: { projectId: string }) {
           onQuickAction={quickAction}
           onAddReference={() => void openAssets()}
           onSelectSkill={(id) => { setSelectedSkillId(id); setSkillRoleAssignments({}); }}
+          onGenerationPreferencesChange={setGenerationPreferences}
         />
       </div>
     </main>
   );
 }
 
-function CanvasNodeView({ node, selected, scale, connecting, onSelect, onChange, onDelete, onStartConnection, onFinishConnection }: {
+function CanvasNodeView({ node, selected, scale, connecting, onSelect, onChange, onDelete, onStartConnection, onFinishConnection, onTool, onContextMenu }: {
   node: CanvasNode;
   selected: boolean;
   scale: number;
@@ -634,6 +829,8 @@ function CanvasNodeView({ node, selected, scale, connecting, onSelect, onChange,
   onDelete: () => void;
   onStartConnection: () => void;
   onFinishConnection: () => void;
+  onTool: (tool: CanvasNodeTool) => void;
+  onContextMenu: (x: number, y: number) => void;
 }) {
   const dragRef = useRef<{ pointerId: number; clientX: number; clientY: number; x: number; y: number } | null>(null);
   const resizeRef = useRef<{ pointerId: number; clientX: number; clientY: number; width: number; height: number } | null>(null);
@@ -667,7 +864,8 @@ function CanvasNodeView({ node, selected, scale, connecting, onSelect, onChange,
     resizeRef.current = null;
   };
   return (
-    <article data-canvas-node data-selected={selected || undefined} data-node-type={node.type} className={styles.canvasNode} style={{ left: node.x, top: node.y, width: node.width, height: node.height }} onPointerDown={(event) => { event.stopPropagation(); onSelect(event.shiftKey); }}>
+    <article data-canvas-node data-selected={selected || undefined} data-node-type={node.type} data-status={node.metadata?.status} className={styles.canvasNode} style={{ left: node.x, top: node.y, width: node.width, height: node.height }} onPointerDown={(event) => { event.stopPropagation(); onSelect(event.shiftKey); }} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); onSelect(false); onContextMenu(event.clientX, event.clientY); }}>
+      <CanvasNodeHoverTools node={node} onTool={onTool} />
       <div className={styles.nodeHeader} onPointerDown={startDrag} onPointerMove={drag} onPointerUp={finishDrag} onPointerCancel={finishDrag}>
         <span>{nodeIcon(node.type)}{node.title}</span><button type="button" aria-label="删除节点" onPointerDown={(event) => event.stopPropagation()} onClick={onDelete}><Trash2 /></button>
       </div>
@@ -680,7 +878,9 @@ function CanvasNodeView({ node, selected, scale, connecting, onSelect, onChange,
 }
 
 function NodeContent({ node, onChange }: { node: CanvasNode; onChange: (patch: Partial<CanvasNode>, recordHistory?: boolean) => void }) {
-  if (node.type === "text" || node.type === "config") return <textarea value={node.content} aria-label={node.title} onPointerDown={(event) => event.stopPropagation()} onFocus={() => onChange({}, true)} onChange={(event) => onChange({ content: event.target.value })} />;
+  if (node.metadata?.status === "loading" && !node.content) return <div className={styles.nodeMedia}><div className={styles.nodePlaceholder}><Loader2 className="animate-spin" /><strong>任务生成中</strong><small>可以离开页面，完成后会自动恢复</small></div></div>;
+  if (["error", "cancelled", "needs_review"].includes(node.metadata?.status || "") && !node.content) return <div className={styles.nodeMedia}><div className={styles.nodePlaceholder} data-error><X /><strong>{node.metadata?.status === "needs_review" ? "任务需要检查" : "生成失败"}</strong><small>{node.metadata?.errorDetails || "请从节点工具栏重试"}</small></div></div>;
+  if (["text", "config", "brief", "task", "brand-kit"].includes(node.type)) return <textarea value={node.content} aria-label={node.title} style={{ fontSize: node.metadata?.fontSize || undefined }} onPointerDown={(event) => event.stopPropagation()} onFocus={() => onChange({}, true)} onChange={(event) => onChange({ content: event.target.value })} />;
   if (!node.content) return <div className={styles.nodeMedia}><div className={styles.nodePlaceholder}><span>{nodeIcon(node.type)}</span><strong>{NODE_DEFAULTS[node.type].title}</strong><small>点击下方上传或资产工具添加内容</small></div></div>;
   if (node.type === "video") return <div className={styles.nodeMedia}><video src={node.content} controls playsInline onPointerDown={(event) => event.stopPropagation()} /></div>;
   if (node.type === "audio") return <div className={styles.nodeMedia}><audio src={node.content} controls onPointerDown={(event) => event.stopPropagation()} /></div>;
@@ -729,8 +929,42 @@ async function pollCanvasGeneration(generationId: string) {
     const response = await fetch(`/api/general-image?generation_id=${encodeURIComponent(generationId)}`, { cache: "no-store" });
     const payload = await response.json().catch(() => ({})) as { status?: string; status_group?: string; result_urls?: string[]; error?: string };
     if (!response.ok) throw new Error(payload.error || "任务状态查询失败");
-    if (payload.status_group === "completed" || payload.status === "completed") return Array.isArray(payload.result_urls) ? payload.result_urls : [];
+    if (payload.status_group === "completed" || payload.status === "completed") {
+      const urls = Array.isArray(payload.result_urls) ? payload.result_urls.filter(Boolean) : [];
+      if (!urls.length) throw new Error("任务已完成，但没有返回可用结果");
+      return urls;
+    }
     if (payload.status_group === "failed" || ["failed", "cancelled", "needs_review"].includes(payload.status || "")) throw new Error(payload.error || "生成失败");
   }
   throw new Error("任务仍在后台执行，请稍后在历史中查看");
+}
+
+function splitOutputCount(value: string) {
+  const match = value.match(/(\d)\s*[x×]\s*(\d)/i);
+  return Math.min(4, Math.max(1, match ? Number(match[1]) * Number(match[2]) : 4));
+}
+
+function canvasToolLabel(tool: CanvasNodeTool) {
+  const labels: Partial<Record<CanvasNodeTool, string>> = {
+    mask: "局部编辑", crop: "裁剪重构", split: "智能切图", layers: "智能分层", "remove-bg": "消除背景", emotion: "表情参考", upscale: "画质放大", "super-resolve": "超分辨率", angle: "多角度生成", "generate-image": "文本生图", retry: "重新生成",
+  };
+  return labels[tool] || "节点编辑";
+}
+
+function buildNodeToolPrompt(tool: CanvasNodeTool, detail: string, sourcePrompt: string) {
+  const extra = detail.trim();
+  const operations: Partial<Record<CanvasNodeTool, string>> = {
+    mask: "只修改用户指定的局部区域，未提及区域、主体身份、构图与画面风格必须保持不变。",
+    crop: "按目标构图重新裁切画面，保持主体、材质、文字与关键细节完整，不新增无关内容。",
+    split: `把画面按 ${extra || "2x2"} 网格拆分，依次输出可独立使用、边界清晰且无重复的分区。`,
+    layers: "把画面拆解为主体、前景与背景三类可独立使用的视觉层，分别输出，边缘干净。",
+    "remove-bg": "准确移除图片背景，完整保留主体轮廓、半透明细节与真实边缘，输出纯净浅色背景。",
+    emotion: "只调整人物表情，保持人物身份、五官结构、发型、服装、姿势、背景、构图和光线不变。",
+    upscale: "提升图片清晰度和分辨率，恢复材质与边缘细节，不改变原始内容和构图。",
+    "super-resolve": "执行高质量超分辨率修复，去除压缩伪影，增强微细节，保持内容严格一致。",
+    angle: "保持主体身份、材质、颜色与比例一致，从不同观察角度生成同一主体的完整视图。",
+    "generate-image": "根据文本内容生成完整、高质量、可直接用于商业设计的图片。",
+    retry: "重新执行原始生成要求，修正失败并输出完整、可用的高质量结果。",
+  };
+  return [operations[tool] || "按要求编辑图片。", extra, sourcePrompt ? `原始意图：${sourcePrompt}` : ""].filter(Boolean).join("\n").slice(0, 4000);
 }

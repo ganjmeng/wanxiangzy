@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import type { CreativeRunClient } from "@/lib/creative-runs.server";
 import type { AgentSkill } from "@/lib/creative-skills";
+import type { CanvasNode } from "@/lib/canvas-contract";
 import styles from "./infinite-canvas.module.css";
 
 export type CanvasTool = "pan" | "select";
@@ -192,7 +193,9 @@ export function CanvasAgentPanel({
   skills,
   selectedSkillId,
   selectedNodeTitle,
+  nodes,
   nodeCount,
+  generationPreferences,
   skillWorkspace,
   onClose,
   onTabChange,
@@ -202,6 +205,7 @@ export function CanvasAgentPanel({
   onQuickAction,
   onAddReference,
   onSelectSkill,
+  onGenerationPreferencesChange,
 }: {
   open: boolean;
   tab: CanvasPanelTab;
@@ -211,7 +215,9 @@ export function CanvasAgentPanel({
   skills: AgentSkill[];
   selectedSkillId: string;
   selectedNodeTitle?: string;
+  nodes: CanvasNode[];
   nodeCount: number;
+  generationPreferences: { aspectRatio: string; imageSize: string; count: number };
   skillWorkspace?: React.ReactNode;
   onClose: () => void;
   onTabChange: (tab: CanvasPanelTab) => void;
@@ -221,6 +227,7 @@ export function CanvasAgentPanel({
   onQuickAction: (value: string) => void;
   onAddReference: () => void;
   onSelectSkill: (id: string) => void;
+  onGenerationPreferencesChange: (value: { aspectRatio: string; imageSize: string; count: number }) => void;
 }) {
   if (!open) return null;
   return (
@@ -261,6 +268,16 @@ export function CanvasAgentPanel({
         <div className={styles.composerBottomline}>
           <span><Sparkles /></span><span className={styles.smartMode}>智能</span>
           <select value={selectedSkillId} onChange={(event) => onSelectSkill(event.target.value)} aria-label="选择画布 Skill"><option value="">智能 · 1张</option>{skills.map((skill) => <option key={skill.id} value={skill.id}>{skill.name}</option>)}</select>
+          <select value="" aria-label="引用画布节点" onChange={(event) => { const node = nodes.find((item) => item.id === event.target.value); if (node) onPromptChange(`${prompt}${prompt && !prompt.endsWith(" ") ? " " : ""}@${node.title} `); }}><option value="">@ 引用</option>{nodes.map((node) => <option key={node.id} value={node.id}>{node.title}</option>)}</select>
+          <a className={styles.promptLibraryLink} href="/prompts">提示词</a>
+          <details className={styles.generationSettings}>
+            <summary><Settings2 />{generationPreferences.aspectRatio === "auto" ? "智能" : generationPreferences.aspectRatio} · {generationPreferences.count}张</summary>
+            <div>
+              <label>画面比例<select value={generationPreferences.aspectRatio} aria-label="输出比例" onChange={(event) => onGenerationPreferencesChange({ ...generationPreferences, aspectRatio: event.target.value })}><option value="auto">智能比例</option><option value="1:1">1:1</option><option value="4:3">4:3</option><option value="3:4">3:4</option><option value="16:9">16:9</option><option value="9:16">9:16</option><option value="21:9">21:9</option></select></label>
+              <label>清晰度<select value={generationPreferences.imageSize} aria-label="图片尺寸" onChange={(event) => onGenerationPreferencesChange({ ...generationPreferences, imageSize: event.target.value })}><option value="1K">1K</option><option value="2K">2K</option><option value="4K">4K</option></select></label>
+              <label>生成数量<select value={generationPreferences.count} aria-label="生成张数" onChange={(event) => onGenerationPreferencesChange({ ...generationPreferences, count: Number(event.target.value) })}>{[1, 2, 3, 4].map((count) => <option key={count} value={count}>{count}张</option>)}</select></label>
+            </div>
+          </details>
           <button type="button" className={styles.sendButton} disabled={!prompt.trim() || generating} onClick={onSubmit}>{generating ? <Loader2 className="animate-spin" /> : <ArrowUp />}</button>
         </div>
       </div>

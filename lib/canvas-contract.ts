@@ -4,8 +4,24 @@ export type CanvasViewport = {
   scale: number;
 };
 
-export type CanvasNodeType = "text" | "image" | "panorama" | "video" | "audio" | "config";
+export type CanvasNodeType = "text" | "image" | "panorama" | "video" | "audio" | "config" | "brief" | "task" | "brand-kit";
 export type CanvasBackgroundMode = "dots" | "lines" | "blank";
+
+export type CanvasNodeMetadata = {
+  status?: "idle" | "success" | "loading" | "error" | "needs_review" | "cancelled";
+  prompt?: string;
+  errorDetails?: string;
+  generationId?: string;
+  creativeRunId?: string;
+  operation?: string;
+  model?: string;
+  aspectRatio?: string;
+  imageSize?: string;
+  fontSize?: number;
+  freeResize?: boolean;
+  naturalWidth?: number;
+  naturalHeight?: number;
+};
 
 export type CanvasNode = {
   id: string;
@@ -17,6 +33,7 @@ export type CanvasNode = {
   title: string;
   content: string;
   assetId?: string;
+  metadata?: CanvasNodeMetadata;
 };
 
 export type CanvasEdge = {
@@ -101,6 +118,7 @@ function normalizeCanvasNode(value: unknown, index: number): CanvasNode {
   const title = boundedText(item.title, defaultNodeTitle(type), 120);
   const content = boundedText(item.content, "", mediaNode ? 1600 : 12_000);
   const assetId = typeof item.assetId === "string" && item.assetId.trim() ? item.assetId.trim().slice(0, 160) : undefined;
+  const metadata = normalizeNodeMetadata(item.metadata);
   if (mediaNode && content && !/^https:\/\//i.test(content)) throw new CanvasContractError("媒体节点必须引用 HTTPS 素材");
   return {
     id,
@@ -112,11 +130,12 @@ function normalizeCanvasNode(value: unknown, index: number): CanvasNode {
     title,
     content,
     ...(assetId ? { assetId } : {}),
+    ...(metadata ? { metadata } : {}),
   };
 }
 
 function normalizeNodeType(value: unknown): CanvasNodeType {
-  return value === "image" || value === "panorama" || value === "video" || value === "audio" || value === "config"
+  return value === "image" || value === "panorama" || value === "video" || value === "audio" || value === "config" || value === "brief" || value === "task" || value === "brand-kit"
     ? value
     : "text";
 }
@@ -127,7 +146,36 @@ function defaultNodeTitle(type: CanvasNodeType) {
   if (type === "video") return "视频素材";
   if (type === "audio") return "音频素材";
   if (type === "config") return "生成配置";
+  if (type === "brief") return "创作简报";
+  if (type === "task") return "Agent 任务";
+  if (type === "brand-kit") return "品牌规范";
   return "灵感便笺";
+}
+
+function normalizeNodeMetadata(value: unknown): CanvasNodeMetadata | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const item = value as Record<string, unknown>;
+  const status = ["idle", "success", "loading", "error", "needs_review", "cancelled"].includes(String(item.status))
+    ? item.status as CanvasNodeMetadata["status"]
+    : undefined;
+  const text = (key: string, max: number) => typeof item[key] === "string" && item[key] ? String(item[key]).slice(0, max) : undefined;
+  const number = (key: string) => Number.isFinite(Number(item[key])) ? Number(item[key]) : undefined;
+  const metadata: CanvasNodeMetadata = {
+    status,
+    prompt: text("prompt", 4_000),
+    errorDetails: text("errorDetails", 2_000),
+    generationId: text("generationId", 160),
+    creativeRunId: text("creativeRunId", 160),
+    operation: text("operation", 80),
+    model: text("model", 120),
+    aspectRatio: text("aspectRatio", 24),
+    imageSize: text("imageSize", 24),
+    fontSize: number("fontSize"),
+    freeResize: item.freeResize === true,
+    naturalWidth: number("naturalWidth"),
+    naturalHeight: number("naturalHeight"),
+  };
+  return Object.values(metadata).some((entry) => entry !== undefined && entry !== false) ? metadata : undefined;
 }
 
 function normalizeCanvasEdge(value: unknown, index: number): CanvasEdge {
