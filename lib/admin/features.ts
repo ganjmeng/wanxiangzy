@@ -37,8 +37,6 @@ const moduleAdminHref: Record<AppModuleKey, string> = {
   home: "/admin",
   aiShoots: "/admin/generations",
   productImages: "/admin/product-retouch-skill",
-  assistant: "/admin",
-  canvas: "/admin/generations",
   tools: "/admin/generations",
   toolbox: "/admin/generations",
   enterprise: "/admin/billing",
@@ -169,7 +167,7 @@ function normalizeText(value: unknown, maxLength: number) {
 
 function normalizeModule(value: unknown): AppModuleKey | null {
   const module = normalizeText(value, 40);
-  return ["home", "aiShoots", "productImages", "assistant", "tools", "toolbox", "enterprise", "aiVideo", "works"].includes(module)
+  return ["home", "aiShoots", "productImages", "tools", "toolbox", "enterprise", "aiVideo", "works"].includes(module)
     ? (module as AppModuleKey)
     : null;
 }

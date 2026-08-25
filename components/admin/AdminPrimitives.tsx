@@ -496,7 +496,6 @@ export function shortAdminCode(value: string | null | undefined, prefix = "编�
 
 export function resourceTypeLabel(value: string | null | undefined) {
   if (value === "generation") return "生成任务";
-  if (value === "creative_run") return "创意任务";
   if (value === "reference") return "参考素材";
   if (value === "favorite-plan") return "收藏方案";
   if (value === "user") return "用户";

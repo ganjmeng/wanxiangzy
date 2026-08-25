@@ -4,7 +4,7 @@
 
 ## 商用队列 / OSS clean-slate 迁移（强制顺序）
 
-前四个迁移不兼容旧 generation 队列数据，最后的 VOZEB 迁移会永久删除旧 Agent v1 表。两处都必须在停写维护窗口内、完成数据库备份后严格顺序应用；中间迁移负责统一模型、Worker 控制面、后台经营指标聚合和生成容量退避：
+前四个迁移不兼容旧 generation 队列数据；后续历史迁移曾引入 VOZEB，最终 cleanup 迁移会永久删除 VOZEB 数据和数据库对象，仅保留通用生成执行栅栏。必须在停写维护窗口内、完成数据库备份后严格顺序应用：
 
 ```text
 1. supabase/migrations/20260818072132_bullmq_generation_outbox.sql
@@ -22,6 +22,10 @@
 13. supabase/migrations/20260824193939_complete_agent_skill_runtime.sql
 14. supabase/migrations/20260824203735_creative_runtime_fk_indexes.sql
 15. supabase/migrations/20260825030000_creative_user_skills.sql
+16. supabase/migrations/20260825043413_fix_agent_conversation_runtime.sql
+17. supabase/migrations/20260825054554_repair_minimax_openai_base_url.sql
+18. supabase/migrations/20260825061720_complete_vozeb_agent_message_runtime.sql
+19. supabase/migrations/20260825065043_remove_vozeb_runtime_keep_generation_fence.sql
 ```
 
 Worker runtime 迁移提供 `get_runtime_contract_version()`；发布脚本会精确校验 version/hash，并同时检查后台经营指标 RPC，而不只检查同名 RPC。迁移完成前不得启动新 API/Worker，完成后不得回滚到旧轮询代码；故障恢复采用数据库备份或向前修复。
@@ -42,6 +46,10 @@ psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260824153558
 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260824193939_complete_agent_skill_runtime.sql
 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260824203735_creative_runtime_fk_indexes.sql
 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260825030000_creative_user_skills.sql
+psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260825043413_fix_agent_conversation_runtime.sql
+psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260825054554_repair_minimax_openai_base_url.sql
+psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260825061720_complete_vozeb_agent_message_runtime.sql
+psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260825065043_remove_vozeb_runtime_keep_generation_fence.sql
 ```
 
 ## 推荐基础顺序
@@ -75,6 +83,10 @@ psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260825030000
 26. supabase/migrations/20260824193939_complete_agent_skill_runtime.sql
 27. supabase/migrations/20260824203735_creative_runtime_fk_indexes.sql
 28. supabase/migrations/20260825030000_creative_user_skills.sql
+29. supabase/migrations/20260825043413_fix_agent_conversation_runtime.sql
+30. supabase/migrations/20260825054554_repair_minimax_openai_base_url.sql
+31. supabase/migrations/20260825061720_complete_vozeb_agent_message_runtime.sql
+32. supabase/migrations/20260825065043_remove_vozeb_runtime_keep_generation_fence.sql
 ```
 
 关键依赖：
@@ -85,13 +97,13 @@ credits-update.sql 创建 credit_logs 并更新注册发放积分逻辑。
 set-signup-credits-50.sql 会覆盖 handle_new_user 的默认注册积分，必须在 credits-update.sql 后执行。
 atomic-credit-rpc.sql 依赖 profiles、generations、credit_logs。
 rls-and-ratelimit-update.sql 创建 rate_limit_buckets，fix-rate-limit-rls.sql 依赖它。
-task-queue-items.sql 依赖 generations；VOZEB 迁移会再加入 creative_runs 投影。
+task-queue-items.sql 只依赖 generations 和 ai_tool_tasks 投影。
 stripe-billing.sql 文件头已标明需要在 schema、credits-update、admin-console 后执行。
 admin-console.sql 的积分调整函数依赖 profiles 和 credit_logs。
 product-retouch.sql 依赖 generations、credit_logs、admin_config_versions 和 task_queue_items。
 ```
 
-旧 Agent v1 不再安装或恢复。VOZEB foundation 迁移会永久移除旧表，并建立 `creative_runs`、步骤、事件和 generation 执行阶段；随后三个 Skill 迁移建立统一 Skill 注册表、不可变版本快照、外键覆盖索引和旧数据兼容表。父级编排不另设积分账本。
+旧 Agent v1 与 VOZEB 不再安装或恢复。VOZEB 相关迁移仅作为已发布迁移历史保留，最终 cleanup 迁移负责删除所有 VOZEB 对象；`generation_execution_events`、阶段检查点和 `needs_review` 防重复提交能力继续服务现有生成队列。
 
 ## 兼容脚本说明
 
@@ -141,10 +153,7 @@ SELECT
   to_regclass('public.generations') AS generations,
   to_regclass('public.credit_logs') AS credit_logs,
   to_regclass('public.task_queue_items') AS task_queue_items,
-  to_regclass('public.creative_runs') AS creative_runs,
-  to_regclass('public.creative_agent_skills') AS creative_agent_skills,
-  to_regclass('public.creative_agent_skill_versions') AS creative_agent_skill_versions,
-  to_regclass('public.creative_user_skills') AS creative_user_skills,
+  to_regclass('public.generation_execution_events') AS generation_execution_events,
   to_regclass('public.admin_members') AS admin_members,
   to_regclass('public.billing_products') AS billing_products,
   to_regclass('public.tryon_reference_scenes') AS tryon_reference_scenes,

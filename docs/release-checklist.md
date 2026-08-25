@@ -43,9 +43,13 @@
    supabase/migrations/20260824193939_complete_agent_skill_runtime.sql
    supabase/migrations/20260824203735_creative_runtime_fk_indexes.sql
    supabase/migrations/20260825030000_creative_user_skills.sql
+   supabase/migrations/20260825043413_fix_agent_conversation_runtime.sql
+   supabase/migrations/20260825054554_repair_minimax_openai_base_url.sql
+   supabase/migrations/20260825061720_complete_vozeb_agent_message_runtime.sql
+   supabase/migrations/20260825065043_remove_vozeb_runtime_keep_generation_fence.sql
    ```
 
-   前四个时间戳迁移会清理旧 generation 队列数据，VOZEB foundation 迁移会永久删除旧 Agent v1 表：先备份，在停写维护窗口严格顺序执行，随后再应用三个 Skill 迁移。部署会精确校验 runtime contract、所需 RPC 和 Skill 表，缺少任一项都不能切流。
+   前四个时间戳迁移会清理旧 generation 队列数据；后续历史迁移曾引入 VOZEB，最终 cleanup 迁移会永久删除其数据和数据库对象，仅保留通用生成执行栅栏。必须先备份并严格按文件名顺序执行。部署会精确校验 runtime contract 和所需 RPC，缺少任一项都不能切流。
 
 4. 检查生产环境变量。EC2 上的文件位于 `AWS_APP_DIR`（未配置时默认 `~/apps/wanxiangzy`）下：
 
@@ -102,13 +106,14 @@ PRODUCT_RETOUCH_RUNTIME_SKILL_ENABLED=true
    git tag v1.0.0
    ```
 
-2. 推送 tag 触发部署：
+2. 推送 tag，并从本地 Mac 执行部署：
 
    ```bash
    git push origin v1.0.0
+   scripts/deploy-from-local.sh v1.0.0
    ```
 
-3. 在 GitHub Actions 中查看 `Deploy AWS on tag`。流程应该依次通过：
+3. 观察本地部署输出。GitHub Actions 的 `Deploy AWS on tag` 仅在需要人工回退时手动触发。正常流程应该依次通过：
 
    ```text
    Run release checks

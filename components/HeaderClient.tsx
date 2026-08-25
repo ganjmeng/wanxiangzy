@@ -413,17 +413,9 @@ function MarketingMobileMenu() {
 }
 
 function AppHeader({ pathname }: { pathname: string }) {
-  const [locationSearch, setLocationSearch] = useState("");
-  const activeModule =
-    pathname === "/agent" && new URLSearchParams(locationSearch).get("intent") === "video"
-      ? "aiVideo"
-      : getActiveTopModule(pathname);
+  const activeModule = getActiveTopModule(pathname);
   const isLoginPage = pathname === "/login";
   const { authReady, creditsReady, credits, email, isLoggingOut, onLogout } = useHeaderAccount();
-
-  useEffect(() => {
-    setLocationSearch(window.location.search);
-  }, [pathname]);
 
   return (
     <header className="studio-app-header mac-toolbar sticky top-0 z-50">

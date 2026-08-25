@@ -59,7 +59,6 @@ export function AdminUsersClient({ users, q, page, pageSize }: AdminUsersClientP
     { title: "余额", dataIndex: "credits", width: 100, sorter: (a, b) => a.credits - b.credits, render: (value) => <span className="tabular-nums">{formatNumber(value)}</span> },
     { title: "累计消耗", dataIndex: "totalCreditsUsed", width: 110, sorter: (a, b) => a.totalCreditsUsed - b.totalCreditsUsed, render: (value) => <span className="tabular-nums">{formatNumber(value)}</span> },
     { title: "生成", dataIndex: "generationCount", width: 90, sorter: (a, b) => a.generationCount - b.generationCount, render: (value) => <span className="tabular-nums">{formatNumber(value)}</span> },
-    { title: "工作流", dataIndex: "workflowCount", width: 90, sorter: (a, b) => a.workflowCount - b.workflowCount, render: (value) => <span className="tabular-nums">{formatNumber(value)}</span> },
     {
       title: "服务",
       dataIndex: "supportLevel",

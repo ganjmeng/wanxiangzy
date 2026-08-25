@@ -49,12 +49,6 @@ const SUMMARY_GENERATION_COLUMNS = [
   "job_payload",
 ].join(",");
 
-const SUMMARY_WORKFLOW_COLUMNS = [
-  "status",
-  "created_at",
-  "updated_at",
-].join(",");
-
 type QueueRow = {
   id: string;
   status: string;
@@ -67,21 +61,6 @@ type QueueRow = {
   clothing_urls?: string[] | null;
   model_face_url?: string | null;
   reference_url?: string | null;
-};
-
-type WorkflowRow = {
-  id: string;
-  status: string;
-  intent?: string | null;
-  summary?: string | null;
-  input_images?: unknown;
-  final_outputs?: Record<string, unknown> | null;
-  cost_reserved?: number | null;
-  cost_settled?: number | null;
-  error_message?: string | null;
-  created_at: string;
-  updated_at?: string | null;
-  completed_at?: string | null;
 };
 
 type QueueSummaryData = {
@@ -102,8 +81,6 @@ const EMPTY_SUMMARY: QueueSummaryData = {
   failedTaskNum: 0,
 };
 
-const RUNNING_WORKFLOW_STATUSES = ["queued", "running"];
-const FAILED_WORKFLOW_STATUSES = ["failed", "cancelled", "canceled", "needs_review"];
 const RUNNING_TASK_STALE_MS = getRunningTaskStaleMs();
 const AUTH_CLAIMS_TIMEOUT_MS = 2_500;
 const AUTH_USER_FALLBACK_TIMEOUT_MS = 5_000;
@@ -197,18 +174,14 @@ export async function GET(request: Request) {
       .map(normalizeQueueRow)
       .filter((row) => !moduleFilter || row.module === moduleFilter);
     const pinnedGenerationRows = cursor ? [] : await loadRunningGenerationRows(supabase, user.id, moduleFilter, scopeFilter);
-    const workflowRows = moduleFilter ? [] : await loadWorkflowRows(supabase, user.id, cursor, limit + 1);
-    const pinnedWorkflowRows = cursor || moduleFilter ? [] : await loadRunningWorkflowRows(supabase, user.id);
     const filteredRows = mergeQueueRows([
       ...pinnedGenerationRows,
       ...generationRows,
-      ...pinnedWorkflowRows,
-      ...workflowRows,
     ])
       .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
       .filter((row) => matchesSearch(row, searchQuery));
     const rows = filteredRows.slice(0, limit);
-    const hasMore = filteredRows.length > limit || rawRows.length >= queryLimit || workflowRows.length > limit;
+    const hasMore = filteredRows.length > limit || rawRows.length >= queryLimit;
     const nextCursor = rows.length ? rows[rows.length - 1]?.createdAt || null : null;
 
     return queueJson(detailPayload(rows, summary, hasMore, hasMore ? nextCursor : null));
@@ -336,7 +309,7 @@ async function loadIndexedTaskQueueResponse(args: {
   // A successful zero from the read model is not enough to prove that the user
   // has no history: deployments can briefly have an empty/stale Redis summary
   // or an index that has not been backfilled for this user yet. Let the legacy
-  // generations/creative_runs path verifies zero instead of returning fake
+  // generations source verifies zero instead of returning fake
   // empty history.
   if (args.includeSummary && summary.totalTaskNum === 0) {
     logTaskQueueWarning("empty indexed summary; verifying source tables", args.userId);
@@ -399,14 +372,7 @@ function getTaskQueueCacheMode(): TaskQueueCacheMode {
 }
 
 async function loadQueueSummary(supabase: Awaited<ReturnType<typeof createServerSupabase>>, userId: string): Promise<QueueSummaryData> {
-  const [
-    generationTotal,
-    generationFailed,
-    generationRunningBuckets,
-    workflowTotal,
-    workflowFailed,
-    workflowRunningBuckets,
-  ] = await Promise.all([
+  const [generationTotal, generationFailed, generationRunningBuckets] = await Promise.all([
     countRowsStrict(
       supabase
         .from("generations")
@@ -425,27 +391,11 @@ async function loadQueueSummary(supabase: Awaited<ReturnType<typeof createServer
       "generations failed"
     ),
     loadRunningGenerationBuckets(supabase, userId),
-    countRows(
-      supabase
-        .from("creative_runs")
-        .select("id", { count: "planned", head: true })
-        .eq("user_id", userId),
-      "workflows total"
-    ),
-    countRows(
-      supabase
-        .from("creative_runs")
-        .select("id", { count: "planned", head: true })
-        .eq("user_id", userId)
-        .in("status", FAILED_WORKFLOW_STATUSES),
-      "workflows failed"
-    ),
-    loadRunningWorkflowBuckets(supabase, userId),
   ]);
 
-  const totalTaskNum = generationTotal + workflowTotal;
-  const runningTaskNum = generationRunningBuckets.running + workflowRunningBuckets.running;
-  const failedTaskNum = generationFailed + generationRunningBuckets.failed + workflowFailed + workflowRunningBuckets.failed;
+  const totalTaskNum = generationTotal;
+  const runningTaskNum = generationRunningBuckets.running;
+  const failedTaskNum = generationFailed + generationRunningBuckets.failed;
   const finishedTaskNum = Math.max(0, totalTaskNum - runningTaskNum - failedTaskNum);
 
   return {
@@ -494,37 +444,6 @@ async function loadRunningGenerationBuckets(supabase: Awaited<ReturnType<typeof 
     }, { running: 0, failed: 0 });
   } catch (error) {
     logTaskQueueWarning("generations running unavailable", toLogMessage(error));
-    return { running: 0, failed: 0 };
-  }
-}
-
-async function loadRunningWorkflowBuckets(supabase: Awaited<ReturnType<typeof createServerSupabase>>, userId: string) {
-  try {
-    const { data, error } = await withTimeout(
-      supabase
-        .from("creative_runs")
-        .select(SUMMARY_WORKFLOW_COLUMNS)
-        .eq("user_id", userId)
-        .in("status", RUNNING_WORKFLOW_STATUSES)
-        .order("created_at", { ascending: false })
-        .limit(RUNNING_QUEUE_PIN_LIMIT),
-      SUMMARY_QUERY_TIMEOUT_MS,
-      "workflows running timeout"
-    );
-
-    if (error) {
-      logTaskQueueWarning("workflows running unavailable", error.message);
-      return { running: 0, failed: 0 };
-    }
-
-    const rows = (Array.isArray(data) ? data : []) as unknown as Pick<WorkflowRow, "status" | "created_at" | "updated_at">[];
-    return rows.reduce((counts, row) => {
-      if (!isRunningWorkflowStatus(row.status)) return counts;
-      counts.running += 1;
-      return counts;
-    }, { running: 0, failed: 0 });
-  } catch (error) {
-    logTaskQueueWarning("workflows running unavailable", toLogMessage(error));
     return { running: 0, failed: 0 };
   }
 }
@@ -688,40 +607,6 @@ async function loadLightweightInferredModuleQueue(
     .slice(0, limit);
 }
 
-async function loadWorkflowRows(
-  supabase: Awaited<ReturnType<typeof createServerSupabase>>,
-  userId: string,
-  cursor: string | null,
-  limit: number
-) {
-  let query = supabase
-    .from("creative_runs")
-    .select("id,status,intent,summary,input_images:input_payload,final_outputs:output_payload,error_message,created_at,updated_at,completed_at")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false });
-
-  if (cursor) query = query.lt("created_at", cursor);
-
-  try {
-    const { data, error } = await withTimeout(
-      query.limit(limit),
-      QUEUE_QUERY_TIMEOUT_MS,
-      "workflow list timeout"
-    );
-
-    if (error) {
-      logTaskQueueWarning("creative runs unavailable", error.message);
-      return [];
-    }
-
-    const workflows = (Array.isArray(data) ? data : []) as unknown as WorkflowRow[];
-    return workflows.map(normalizeWorkflowRow);
-  } catch (error) {
-    logTaskQueueWarning("creative runs unavailable", toLogMessage(error));
-    return [];
-  }
-}
-
 async function loadRunningGenerationRows(
   supabase: Awaited<ReturnType<typeof createServerSupabase>>,
   userId: string,
@@ -759,37 +644,6 @@ async function loadRunningGenerationRows(
       .filter((row) => !scopeFilter || row.scope === scopeFilter);
   } catch (error) {
     logTaskQueueWarning("running generations unavailable", toLogMessage(error));
-    return [];
-  }
-}
-
-async function loadRunningWorkflowRows(
-  supabase: Awaited<ReturnType<typeof createServerSupabase>>,
-  userId: string
-) {
-  try {
-    const { data, error } = await withTimeout(
-      supabase
-        .from("creative_runs")
-        .select("id,status,intent,summary,input_images:input_payload,final_outputs:output_payload,error_message,created_at,updated_at,completed_at")
-        .eq("user_id", userId)
-        .in("status", RUNNING_WORKFLOW_STATUSES)
-        .order("created_at", { ascending: false })
-        .limit(RUNNING_QUEUE_PIN_LIMIT),
-      QUEUE_QUERY_TIMEOUT_MS,
-      "running workflows list timeout"
-    );
-
-    if (error) {
-      logTaskQueueWarning("running workflows unavailable", error.message);
-      return [];
-    }
-
-    return ((Array.isArray(data) ? data : []) as unknown as WorkflowRow[])
-      .map(normalizeWorkflowRow)
-      .filter(isQueueItemRunning);
-  } catch (error) {
-    logTaskQueueWarning("running workflows unavailable", toLogMessage(error));
     return [];
   }
 }
@@ -838,32 +692,6 @@ function normalizeQueueRow(row: QueueRow): TaskQueueItem {
   };
 }
 
-function normalizeWorkflowRow(row: WorkflowRow): TaskQueueItem {
-  const statusGroup = getWorkflowStatusGroup(row);
-  const staleRunning = isRunningWorkflowStatus(row.status) && isStaleRunningDate(row.updated_at || row.created_at);
-  const inputThumbnails = getWorkflowInputThumbnails(row);
-  const resultThumbnails = getWorkflowResultThumbnails(row);
-  return {
-    id: row.id,
-    module: "creativeRun",
-    title: row.summary || workflowLabel(row.intent || ""),
-    status: staleRunning && statusGroup === "running" ? "processing_delayed" : row.status,
-    statusGroup,
-    time: formatDuration(row.created_at, isTaskCompleteLike(statusGroup) ? row.completed_at || row.updated_at : null),
-    createdAt: row.created_at,
-    updatedAt: row.updated_at || row.created_at,
-    completedAt: row.completed_at || (isTaskCompleteLike(statusGroup) ? row.updated_at || null : null),
-    error: row.error_message || "",
-    progress: statusGroup === "completed" ? 100 : statusGroup === "failed" ? 100 : 15,
-    expectedCount: Math.max(1, resultThumbnails.length || inputThumbnails.length || 1),
-    resultCount: resultThumbnails.length,
-    inputThumbnails,
-    resultThumbnails,
-    thumbnails: getDisplayThumbnails(resultThumbnails, inputThumbnails),
-    applyUrl: `/agent?run=${encodeURIComponent(row.id)}`,
-  };
-}
-
 function inferGenerationModule(row: QueueRow, payload: Record<string, unknown>) {
   if (aiToolOperation(payload)) return "toolbox";
   const clothingUrls = [
@@ -883,11 +711,6 @@ function inferGenerationModule(row: QueueRow, payload: Record<string, unknown>) 
   return "";
 }
 
-function isRunningWorkflowStatus(status: string) {
-  const normalized = status.toLowerCase();
-  return normalized === "queued" || normalized === "running";
-}
-
 function getGenerationStatusGroup(status: string, staleRunning: boolean, resultCount: number): TaskStatusGroup {
   const normalized = status.toLowerCase();
   if (GENERATION_FAILED_STATUS_FILTERS.includes(normalized as typeof GENERATION_FAILED_STATUS_FILTERS[number])) return "failed";
@@ -895,16 +718,6 @@ function getGenerationStatusGroup(status: string, staleRunning: boolean, resultC
   if (GENERATION_PENDING_STATUS_FILTERS.includes(normalized as typeof GENERATION_PENDING_STATUS_FILTERS[number])) return "queued";
   if (GENERATION_RUNNING_STATUS_FILTERS.includes(normalized as typeof GENERATION_RUNNING_STATUS_FILTERS[number]) || normalized.startsWith("processing_")) {
     return "running";
-  }
-  return "completed";
-}
-
-function getWorkflowStatusGroup(row: WorkflowRow): TaskStatusGroup {
-  const normalized = row.status.toLowerCase();
-  if (FAILED_WORKFLOW_STATUSES.includes(normalized)) return "failed";
-  if (isRunningWorkflowStatus(normalized) && isStaleRunningDate(row.updated_at || row.created_at)) return "running";
-  if (isRunningWorkflowStatus(normalized) && !isStaleRunningDate(row.updated_at || row.created_at)) {
-    return normalized === "queued" ? "queued" : "running";
   }
   return "completed";
 }
@@ -953,14 +766,6 @@ function moduleLabel(kind: string) {
   return "AI任务";
 }
 
-function workflowLabel(intent: string) {
-  if (intent.includes("tryon")) return "Agent Try-on";
-  if (intent.includes("pose")) return "Agent Pose";
-  if (intent.includes("detail")) return "Agent Detail Page";
-  if (intent.includes("face")) return "Agent Face Swap";
-  return "Agent Workflow";
-}
-
 function getInputThumbnails(row: QueueRow, payload: Record<string, unknown>) {
   if (payload.kind === "tryon") {
     return getTryOnInputReferenceUrls({
@@ -991,37 +796,6 @@ function getInputThumbnails(row: QueueRow, payload: Record<string, unknown>) {
     stringValue(row.model_face_url),
     stringValue(row.reference_url),
     ...(Array.isArray(row.clothing_urls) ? row.clothing_urls : []),
-  ].filter(Boolean) as string[])).slice(0, 8);
-}
-
-function getWorkflowInputThumbnails(row: WorkflowRow) {
-  const payload = row.input_images && typeof row.input_images === "object" && !Array.isArray(row.input_images)
-    ? row.input_images as Record<string, unknown>
-    : {};
-  const imageRows = Array.isArray(row.input_images)
-    ? row.input_images
-    : Array.isArray(payload.images)
-      ? payload.images
-      : [];
-  return Array.from(new Set([
-    ...imageRows.map((image) => image && typeof image === "object" && "url" in image ? (image as { url?: unknown }).url : image),
-    ...stringArray(payload.inputUrls),
-    ...stringArray(payload.referenceUrls),
-    ...stringArray(payload.imageUrls),
-    stringValue(payload.inputUrl),
-    stringValue(payload.referenceUrl),
-    stringValue(payload.imageUrl),
-  ].filter((url): url is string => typeof url === "string" && url.length > 0))).slice(0, 8);
-}
-
-function getWorkflowResultThumbnails(row: WorkflowRow) {
-  const final = row.final_outputs && typeof row.final_outputs === "object" ? row.final_outputs : {};
-  return Array.from(new Set([
-    ...stringArray(final.imageUrls),
-    ...stringArray(final.resultUrls),
-    ...stringArray(final.urls),
-    stringValue(final.selectedImageUrl),
-    stringValue(final.imageUrl),
   ].filter(Boolean) as string[])).slice(0, 8);
 }
 

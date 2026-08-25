@@ -112,7 +112,6 @@ const footerGroups = [
   },
   {
     links: [
-      ["assistant", "/agent"],
       ["material", "/general-image"],
       ["model", "/model"],
       ["garment3d", "/garment-3d"],
@@ -399,7 +398,7 @@ function Footer({ t }: { t: (key: string) => string }) {
           <div key={index}>
             <h3 className="text-[13px] font-semibold text-codex-faint">{t(`footerGroupTitle.${index}`)}</h3>
             <ul className="mt-5 space-y-3">
-              {group.links.filter(([, href]) => href !== "/agent").map(([labelKey, href]) => (
+              {group.links.map(([labelKey, href]) => (
                 <li key={labelKey}>
                   <Link href={href} className="inline-flex items-center gap-1 py-1.5 text-[14px] font-semibold text-codex-ink transition hover:text-codex-muted">
                     {t(`footerLink.${labelKey}`)}

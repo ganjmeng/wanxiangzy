@@ -16,7 +16,7 @@ export const TASK_QUEUE_MODULE_CACHE_LIMIT = 100;
 export const TASK_QUEUE_RUNNING_STALE_MS = 60 * 60 * 1000;
 export const TASK_RESULT_THUMBNAIL_LIMIT = 4;
 
-export type TaskQueueSourceType = "generation" | "creative_run" | "ai_tool";
+export type TaskQueueSourceType = "generation" | "ai_tool";
 
 export type TaskQueueGenerationSourceRow = {
   id: string;
@@ -32,22 +32,6 @@ export type TaskQueueGenerationSourceRow = {
   clothing_urls?: string[] | null;
   model_face_url?: string | null;
   reference_url?: string | null;
-};
-
-export type TaskQueueCreativeRunSourceRow = {
-  id: string;
-  user_id: string;
-  status: string | null;
-  generation_type?: string | null;
-  intent?: string | null;
-  summary?: string | null;
-  input_images?: unknown;
-  error_message?: string | null;
-  created_at: string | null;
-  updated_at?: string | null;
-  completed_at?: string | null;
-  workflow_payload?: Record<string, unknown> | null;
-  final_outputs?: unknown;
 };
 
 export type TaskQueueAiToolSourceRow = {
@@ -112,8 +96,6 @@ const MODULE_LABELS: Record<string, string> = {
   videoImageToVideo: "图生视频",
   videoMotion: "动作模仿",
   videoFirstLastFrame: "首尾帧",
-  workflow: "工作流",
-  creativeRun: "创意任务",
   toolbox: "AI工具箱",
 };
 
@@ -137,8 +119,6 @@ export const TASK_QUEUE_MODULE_LABEL_KEYS: Record<string, string> = {
   videoImageToVideo: "LibShared.taskQueue.module.videoImageToVideo",
   videoMotion: "LibShared.taskQueue.module.videoMotion",
   videoFirstLastFrame: "LibShared.taskQueue.module.videoFirstLastFrame",
-  workflow: "LibShared.taskQueue.module.workflow",
-  creativeRun: "LibShared.taskQueue.module.workflow",
 };
 
 export const TASK_QUEUE_FALLBACK_TITLE = "任务";
@@ -166,8 +146,6 @@ const MODULE_PATHS: Record<string, string> = {
   videoImageToVideo: "/video",
   videoMotion: "/video/motion-control",
   videoFirstLastFrame: "/video/first-last-frame",
-  workflow: "/workflow",
-  creativeRun: "/agent",
   toolbox: "/ai-tools",
 };
 
@@ -183,7 +161,13 @@ export function emptyTaskQueueSummary(): TaskQueueSummary {
 
 export function taskQueueStatusGroup(status: string | null | undefined, resultCount = 0): TaskStatusGroup {
   const normalized = String(status || "").toLowerCase();
-  if (normalized === "failed" || normalized === "timeout" || normalized === "canceled" || normalized === "cancelled" || normalized === "needs_review") {
+  if (
+    normalized === "failed" ||
+    normalized === "timeout" ||
+    normalized === "canceled" ||
+    normalized === "cancelled" ||
+    normalized === "needs_review"
+  ) {
     return "failed";
   }
   if (normalized === "completed" || normalized === "succeeded" || normalized === "success") {
@@ -261,15 +245,6 @@ export function inferGenerationModule(row: TaskQueueGenerationSourceRow): string
     return "image";
   }
   return "tryon";
-}
-
-export function inferCreativeRunModule(row: TaskQueueCreativeRunSourceRow): string {
-  const payload = row.workflow_payload || {};
-  const explicit = row.generation_type || stringValue(payload.module) || stringValue(payload.kind) || "";
-  if (explicit) {
-    return normalizeModule(explicit);
-  }
-  return "creativeRun";
 }
 
 export function normalizeModule(module: string): string {
@@ -419,34 +394,6 @@ export function normalizeAiToolTaskQueueItem(row: TaskQueueAiToolSourceRow): Tas
   return isPersistingOutput ? item : applyStaleRunningFallback(item);
 }
 
-export function normalizeCreativeRunTaskQueueItem(row: TaskQueueCreativeRunSourceRow): TaskQueueItem {
-  const module = inferCreativeRunModule(row);
-  const resultThumbnails = extractWorkflowResultThumbnails(row.final_outputs);
-  const statusGroup = taskQueueStatusGroup(row.status, resultThumbnails.length);
-  const createdAt = row.created_at || new Date().toISOString();
-  const updatedAt = row.updated_at || row.completed_at || row.created_at || createdAt;
-  const item: TaskQueueItem = {
-    id: row.id,
-    module,
-    title: row.summary || moduleTitle(module),
-    status: row.status || "queued",
-    statusGroup,
-    time: formatElapsed(createdAt, row.completed_at || null),
-    createdAt,
-    updatedAt,
-    completedAt: row.completed_at || (statusGroup === "completed" || statusGroup === "failed" ? row.updated_at || null : null),
-    error: row.error_message || "",
-    progress: statusGroup === "completed" ? 100 : statusGroup === "failed" ? 0 : 30,
-    expectedCount: Math.max(1, resultThumbnails.length || numberValue(row.workflow_payload?.count) || 1),
-    resultCount: resultThumbnails.length,
-    inputThumbnails: extractWorkflowInputThumbnails(row.workflow_payload, row.input_images),
-    resultThumbnails,
-    thumbnails: resultThumbnails,
-    applyUrl: `/agent?run=${encodeURIComponent(row.id)}`,
-  };
-  return applyStaleRunningFallback(item);
-}
-
 export function indexRowToTaskQueueItem(row: TaskQueueIndexRow): TaskQueueItem {
   const inputThumbnails = arrayOfStrings(row.input_thumbnails);
   const resultThumbnails = arrayOfStrings(row.result_thumbnails);
@@ -584,62 +531,6 @@ function aiToolOperation(payload?: Record<string, unknown> | null): AiToolSlug |
   if (!aiTool || typeof aiTool !== "object" || Array.isArray(aiTool)) return null;
   const operation = stringValue((aiTool as Record<string, unknown>).operation);
   return isAiToolSlug(operation) ? operation : null;
-}
-
-function extractWorkflowInputThumbnails(
-  payload: Record<string, unknown> | null | undefined,
-  inputImages?: unknown,
-): string[] {
-  const imageUrls = extractUrlsFromUnknown(inputImages);
-  if (!payload) {
-    return uniqueStrings(imageUrls).slice(0, 8);
-  }
-  return uniqueStrings([
-    ...imageUrls,
-    ...arrayOfStrings(payload.inputUrls),
-    ...arrayOfStrings(payload.referenceUrls),
-    ...arrayOfStrings(payload.imageUrls),
-    stringValue(payload.inputUrl),
-    stringValue(payload.referenceUrl),
-    stringValue(payload.imageUrl),
-  ]).slice(0, 8);
-}
-
-function extractWorkflowResultThumbnails(value: unknown): string[] {
-  if (!value) {
-    return [];
-  }
-  if (Array.isArray(value)) {
-    return uniqueStrings(value.flatMap((entry) => extractUrlsFromUnknown(entry))).slice(0, TASK_RESULT_THUMBNAIL_LIMIT);
-  }
-  return uniqueStrings(extractUrlsFromUnknown(value)).slice(0, TASK_RESULT_THUMBNAIL_LIMIT);
-}
-
-function extractUrlsFromUnknown(value: unknown): string[] {
-  if (typeof value === "string") {
-    return isLikelyUrl(value) ? [value] : [];
-  }
-  if (Array.isArray(value)) {
-    return value.flatMap((entry) => extractUrlsFromUnknown(entry));
-  }
-  if (value && typeof value === "object") {
-    const record = value as Record<string, unknown>;
-    return [
-      stringValue(record.url),
-      stringValue(record.imageUrl),
-      stringValue(record.outputUrl),
-      stringValue(record.resultUrl),
-      ...arrayOfStrings(record.urls),
-      ...arrayOfStrings(record.images),
-      ...arrayOfStrings(record.resultUrls),
-      ...arrayOfStrings(record.inputUrls),
-      ...arrayOfStrings(record.referenceUrls),
-      ...arrayOfStrings(record.imageUrls),
-      stringValue(record.inputUrl),
-      stringValue(record.referenceUrl),
-    ].filter(Boolean);
-  }
-  return [];
 }
 
 function inferExpectedCount(payload: Record<string, unknown> | null | undefined, resultCount: number): number {

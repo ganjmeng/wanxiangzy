@@ -127,40 +127,6 @@ if (
   process.exit(1);
 }
 console.log(`Migration gate: runtime contract ${expected.contractVersion} is ready.`);
-
-const requiredSkillTables = [
-  "creative_agent_skills",
-  "creative_agent_skill_versions",
-  "creative_user_skills",
-];
-let schemaResponse;
-try {
-  schemaResponse = await fetch(`${url}/rest/v1/`, {
-    headers: {
-      apikey: serviceKey,
-      authorization: `Bearer ${serviceKey}`,
-      accept: "application/openapi+json",
-    },
-    signal: AbortSignal.timeout(10_000),
-  });
-} catch {
-  console.error("Migration gate: Supabase Data API schema is unreachable.");
-  process.exit(1);
-}
-if (!schemaResponse.ok) {
-  console.error("Migration gate: could not read the authenticated Data API schema.");
-  process.exit(1);
-}
-const schema = await schemaResponse.json();
-const paths = schema && typeof schema.paths === "object" ? schema.paths : {};
-const missingSkillTables = requiredSkillTables.filter(
-  (name) => !Object.prototype.hasOwnProperty.call(paths, `/${name}`),
-);
-if (missingSkillTables.length > 0) {
-  console.error(`Migration gate: missing Skill tables (${missingSkillTables.join(", ")}). Apply the Agent Skill migrations first.`);
-  process.exit(1);
-}
-console.log("Migration gate: Agent Skill registry and version tables are ready.");
 NODE
 
 echo "==> [3/6] 本地构建 .next"

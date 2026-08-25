@@ -11,9 +11,8 @@ type AdminTaskAction = "retry" | "mark_failed_refund" | "mark_failed_no_refund" 
 
 type AdminTaskActionsProps = {
   id: string;
-  sourceType: "generation" | "creative_run";
+  sourceType: "generation";
   statusGroup: TaskStatusGroup;
-  status?: string;
   isStale?: boolean;
   compact?: boolean;
   canOperate?: boolean;
@@ -45,20 +44,15 @@ const actionConfig: Record<AdminTaskAction, { label: string; icon: ReactNode; de
   },
 };
 
-export function AdminTaskActions({ id, sourceType, statusGroup, status = "", isStale = false, compact = false, canOperate = false }: AdminTaskActionsProps) {
+export function AdminTaskActions({ id, sourceType, statusGroup, isStale = false, compact = false, canOperate = false }: AdminTaskActionsProps) {
   const router = useRouter();
   const { message, modal } = App.useApp();
   const [loadingAction, setLoadingAction] = useState<AdminTaskAction | null>(null);
   const [lastOutcome, setLastOutcome] = useState("");
-  const needsReview = status.toLowerCase() === "needs_review";
-  const finished = statusGroup === "completed" || (statusGroup === "failed" && !needsReview);
+  const finished = statusGroup === "completed" || statusGroup === "failed";
   if (!canOperate) return <Typography.Text type="secondary" className="text-xs">只读</Typography.Text>;
-  const availableActions: AdminTaskAction[] = needsReview
-    ? sourceType === "generation" ? ["mark_failed_refund", "mark_failed_no_refund"] : ["mark_failed_no_refund"]
-    : finished
+  const availableActions: AdminTaskAction[] = finished
     ? []
-    : sourceType === "creative_run"
-      ? ["retry", "mark_failed_no_refund"]
     : isStale
       ? ["retry", "mark_failed_refund", "cancel_refund", "mark_failed_no_refund"]
       : ["retry", "mark_failed_refund", "cancel_refund"];

@@ -6,10 +6,6 @@ export async function updateSession(request: NextRequest) {
   // API routes still perform authoritative auth checks with createServerSupabase().
   const protectedPaths = [
     "/admin",
-    "/agent",
-    "/canvas",
-    "/prompts",
-    "/plaza",
     "/dashboard",
     "/create",
     "/face-swap",

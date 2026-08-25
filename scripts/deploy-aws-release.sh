@@ -627,8 +627,6 @@ const required = [
   "get_admin_dashboard_period",
   "get_admin_billing_summary",
   "claim_generation_job",
-  "create_creative_run",
-  "attach_generation_to_creative_run",
   "checkpoint_generation_execution",
   "mark_generation_needs_review",
   "heartbeat_generation_job",
@@ -669,12 +667,6 @@ const required = [
   "get_media_asset_lifecycle_health",
 ];
 const requiredTables = [
-  "creative_agent_skills",
-  "creative_agent_skill_versions",
-  "creative_canvas_projects",
-  "creative_runs",
-  "creative_run_steps",
-  "creative_user_skills",
   "resource_library_assets",
   "user_prompts",
 ];

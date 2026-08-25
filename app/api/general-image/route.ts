@@ -25,9 +25,6 @@ import {
   normalizeGeneralImageReferenceUrls,
 } from "@/lib/api/general-image-inputs";
 import { resolveGeneralImageReferences } from "@/lib/api/general-image-inputs.server";
-import { attachGenerationToCreativeRun } from "@/lib/api/creative-runtime";
-import { getAdminClient } from "@/lib/supabase/admin";
-import { getCreativeRunExecutionContext } from "@/lib/creative-skills.server";
 
 export const maxDuration = 60;
 
@@ -51,16 +48,7 @@ export async function POST(request: NextRequest) {
     }
 
     const mode = normalizeMode(body.mode);
-    let prompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
-    let runImagePreferences: Record<string, unknown> = {};
-    const creativeRunId = typeof body.creative_run_id === "string" ? body.creative_run_id.trim() : "";
-    if (creativeRunId) {
-      const execution = await getCreativeRunExecutionContext(getAdminClient(), { userId: user.id, runId: creativeRunId, fallbackPrompt: prompt });
-      prompt = execution.prompt;
-      runImagePreferences = execution.generationPreferences.image && typeof execution.generationPreferences.image === "object"
-        ? execution.generationPreferences.image as Record<string, unknown>
-        : {};
-    }
+    const prompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
     const userPrompt = typeof body.user_prompt === "string" && body.user_prompt.trim()
       ? body.user_prompt.trim().slice(0, 1200)
       : typeof body.input_prompt === "string" && body.input_prompt.trim()
@@ -90,10 +78,9 @@ export async function POST(request: NextRequest) {
     }
 
     const model: LingyaModel = normalizeLingyaModel(body.ai_model || "nano-banana-2");
-    const aspectRatio = normalizeAspectRatio(runImagePreferences.aspectRatio || body.aspect_ratio || "auto");
-    const requestedImageSize = typeof runImagePreferences.imageSize === "string" ? runImagePreferences.imageSize : typeof body.image_size === "string" ? body.image_size : "1K";
-    const size: ImageSize = normalizeImageSize(model, requestedImageSize as ImageSize, aspectRatio);
-    const genCount = Math.min(Math.max(Math.floor(Number(runImagePreferences.count ?? body.gen_count) || 1), 1), MAX_GENERAL_IMAGE_OUTPUT_COUNT);
+    const aspectRatio = normalizeAspectRatio(body.aspect_ratio || "auto");
+    const size: ImageSize = normalizeImageSize(model, (typeof body.image_size === "string" ? body.image_size : "1K") as ImageSize, aspectRatio);
+    const genCount = Math.min(Math.max(Math.floor(Number(body.gen_count) || 1), 1), MAX_GENERAL_IMAGE_OUTPUT_COUNT);
     const moduleKind = normalizeModuleKind(body.module_kind || body.module);
     const wantsOnePerReference = mode === "image-to-image"
       && moduleKind === "generalImage"
@@ -127,7 +114,6 @@ export async function POST(request: NextRequest) {
     const outfitFusionReferenceUrl = outfitFusionRuntimePlan?.referenceUrl || referenceUrls[0] || null;
     const outfitFusionClothingUrls = outfitFusionRuntimePlan?.clothingUrls || [];
     const moduleLabel = moduleKind === "outfitFusion" ? "搭配融图" : "通用生图";
-    const creativeContext = await resolveCreativeRunContext(body, user.id);
 
     const payloadBase = {
       publicBaseUrl,
@@ -156,7 +142,6 @@ export async function POST(request: NextRequest) {
       : {
           kind: "generalImage",
           ...payloadBase,
-          ...(userPrompt ? { userPrompt } : {}),
           ...(onePerReference ? { onePerReference: true } : {}),
         };
 
@@ -183,25 +168,6 @@ export async function POST(request: NextRequest) {
       publicBaseUrl,
     });
 
-    let creativeRunAttached = false;
-    if (creativeContext) {
-      try {
-        await attachGenerationToCreativeRun(getAdminClient(), {
-          userId: user.id,
-          runId: creativeContext.runId,
-          generationId: debit.generationId,
-          stepKey: creativeContext.stepKey,
-          stepType: "image.generate",
-          title: creativeContext.title,
-          inputPayload: { mode, model, aspectRatio, imageSize: size, genCount },
-          canvasNodeId: creativeContext.canvasNodeId,
-        });
-        creativeRunAttached = true;
-      } catch (error) {
-        console.error("[general-image] creative run attach failed:", error instanceof Error ? error.message : error);
-      }
-    }
-
     startGenerationJob(debit.generationId);
 
     return NextResponse.json({
@@ -209,46 +175,12 @@ export async function POST(request: NextRequest) {
       credits_cost: totalCost,
       credits_remaining: debit.creditsRemaining,
       status: "processing_tryon",
-      ...(creativeContext ? {
-        creative_run_id: creativeContext.runId,
-        creative_run_attached: creativeRunAttached,
-      } : {}),
     });
   } catch (err: unknown) {
     console.error("[general-image] POST error:", err instanceof Error ? err.message : err);
     const payload = errorToResponsePayload(err);
     return NextResponse.json(payload.body, { status: payload.status });
   }
-}
-
-async function resolveCreativeRunContext(body: Record<string, unknown>, userId: string) {
-  const runId = typeof body.creative_run_id === "string" ? body.creative_run_id.trim() : "";
-  if (!runId) return null;
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(runId)) {
-    throw new Error("创作任务 ID 无效");
-  }
-  const admin = getAdminClient();
-  const { data, error } = await admin
-    .from("creative_runs")
-    .select("id,status,surface,project_id")
-    .eq("id", runId)
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error || !data) throw new Error("创作任务不存在或无权访问");
-  if (["completed", "failed", "cancelled"].includes(String(data.status))) throw new Error("创作任务已结束");
-  const rawStepKey = typeof body.creative_step_key === "string" ? body.creative_step_key.trim() : "";
-  const stepKey = /^[A-Za-z0-9._:-]{1,120}$/.test(rawStepKey) ? rawStepKey : `image-${Date.now()}`;
-  const canvasNodeId = typeof body.canvas_node_id === "string" && body.canvas_node_id.trim()
-    ? body.canvas_node_id.trim().slice(0, 160)
-    : undefined;
-  return {
-    runId,
-    stepKey,
-    canvasNodeId,
-    title: typeof body.creative_step_title === "string" && body.creative_step_title.trim()
-      ? body.creative_step_title.trim().slice(0, 300)
-      : "Agent 图片生成",
-  };
 }
 
 export async function GET(request: NextRequest) {

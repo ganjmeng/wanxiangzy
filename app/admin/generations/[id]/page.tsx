@@ -155,7 +155,6 @@ export default async function AdminTaskDetailPage({ params }: PageProps) {
               id={task.sourceId}
               sourceType={task.sourceType}
               statusGroup={task.statusGroup}
-              status={task.status}
               isStale={task.isStale}
               canOperate={hasAdminPermission(admin.role, "tasks:operate")}
             />
@@ -199,13 +198,6 @@ export default async function AdminTaskDetailPage({ params }: PageProps) {
         />
       </AdminSection>
 
-      {detail.sourceType === "creative_run" && (
-        <div className="grid gap-5 xl:grid-cols-2">
-          <JsonRows title="工作流步骤" rows={detail.workflowSteps} empty="暂无步骤" />
-          <JsonRows title="工作流事件" rows={detail.workflowEvents} empty="暂无事件" />
-        </div>
-      )}
-
       <AdminSection title="审计记录">
         <AdminTable<AdminAuditLog>
           rows={detail.auditLogs}
@@ -228,24 +220,6 @@ function formatQueueReason(reason: string) {
   if (reason === "retryable_error") return "等待生成服务恢复";
   if (reason === "admin_retry") return "管理员已重新投递";
   return reason;
-}
-
-function JsonRows({ title, rows, empty }: { title: string; rows: Array<Record<string, unknown>>; empty: string }) {
-  return (
-    <AdminSection title={title}>
-      {rows.length ? (
-        <div className="max-h-[420px] space-y-2 overflow-auto p-4">
-          {rows.map((row, index) => (
-            <pre key={`${title}-${index}`} className="rounded-lg bg-[var(--admin-surface-soft)] p-3 text-xs leading-5 text-[var(--admin-fg)]">
-              {JSON.stringify(row, null, 2)}
-            </pre>
-          ))}
-        </div>
-      ) : (
-        <p className="p-4 text-sm font-bold text-[var(--admin-muted)]">{empty}</p>
-      )}
-    </AdminSection>
-  );
 }
 
 function DeveloperValue({ label, value }: { label: string; value: Record<string, unknown> }) {
@@ -303,26 +277,9 @@ function buildTaskDiagnostics(detail: AdminTaskDetail) {
     }
   }
 
-  for (const step of detail.workflowSteps) {
-    const stepFinalPrompt = firstStringDeepByKeys(step, FINAL_PROMPT_KEYS);
-    const stepOriginalPrompt = firstStringDeepByKeys(step, ORIGINAL_PROMPT_KEYS);
-    const stepPrompt = stepFinalPrompt || stepOriginalPrompt;
-    if (!stepPrompt) continue;
-    const isFinal = Boolean(stepFinalPrompt);
-    prompts.push({
-      label: `工作流步骤${isFinal ? "最终执行" : "请求提示"}：${pickString(step, ["title", "step_key", "type"]) || "未命名步骤"}`,
-      meta: `status: ${pickString(step, ["status"]) || "-"} · source: ${isFinal ? "compiledPrompt/finalPrompt" : "prompt/userPrompt fallback"}`,
-      value: stepPrompt,
-      original: stepOriginalPrompt,
-      isFinal,
-    });
-  }
-
   const errors = uniqueDiagnosticLines([
     detail.errorMessage ? { label: "任务错误", value: detail.errorMessage } : null,
     ...collectStringMatches(payload, ERROR_KEYS, "payload"),
-    ...detail.workflowSteps.flatMap((step, index) => collectStringMatches(step, ERROR_KEYS, `step ${index + 1}`)),
-    ...detail.workflowEvents.flatMap((event, index) => collectStringMatches(event, ERROR_KEYS, `event ${index + 1}`)),
   ]);
 
   const asyncTask = isRecord(payload.asyncTask) ? payload.asyncTask : {};
@@ -339,7 +296,6 @@ function buildTaskDiagnostics(detail: AdminTaskDetail) {
       ? { label: "providerDetails", value: JSON.stringify(asyncTask.providerDetails, null, 2) }
       : null,
     ...collectStringMatches(payload, RESPONSE_KEYS, "payload"),
-    ...detail.workflowSteps.flatMap((step, index) => collectStringMatches(step, RESPONSE_KEYS, `step ${index + 1}`)),
   ].filter((item): item is DiagnosticLine => Boolean(item));
 
   return {
@@ -455,28 +411,6 @@ function pickString(record: Record<string, unknown>, keys: string[]) {
 function diagnosticFromRecord(record: Record<string, unknown>, label: string, keys: string[]) {
   const value = pickString(record, keys);
   return value ? { label, value } : null;
-}
-
-function firstStringDeepByKeys(value: unknown, keys: string[], depth = 0): string {
-  if (depth > 4) return "";
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      const match = firstStringDeepByKeys(item, keys, depth + 1);
-      if (match) return match;
-    }
-    return "";
-  }
-  if (!isRecord(value)) return "";
-  for (const key of keys) {
-    const item = value[key];
-    if (typeof item === "string" && item.trim()) return item.trim();
-  }
-  for (const item of Object.values(value)) {
-    if (!isRecord(item) && !Array.isArray(item)) continue;
-    const match = firstStringDeepByKeys(item, keys, depth + 1);
-    if (match) return match;
-  }
-  return "";
 }
 
 function collectStringMatches(value: unknown, keys: Set<string>, prefix: string, depth = 0): DiagnosticLine[] {

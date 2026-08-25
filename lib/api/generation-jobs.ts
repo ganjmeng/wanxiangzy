@@ -50,10 +50,8 @@ import {
   collectGenerationInputMediaAssetIds,
   parseCanonicalMediaAssetId,
 } from "@/lib/api/media-asset-references.server";
-// Agent module is temporarily disabled; the visual quality evaluator
-// (applyQualityRepairToPrompt / evaluateGeneratedImages) is stubbed locally.
-// Restore the import from "@/lib/agent/brain/visual-quality" once the
-// agent module is brought back from `refactor/extract-agent-module`.
+// Visual quality evaluation remains intentionally inert in the generation
+// worker; automatic repair is controlled independently by runtime config.
 type VisualQualityEvaluation = {
   ok: boolean;
   score: number;

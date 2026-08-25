@@ -79,7 +79,6 @@ export const ADMIN_NAVIGATION: AdminNavigationGroup[] = [
     children: [
       { href: "/admin/features", label: "功能目录", description: "功能状态与前台可见性", icon: <Boxes aria-hidden="true" />, permission: "settings:read" },
       { href: "/admin/tryon", label: "试衣内容", description: "分类、参考图与发布版本", icon: <Sparkles aria-hidden="true" />, permission: "settings:read" },
-      { href: "/admin/agent-skills", label: "Agent Skills", description: "官方 Skill、版本与运行约束", icon: <BrainCircuit aria-hidden="true" />, permission: "prompts:read" },
       { href: "/admin/product-retouch-skill", label: "商品精修规则", description: "精修运行版本与质量规则", icon: <BadgeDollarSign aria-hidden="true" />, permission: "prompts:read" },
       { href: "/admin/prompts", label: "提示词实验", description: "模板、实验与版本发布", icon: <BrainCircuit aria-hidden="true" />, permission: "prompts:read" },
     ],

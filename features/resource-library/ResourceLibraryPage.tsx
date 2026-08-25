@@ -2,10 +2,10 @@
 
 import { useDeferredValue, useMemo, useReducer, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ArrowUpRight, FileText, Plus, Search, Sparkles, Upload, X } from "lucide-react";
+import { FileText, Plus, Search, Upload, X } from "lucide-react";
 import { toast } from "sonner";
+import { FeatureTabs } from "@/components/FeatureTabs";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -36,24 +36,15 @@ const PROMPT_CREATION_TYPES = [
   "other",
 ] as const;
 
-const OFFICIAL_PROMPTS = [
-  { id: "official-product-hero", title: "电商主视觉", creationType: "text-to-image", content: "高端电商商品主视觉，主体结构与品牌细节准确，材质纹理清晰可信，柔和定向光塑造轮廓，背景简洁并保留营销文案空间，商业摄影质感。" },
-  { id: "official-natural-retouch", title: "自然人像精修", creationType: "image-to-image", content: "保持人物身份、脸型和真实皮肤纹理，自然修正肤色、瑕疵与杂乱发丝，统一面部和身体光影，不磨皮过度，不改变五官比例。" },
-  { id: "official-editorial", title: "杂志大片", creationType: "text-to-image", content: "现代时尚杂志大片，克制的高级色彩，明确的主光与轮廓光，真实织物和皮肤细节，具有编辑感的留白构图，避免廉价棚拍感。" },
-  { id: "official-social", title: "社媒种草图", creationType: "image-to-image", content: "自然生活方式场景中的真实抓拍感，产品清晰但不过度摆拍，柔和日光、轻微景深、亲近可信的色调，适合社交媒体种草内容。" },
-  { id: "official-background", title: "商品换背景", creationType: "model-background", content: "完整保留商品轮廓、Logo、包装文字和材质，仅替换为与品牌气质一致的商业场景，接触阴影和环境反射真实，透视与光向统一。" },
-  { id: "official-pose", title: "姿势裂变", creationType: "pose", content: "保持人物身份、服装和背景风格一致，生成自然且有差异的商业姿势，手脚结构准确，重心可信，避免重复动作和夸张肢体。" },
-] as const;
-
 function isKnownPromptType(value: string): value is typeof PROMPT_CREATION_TYPES[number] {
   return PROMPT_CREATION_TYPES.includes(value as typeof PROMPT_CREATION_TYPES[number]);
 }
 
-export function ResourceLibraryPage({ initialTab = "uploads" }: { initialTab?: ResourceLibraryTab }) {
+export function ResourceLibraryPage() {
   const t = useTranslations("ResourceLibrary");
   const [{ tab, media, module }, dispatchPage] = useReducer(
     resourceLibraryPageReducer,
-    { ...INITIAL_RESOURCE_LIBRARY_PAGE_STATE, tab: initialTab },
+    INITIAL_RESOURCE_LIBRARY_PAGE_STATE,
   );
   const [previewAsset, setPreviewAsset] = useState<ResourceAsset | null>(null);
   const [deleteAssetTarget, setDeleteAssetTarget] = useState<ResourceAsset | null>(null);
@@ -198,13 +189,13 @@ export function ResourceLibraryPage({ initialTab = "uploads" }: { initialTab?: R
   };
 
   return (
-    <div className={styles.hub}>
-      <div className={styles.workspace}>
+    <div className={styles.workspace}>
+      <FeatureTabs active={null} module="productImages" />
       <section className={styles.page} aria-labelledby="resource-library-heading">
         <header className={styles.pageHeader}>
           <div>
-            <h1 id="resource-library-heading">{initialTab === "prompts" ? "提示词" : t("page.title")}</h1>
-            <p>{initialTab === "prompts" ? "管理我的提示词，并从公共词库带入 Agent 使用。" : t("page.description")}</p>
+            <h1 id="resource-library-heading">{t("page.title")}</h1>
+            <p>{t("page.description")}</p>
           </div>
         </header>
         <div className={styles.tabRow} role="tablist" aria-label={t("tabs.label")}>
@@ -297,7 +288,6 @@ export function ResourceLibraryPage({ initialTab = "uploads" }: { initialTab?: R
         onCancel={() => setDeletePromptTarget(null)}
         onConfirm={confirmDeletePrompt}
       />
-      </div>
     </div>
   );
 }
@@ -332,18 +322,8 @@ function PromptLibrary({
   onLoadMore: () => void;
 }) {
   const t = useTranslations("ResourceLibrary");
-  const [source, setSource] = useState<"official" | "mine">("official");
-  const officialItems = OFFICIAL_PROMPTS.filter((item) => {
-    const matchesType = creationType === "all" || item.creationType === creationType;
-    const normalizedQuery = query.trim().toLowerCase();
-    return matchesType && (!normalizedQuery || `${item.title} ${item.content}`.toLowerCase().includes(normalizedQuery));
-  });
   return (
     <>
-      <div className={styles.sourceSwitch} role="tablist" aria-label="提示词来源">
-        <button type="button" role="tab" aria-selected={source === "official"} data-active={source === "official" || undefined} onClick={() => setSource("official")}>官方词库</button>
-        <button type="button" role="tab" aria-selected={source === "mine"} data-active={source === "mine" || undefined} onClick={() => setSource("mine")}>我的提示词</button>
-      </div>
       <div className={styles.promptToolbar}>
         <label className={styles.promptTypeSelect}>
           <span className="sr-only">{t("prompts.typeLabel")}</span>
@@ -357,25 +337,10 @@ function PromptLibrary({
           <span className="sr-only">{t("prompts.searchLabel")}</span>
           <input value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder={t("prompts.searchPlaceholder")} />
         </label>
-        {source === "mine" ? <Button onClick={onCreate}><Plus aria-hidden="true" />{t("actions.newPrompt")}</Button> : null}
+        <Button onClick={onCreate}><Plus aria-hidden="true" />{t("actions.newPrompt")}</Button>
       </div>
       <div className={styles.panelScroll}>
-        {source === "official" ? (
-          officialItems.length ? (
-            <div className={styles.promptGrid}>
-              {officialItems.map((prompt) => (
-                <article key={prompt.id} className={styles.promptCard}>
-                  <span className={styles.promptIcon} aria-hidden="true"><Sparkles /></span>
-                  <div className={styles.promptCardHeader}>
-                    <div><strong>{prompt.title}</strong><span>{t(`promptTypes.${prompt.creationType}`)}</span></div>
-                  </div>
-                  <p>{prompt.content}</p>
-                  <Link className={styles.promptUse} href={`/agent?prompt=${encodeURIComponent(prompt.content)}`}>带入 Agent <ArrowUpRight aria-hidden="true" /></Link>
-                </article>
-              ))}
-            </div>
-          ) : <ResourceEmptyState title="没有找到匹配的提示词" description="请尝试清除搜索词或切换创作类型。" />
-        ) : state === "loading" ? <ResourceLoadingState label={t("states.loading")} /> : state === "error" ? (
+        {state === "loading" ? <ResourceLoadingState label={t("states.loading")} /> : state === "error" ? (
           <ResourceErrorState
             title={t("states.loadFailedTitle")}
             description={error?.message ?? t("states.loadFailedDescription")}

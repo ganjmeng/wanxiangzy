@@ -1,19 +1,11 @@
-.hub {
-  display: flex;
-  min-height: calc(100dvh - var(--studio-shell-header-height, 64px));
-  flex-direction: column;
-  overflow: hidden;
-  background: var(--codex-bg);
-}
-
 .workspace {
   display: flex;
   width: 100%;
-  height: calc(100dvh - var(--studio-shell-header-height, 64px));
+  height: calc(100dvh - var(--studio-shell-header-height, 44px) - 12px);
   min-height: 620px;
   overflow: hidden;
-  border: 0;
-  border-radius: 0;
+  border: 1px solid var(--codex-border);
+  border-radius: var(--studio-shell-radius-top, 12px) var(--studio-shell-radius-top, 12px) var(--studio-shell-radius-bottom, 18px) var(--studio-shell-radius-bottom, 18px);
   background: var(--codex-surface);
   box-shadow: var(--codex-shadow-sm);
 }
@@ -87,45 +79,6 @@
 .tabButton[data-active]::after {
   opacity: 1;
   transform: scaleX(1);
-}
-
-.sourceSwitch {
-  display: flex;
-  gap: 4px;
-  padding: 18px 30px 0;
-}
-
-.sourceSwitch button {
-  height: 34px;
-  border-radius: 10px;
-  padding: 0 13px;
-  color: var(--codex-muted);
-  font-size: 12px;
-  font-weight: 750;
-}
-
-.sourceSwitch button[data-active] {
-  background: var(--codex-accent-10);
-  color: var(--codex-accent);
-}
-
-.promptUse {
-  display: inline-flex;
-  width: fit-content;
-  align-items: center;
-  gap: 5px;
-  margin-top: auto;
-  border-radius: 9px;
-  background: var(--codex-accent-10);
-  padding: 7px 10px;
-  color: var(--codex-accent);
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.promptUse svg {
-  width: 13px;
-  height: 13px;
 }
 
 .panel {
@@ -270,7 +223,7 @@
   position: relative;
   display: grid;
   min-height: 188px;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr;
   gap: 12px;
   overflow: hidden;
   border: 1px solid var(--codex-border);
@@ -445,7 +398,7 @@
   }
 
   .page {
-    min-height: calc(100dvh - var(--studio-shell-header-height, 44px));
+    min-height: calc(100dvh - 116px);
   }
 
   .pageHeader {

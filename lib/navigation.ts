@@ -1,6 +1,4 @@
 import {
-  Bot,
-  BookOpenText,
   Box,
   Building2,
   Camera,
@@ -9,14 +7,12 @@ import {
   Expand,
   Footprints,
   GalleryHorizontalEnd,
-  GalleryVerticalEnd,
   Hand,
   Heart,
   History,
   Home,
   Images,
   ImagePlus,
-  LayoutTemplate,
   Languages,
   PackageOpen,
   PackageSearch,
@@ -37,8 +33,6 @@ export type AppModuleKey =
   | "home"
   | "aiShoots"
   | "productImages"
-  | "assistant"
-  | "canvas"
   | "tools"
   | "toolbox"
   | "enterprise"
@@ -47,11 +41,6 @@ export type AppModuleKey =
 
 export type FeatureKey =
   | "home"
-  | "agent"
-  | "infiniteCanvas"
-  | "prompts"
-  | "plaza"
-  | "assets"
   | "tryon"
   | "outfitFusion"
   | "faceSwap"
@@ -117,21 +106,6 @@ const SHOW_INTERNAL_NAV =
 
 export const TOP_MODULES: TopModuleNavItem[] = [
   { key: "home", href: "/", label: "首页", labelKey: "Header.modules.home", icon: Home },
-  {
-    key: "assistant",
-    href: "/agent",
-    label: "创作Agent",
-    labelKey: "Header.modules.assistant",
-    icon: Bot,
-    badgeLabelKey: "Header.featuresBadge.upgrade",
-  },
-  {
-    key: "canvas",
-    href: "/canvas",
-    label: "无限画布",
-    icon: LayoutTemplate,
-    badge: "NEW",
-  },
   { key: "aiShoots", href: "/create", label: "模特图", labelKey: "Header.modules.aiShoots", icon: Camera },
   {
     key: "productImages",
@@ -326,52 +300,6 @@ export const FEATURE_ITEMS: FeatureNavItem[] = [
     shortLabel: "首尾帧",
     description: "指定首帧和尾帧生成过渡视频",
     icon: ImagePlus,
-  },
-  {
-    key: "agent",
-    module: "assistant",
-    href: "/agent",
-    label: "工作流助手",
-    labelKey: "Header.features.agent.label",
-    shortLabel: "助手",
-    description: "聊天、分析与工作流执行",
-    icon: Bot,
-  },
-  {
-    key: "prompts",
-    module: "assistant",
-    href: "/prompts",
-    label: "提示词",
-    shortLabel: "提示词",
-    description: "官方灵感词库与我的提示词",
-    icon: BookOpenText,
-  },
-  {
-    key: "plaza",
-    module: "assistant",
-    href: "/plaza",
-    label: "创作广场",
-    shortLabel: "广场",
-    description: "浏览案例并一键带入 Agent",
-    icon: GalleryVerticalEnd,
-  },
-  {
-    key: "assets",
-    module: "assistant",
-    href: "/resource-library",
-    label: "素材库",
-    shortLabel: "素材",
-    description: "上传素材、生成结果与提示词资产",
-    icon: Images,
-  },
-  {
-    key: "infiniteCanvas",
-    module: "canvas",
-    href: "/canvas",
-    label: "无限画布",
-    shortLabel: "画布",
-    description: "自由组织灵感、素材和生成结果",
-    icon: LayoutTemplate,
   },
   {
     key: "textToImage",
