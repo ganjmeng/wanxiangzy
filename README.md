@@ -98,7 +98,7 @@ REPLICATE_API_TOKEN=
 - `supabase/atomic-credit-rpc.sql`
 - 其余功能脚本按 [Supabase SQL 执行顺序](docs/supabase-migration-order.md) 继续执行
 
-旧 Agent 与 VOZEB 运行时已永久移除。生成任务继续复用 `generations`、现有账户积分和 BullMQ 队列，并保留执行阶段检查点与重复提交防护。
+生成任务复用 `generations`、现有账户积分和 BullMQ 队列，并通过执行阶段检查点防止重复提交。
 
 当前上传和生成结果通过存储适配器保存。本地开发可使用 ImgBB；生产用户上传必须使用阿里云 OSS 客户端直传，服务端只签发短时、用户/用途/大小/MIME/Key 绑定的 PostObject policy，不向浏览器下发长期 AccessKey Secret：
 

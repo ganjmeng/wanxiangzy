@@ -39,17 +39,10 @@
    supabase/migrations/20260821123000_generation_capacity_backpressure.sql
    supabase/migrations/20260822100000_generation_service_entitlements.sql
    supabase/migrations/20260822190000_generation_parent_state_consistency.sql
-   supabase/migrations/20260824153558_vozeb_creative_runtime_foundation.sql
-   supabase/migrations/20260824193939_complete_agent_skill_runtime.sql
-   supabase/migrations/20260824203735_creative_runtime_fk_indexes.sql
-   supabase/migrations/20260825030000_creative_user_skills.sql
-   supabase/migrations/20260825043413_fix_agent_conversation_runtime.sql
-   supabase/migrations/20260825054554_repair_minimax_openai_base_url.sql
-   supabase/migrations/20260825061720_complete_vozeb_agent_message_runtime.sql
-   supabase/migrations/20260825065043_remove_vozeb_runtime_keep_generation_fence.sql
+   supabase/migrations/20260825074913_generation_execution_fence.sql
    ```
 
-   前四个时间戳迁移会清理旧 generation 队列数据；后续历史迁移曾引入 VOZEB，最终 cleanup 迁移会永久删除其数据和数据库对象，仅保留通用生成执行栅栏。必须先备份并严格按文件名顺序执行。部署会精确校验 runtime contract 和所需 RPC，缺少任一项都不能切流。
+   前四个时间戳迁移会清理旧 generation 队列数据；最后一条迁移为现有生成队列增加通用执行栅栏。必须先备份并严格按文件名顺序执行。部署会精确校验 runtime contract 和所需 RPC，缺少任一项都不能切流。
 
 4. 检查生产环境变量。EC2 上的文件位于 `AWS_APP_DIR`（未配置时默认 `~/apps/wanxiangzy`）下：
 

@@ -4,7 +4,7 @@
 
 ## 商用队列 / OSS clean-slate 迁移（强制顺序）
 
-前四个迁移不兼容旧 generation 队列数据；后续历史迁移曾引入 VOZEB，最终 cleanup 迁移会永久删除 VOZEB 数据和数据库对象，仅保留通用生成执行栅栏。必须在停写维护窗口内、完成数据库备份后严格顺序应用：
+前四个迁移不兼容旧 generation 队列数据。最后一条迁移在现有生成队列上增加阶段检查点、上游任务绑定和重复提交防护。必须在停写维护窗口内、完成数据库备份后严格顺序应用：
 
 ```text
 1. supabase/migrations/20260818072132_bullmq_generation_outbox.sql
@@ -18,14 +18,7 @@
 9. supabase/migrations/20260821123000_generation_capacity_backpressure.sql
 10. supabase/migrations/20260822100000_generation_service_entitlements.sql
 11. supabase/migrations/20260822190000_generation_parent_state_consistency.sql
-12. supabase/migrations/20260824153558_vozeb_creative_runtime_foundation.sql
-13. supabase/migrations/20260824193939_complete_agent_skill_runtime.sql
-14. supabase/migrations/20260824203735_creative_runtime_fk_indexes.sql
-15. supabase/migrations/20260825030000_creative_user_skills.sql
-16. supabase/migrations/20260825043413_fix_agent_conversation_runtime.sql
-17. supabase/migrations/20260825054554_repair_minimax_openai_base_url.sql
-18. supabase/migrations/20260825061720_complete_vozeb_agent_message_runtime.sql
-19. supabase/migrations/20260825065043_remove_vozeb_runtime_keep_generation_fence.sql
+12. supabase/migrations/20260825074913_generation_execution_fence.sql
 ```
 
 Worker runtime 迁移提供 `get_runtime_contract_version()`；发布脚本会精确校验 version/hash，并同时检查后台经营指标 RPC，而不只检查同名 RPC。迁移完成前不得启动新 API/Worker，完成后不得回滚到旧轮询代码；故障恢复采用数据库备份或向前修复。
@@ -42,14 +35,7 @@ psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260819112000
 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260821123000_generation_capacity_backpressure.sql
 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260822100000_generation_service_entitlements.sql
 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260822190000_generation_parent_state_consistency.sql
-psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260824153558_vozeb_creative_runtime_foundation.sql
-psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260824193939_complete_agent_skill_runtime.sql
-psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260824203735_creative_runtime_fk_indexes.sql
-psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260825030000_creative_user_skills.sql
-psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260825043413_fix_agent_conversation_runtime.sql
-psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260825054554_repair_minimax_openai_base_url.sql
-psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260825061720_complete_vozeb_agent_message_runtime.sql
-psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260825065043_remove_vozeb_runtime_keep_generation_fence.sql
+psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260825074913_generation_execution_fence.sql
 ```
 
 ## 推荐基础顺序
@@ -79,14 +65,7 @@ psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260825065043
 22. supabase/migrations/20260821123000_generation_capacity_backpressure.sql
 23. supabase/migrations/20260822100000_generation_service_entitlements.sql
 24. supabase/migrations/20260822190000_generation_parent_state_consistency.sql
-25. supabase/migrations/20260824153558_vozeb_creative_runtime_foundation.sql
-26. supabase/migrations/20260824193939_complete_agent_skill_runtime.sql
-27. supabase/migrations/20260824203735_creative_runtime_fk_indexes.sql
-28. supabase/migrations/20260825030000_creative_user_skills.sql
-29. supabase/migrations/20260825043413_fix_agent_conversation_runtime.sql
-30. supabase/migrations/20260825054554_repair_minimax_openai_base_url.sql
-31. supabase/migrations/20260825061720_complete_vozeb_agent_message_runtime.sql
-32. supabase/migrations/20260825065043_remove_vozeb_runtime_keep_generation_fence.sql
+25. supabase/migrations/20260825074913_generation_execution_fence.sql
 ```
 
 关键依赖：
@@ -103,7 +82,7 @@ admin-console.sql 的积分调整函数依赖 profiles 和 credit_logs。
 product-retouch.sql 依赖 generations、credit_logs、admin_config_versions 和 task_queue_items。
 ```
 
-旧 Agent v1 与 VOZEB 不再安装或恢复。VOZEB 相关迁移仅作为已发布迁移历史保留，最终 cleanup 迁移负责删除所有 VOZEB 对象；`generation_execution_events`、阶段检查点和 `needs_review` 防重复提交能力继续服务现有生成队列。
+`generation_execution_events`、阶段检查点和 `needs_review` 防重复提交能力只服务现有生成队列，不引入额外的任务、账户或积分模型。
 
 ## 兼容脚本说明
 
