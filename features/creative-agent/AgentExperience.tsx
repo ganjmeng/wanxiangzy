@@ -15,6 +15,7 @@ import { useStudioAuth } from "@/components/studio/useStudioAuth";
 import { useResourcePicker, assetUrls, type ResourceAsset } from "@/features/resource-library";
 import { uploadLocalResources } from "@/features/resource-library/api";
 import { buildAgentGenerationIdempotencyKey } from "@/lib/agent-generation-idempotency";
+import { codexTheme } from "@/lib/design/codex-theme";
 import type { CreativeAgentProcess, CreativeAgentProcessStep, CreativeAgentTurnDecision, CreativeConversationClient, CreativeMessageClient } from "@/lib/creative-conversations";
 import type { CreativeRunClient } from "@/lib/creative-runs.server";
 import { AgentMessageMarkdown } from "./AgentMessageMarkdown";
@@ -791,7 +792,7 @@ function CreativeAssistantMessage({ message, run }: { message: CreativeMessageCl
   return (
     <article className="group/message flex min-w-0 items-start gap-4 sm:gap-5" data-status={message.status}>
       <span className={`mt-0.5 grid size-9 shrink-0 place-items-center overflow-hidden rounded-xl border border-[#e4e7ec] bg-white shadow-sm dark:border-[#30363e] dark:bg-[#20242a] ${running ? "animate-pulse" : ""}`} aria-hidden="true">
-        <Image src="/logo.svg" alt="" width={20} height={20} className="size-5 object-contain" />
+        <Image src={codexTheme.brand.logo} alt="" width={20} height={20} unoptimized className="size-5 object-contain" />
       </span>
       <div className="min-w-0 flex-1">
         {process ? <AgentProcessTrace process={process} running={running} /> : null}
