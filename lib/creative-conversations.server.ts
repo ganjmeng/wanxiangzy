@@ -76,11 +76,12 @@ export async function appendUserCreativeExchange(
     userId: string;
     conversationId: string;
     userContent: string;
+    userMetadata?: Record<string, unknown>;
     assistantContent: string;
     assistantMetadata?: Record<string, unknown>;
   },
 ) {
-  const { error } = await client.rpc("append_creative_conversation_exchange", {
+  const { data, error } = await client.rpc("append_creative_conversation_exchange", {
     p_user_id: input.userId,
     p_conversation_id: requireUuid(input.conversationId),
     p_user_content: input.userContent,
@@ -88,6 +89,48 @@ export async function appendUserCreativeExchange(
     p_assistant_metadata: input.assistantMetadata || {},
   });
   if (error) throw new CreativeRunError(`对话保存失败: ${error.message}`);
+  if (input.userMetadata && data && typeof data === "object" && !Array.isArray(data)) {
+    const userMessageId = (data as Record<string, unknown>).userMessageId;
+    if (typeof userMessageId === "string") {
+      const { error: metadataError } = await client
+        .from("creative_messages")
+        .update({ metadata: input.userMetadata })
+        .eq("id", requireUuid(userMessageId))
+        .eq("conversation_id", requireUuid(input.conversationId))
+        .eq("user_id", input.userId)
+        .eq("role", "user");
+      if (metadataError) throw new CreativeRunError(`对话素材保存失败: ${metadataError.message}`);
+    }
+  }
+  return listUserCreativeMessages(client, input.userId, input.conversationId);
+}
+
+export async function updateUserCreativeAssistantMessage(
+  client: SupabaseClient,
+  input: {
+    userId: string;
+    conversationId: string;
+    messageId: string;
+    runId?: string | null;
+    status?: CreativeMessageClient["status"];
+    content?: string;
+    metadata?: Record<string, unknown>;
+  },
+) {
+  await requireUserCreativeConversation(client, input.userId, input.conversationId);
+  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (input.runId !== undefined) updates.run_id = input.runId ? requireUuid(input.runId) : null;
+  if (input.status) updates.status = input.status;
+  if (typeof input.content === "string") updates.content = input.content.trim().slice(0, 4_000);
+  if (input.metadata) updates.metadata = input.metadata;
+  const { error } = await client
+    .from("creative_messages")
+    .update(updates)
+    .eq("id", requireUuid(input.messageId))
+    .eq("conversation_id", requireUuid(input.conversationId))
+    .eq("user_id", input.userId)
+    .eq("role", "assistant");
+  if (error) throw new CreativeRunError(`对话状态更新失败: ${error.message}`);
   return listUserCreativeMessages(client, input.userId, input.conversationId);
 }
 
@@ -104,13 +147,15 @@ function mapConversation(row: Record<string, unknown>): CreativeConversationClie
 }
 
 function mapMessage(row: Record<string, unknown>): CreativeMessageClient {
+  const role = row.role === "assistant" || row.role === "system" || row.role === "tool" ? row.role : "user";
+  const status = row.status === "running" || row.status === "failed" || row.status === "cancelled" ? row.status : "completed";
   return {
     id: String(row.id || ""),
     conversationId: String(row.conversation_id || ""),
     runId: typeof row.run_id === "string" ? row.run_id : null,
     sequence: Number(row.sequence || 0),
-    role: row.role === "assistant" ? "assistant" : "user",
-    status: row.status === "running" || row.status === "failed" ? row.status : "completed",
+    role,
+    status,
     content: String(row.content || ""),
     metadata: row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata) ? row.metadata as Record<string, unknown> : {},
     createdAt: String(row.created_at || ""),

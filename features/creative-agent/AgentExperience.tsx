@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ArrowUp, CheckCircle2, CircleDashed, Clock3,
+  ArrowUp, CheckCircle2, ChevronDown, CircleDashed, Clock3, Copy,
   FolderOpen, History, ImageIcon, Loader2, MessageSquarePlus, PanelLeftClose,
   PanelLeftOpen, Play, Plus, RotateCcw, ScanFace, ShoppingBag, Sparkles,
   X,
@@ -15,8 +15,9 @@ import { useStudioAuth } from "@/components/studio/useStudioAuth";
 import { useResourcePicker, assetUrls, type ResourceAsset } from "@/features/resource-library";
 import { uploadLocalResources } from "@/features/resource-library/api";
 import { buildAgentGenerationIdempotencyKey } from "@/lib/agent-generation-idempotency";
-import type { CreativeAgentTurnDecision, CreativeConversationClient, CreativeMessageClient } from "@/lib/creative-conversations";
+import type { CreativeAgentProcess, CreativeAgentProcessStep, CreativeAgentTurnDecision, CreativeConversationClient, CreativeMessageClient } from "@/lib/creative-conversations";
 import type { CreativeRunClient } from "@/lib/creative-runs.server";
+import { AgentMessageMarkdown } from "./AgentMessageMarkdown";
 import {
   AgentComposerControls,
   BUILTIN_AGENT_SKILLS,
@@ -103,9 +104,9 @@ export function AgentExperience() {
     }
   }, []);
 
-  const loadMessages = useCallback(async (conversationId: string) => {
+  const loadMessages = useCallback(async (conversationId: string, silent = false) => {
     if (!conversationId) { setMessages([]); return; }
-    setLoadingMessages(true);
+    if (!silent) setLoadingMessages(true);
     try {
       const response = await fetch(`/api/creative-agent/conversations/${encodeURIComponent(conversationId)}/messages`, { cache: "no-store" });
       const payload = await response.json().catch(() => ({})) as { messages?: CreativeMessageClient[]; error?: string };
@@ -114,7 +115,7 @@ export function AgentExperience() {
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "对话消息加载失败");
     } finally {
-      setLoadingMessages(false);
+      if (!silent) setLoadingMessages(false);
     }
   }, []);
 
@@ -140,6 +141,20 @@ export function AgentExperience() {
     if (!isAuthenticated) { setLoadingRuns(false); setLoadingConversations(false); return; }
     void Promise.all([loadRuns(), loadConversations()]);
   }, [authChecked, isAuthenticated, loadConversations, loadRuns]);
+
+  useEffect(() => {
+    if (!activeConversationId || !messages.some((message) => message.role === "assistant" && message.status === "running" && message.runId)) return;
+    let cancelled = false;
+    const refresh = async () => {
+      await Promise.all([loadRuns(), loadMessages(activeConversationId, true)]).catch(() => undefined);
+      if (cancelled) return;
+    };
+    const timer = window.setInterval(() => void refresh(), 2500);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [activeConversationId, loadMessages, loadRuns, messages]);
 
   useEffect(() => {
     const stored = window.localStorage.getItem("vozeb-agent-sidebar-collapsed");
@@ -398,8 +413,28 @@ export function AgentExperience() {
     }
     setSubmitting(true);
     let optimisticTaskId = "";
+    let optimisticAssistantId = "";
+    let activeAssistantId = "";
     try {
       const conversationId = await ensureConversation();
+      const now = new Date().toISOString();
+      const sequence = messages.reduce((maximum, message) => Math.max(maximum, message.sequence), 0) + 1;
+      const optimisticUserId = crypto.randomUUID();
+      optimisticAssistantId = crypto.randomUUID();
+      activeAssistantId = optimisticAssistantId;
+      const optimisticProcess: CreativeAgentProcess = {
+        status: "running",
+        steps: [
+          { id: "understand", title: "理解需求", status: "running", detail: "正在分析你的目标、素材与上下文" },
+          { id: "route", title: "匹配创作能力", status: "pending" },
+          { id: "respond", title: "确定执行方案", status: "pending" },
+        ],
+      };
+      setMessages((current) => [
+        ...current,
+        { id: optimisticUserId, conversationId, runId: null, sequence, role: "user", status: "completed", content: intent, metadata: { referenceUrls: assetUrls(generationReferences), ...(selectedSkillId ? { selectedSkillId } : {}) }, createdAt: now, updatedAt: now },
+        { id: optimisticAssistantId, conversationId, runId: null, sequence: sequence + 1, role: "assistant", status: "running", content: "正在理解需求并选择合适的创作能力", metadata: { process: optimisticProcess }, createdAt: now, updatedAt: now },
+      ]);
       const plannerResponse = await fetch(`/api/creative-agent/conversations/${encodeURIComponent(conversationId)}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -409,6 +444,8 @@ export function AgentExperience() {
           preferredCapability,
           hasReferences: generationReferences.length > 0,
           hasSkill: Boolean(selectedSkillId),
+          referenceUrls: assetUrls(generationReferences),
+          selectedSkillId,
         }),
       });
       const plannerPayload = await plannerResponse.json().catch(() => ({})) as {
@@ -419,8 +456,19 @@ export function AgentExperience() {
       if (!plannerResponse.ok || !plannerPayload.decision) throw new Error(plannerPayload.error || "Agent 未能完成本轮规划");
       if (Array.isArray(plannerPayload.messages)) setMessages(plannerPayload.messages);
       setPrompt("");
+      setReferences([]);
+      setFocusedReferenceId("");
+      setSkillRoleAssignments({});
       await loadConversations();
       if (plannerPayload.decision.kind === "conversation") return;
+
+      const persistedAssistant = [...(plannerPayload.messages || [])].reverse().find((message) => message.role === "assistant");
+      if (persistedAssistant) {
+        activeAssistantId = persistedAssistant.id;
+        setMessages((current) => current.map((message) => message.id === persistedAssistant.id
+          ? { ...message, status: "running", content: "方案已确定，正在创建后台任务", metadata: generationProcessMetadata(message.metadata, "planning") }
+          : message));
+      }
 
       const capability: AgentCapability = plannerPayload.decision.capability || preferredCapability;
       if (capability === "video" && !generationReferences.length) throw new Error("视频生成需要至少添加 1 张参考图");
@@ -453,6 +501,17 @@ export function AgentExperience() {
       const runPayload = await runResponse.json().catch(() => ({})) as { run?: { id?: string; execution?: { generationPreferences?: AgentGenerationPreferences } }; error?: string };
       const runId = runResponse.ok && runPayload.run?.id ? runPayload.run.id : undefined;
       if (!runId) throw new Error(runPayload.error || "Agent Run 创建失败");
+      if (persistedAssistant) {
+        const processMetadata = generationProcessMetadata(persistedAssistant.metadata, "running");
+        const linkedResponse = await fetch(`/api/creative-agent/conversations/${encodeURIComponent(conversationId)}/messages`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messageId: persistedAssistant.id, runId, status: "running", content: "正在处理创作任务", metadata: processMetadata }),
+        });
+        const linkedPayload = await linkedResponse.json().catch(() => ({})) as { messages?: CreativeMessageClient[]; error?: string };
+        if (!linkedResponse.ok) throw new Error(linkedPayload.error || "Agent 任务与对话关联失败");
+        if (Array.isArray(linkedPayload.messages)) setMessages(linkedPayload.messages);
+      }
       const runPreferences = isAgentGenerationPreferences(runPayload.run?.execution?.generationPreferences)
         ? runPayload.run.execution.generationPreferences
         : preferences;
@@ -500,7 +559,6 @@ export function AgentExperience() {
           taskQueue.upsertTask({ id: generation.generation_id, status: "processing", statusGroup: "running", progress: 18, expectedCount: resolvedOutputCount, inputThumbnails: referenceUrls });
         }
       }
-      setReferences([]); setFocusedReferenceId(""); setSkillRoleAssignments({});
       await loadRuns();
       await Promise.all(generations.map((generation) => pollGeneration(generation.id, {
         onProgress: (status) => taskQueue.markRunning(generation.id, { progress: status.progress ?? 40 }),
@@ -511,9 +569,15 @@ export function AgentExperience() {
         throw error;
       })));
       await loadRuns();
+      await loadMessages(conversationId);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Agent 创作失败";
       if (optimisticTaskId) taskQueue.markFailed(optimisticTaskId, message);
+      if (activeAssistantId) {
+        setMessages((current) => current.map((item) => item.id === activeAssistantId
+          ? { ...item, status: "failed", content: message, metadata: failedProcessMetadata(item.metadata, message), updatedAt: new Date().toISOString() }
+          : item));
+      }
       toast.error(message);
     } finally { setSubmitting(false); }
   };
@@ -556,7 +620,7 @@ export function AgentExperience() {
             <div className={`mx-auto flex min-h-full w-full min-w-0 max-w-[1240px] flex-col items-center px-2.5 pb-8 sm:px-8 ${messages.length || loadingMessages ? "pt-6 sm:pt-8" : "pt-10 sm:pt-14 lg:pt-[8vh]"}`}>
               {!messages.length && !loadingMessages ? <div className="text-center"><h1 className="text-[23px] font-semibold leading-tight sm:text-[31px]">Pixel Diffusion 创作 Agent</h1><p className="mt-2 text-sm text-[#8b949f] dark:text-[#7f8996]">从一个想法开始</p></div> : null}
               {loadingMessages ? <div className="flex min-h-48 items-center gap-2 text-sm text-[#8b949f]"><Loader2 className="size-4 animate-spin" />正在载入对话...</div> : null}
-              {messages.length ? <ConversationThread messages={messages} /> : null}
+              {messages.length ? <ConversationThread messages={messages} runs={runs} /> : null}
               <div ref={composerRef} className={`w-full max-w-[1080px] scroll-mt-4 ${messages.length ? "mt-6" : "mt-5 sm:mt-8"}`}>
                 <div className="overflow-visible rounded-[22px] border border-[#e2e6ea] bg-white p-3 shadow-[0_10px_32px_rgba(32,36,42,0.06)] dark:border-[#30363e] dark:bg-[#181b20] dark:shadow-black/25 sm:p-4">
                   {selectedSkill ? (
@@ -677,25 +741,161 @@ function ConversationSidebar({ conversations, loading, collapsed, activeConversa
   );
 }
 
-function ConversationThread({ messages }: { messages: CreativeMessageClient[] }) {
+function ConversationThread({ messages, runs }: { messages: CreativeMessageClient[]; runs: CreativeRunClient[] }) {
+  const endRef = useRef<HTMLDivElement>(null);
+  const runsById = new Map(runs.map((run) => [run.id, run]));
+  const lastMessageId = messages.at(-1)?.id;
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [lastMessageId]);
   return (
-    <section className="w-full max-w-[1080px] space-y-5" aria-label="对话消息">
-      {messages.map((message) => message.role === "user" ? (
-        <article key={message.id} className="flex justify-end">
-          <div className="max-w-[min(78%,720px)] whitespace-pre-wrap rounded-[18px] rounded-br-md bg-[#20242a] px-4 py-3 text-[14px] leading-6 text-white shadow-sm dark:bg-[#f1f3f5] dark:text-[#20242a]">
-            {message.content}
+    <section className="w-full max-w-[1120px] space-y-8 px-1 pb-2 sm:px-5" aria-label="对话消息" data-testid="creative-message-list">
+      {messages.filter((message) => message.role !== "system").map((message) => message.role === "user" ? (
+        <article key={message.id} className="group/message flex items-start justify-end gap-3 sm:gap-4">
+          <div className="min-w-0 max-w-[min(82%,640px)] text-right">
+            <CreativeMessageReferences message={message} />
+            <div className="whitespace-pre-wrap break-words rounded-[14px] bg-[linear-gradient(135deg,#f3f1ff_0%,#ebeaff_100%)] px-[18px] py-3 text-left text-[15px] leading-6 text-[#111827] dark:bg-[linear-gradient(135deg,#2d2a46_0%,#26243a_100%)] dark:text-[#f3f5f7]">
+              {message.content}
+            </div>
+            <p className="mt-1.5 pr-1 text-[11px] tabular-nums text-[#a0a8b2]">{formatMessageTime(message.createdAt)}</p>
           </div>
+          <span className="mt-2 grid size-8 shrink-0 place-items-center rounded-full bg-[#20242a] text-[11px] font-semibold text-white dark:bg-[#f1f3f5] dark:text-[#20242a]" aria-label="用户">你</span>
         </article>
       ) : (
-        <article key={message.id} className="flex items-start gap-3">
-          <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-xl bg-[#edf1ff] text-[#5f63dc] dark:bg-[#262b3c] dark:text-[#aeb4ff]" aria-hidden="true"><Sparkles className="size-4" /></span>
-          <div className="max-w-[min(82%,760px)] whitespace-pre-wrap rounded-[18px] rounded-tl-md border border-[#e5e8ec] bg-white px-4 py-3 text-[14px] leading-6 text-[#343b44] shadow-[0_4px_18px_rgba(32,36,42,0.04)] dark:border-[#30363e] dark:bg-[#181b20] dark:text-[#e1e5ea]">
-            {message.content}
-          </div>
-        </article>
+        <CreativeAssistantMessage key={message.id} message={message} run={message.runId ? runsById.get(message.runId) : undefined} />
       ))}
+      <div ref={endRef} className="h-px" aria-hidden="true" />
     </section>
   );
+}
+
+function CreativeMessageReferences({ message }: { message: CreativeMessageClient }) {
+  const urls = Array.isArray(message.metadata.referenceUrls)
+    ? message.metadata.referenceUrls.filter((value): value is string => typeof value === "string" && /^https?:\/\//i.test(value)).slice(0, 10)
+    : [];
+  if (!urls.length) return null;
+  return (
+    <div className="mb-2 flex max-w-full flex-wrap justify-end gap-1.5" aria-label="本轮参考素材">
+      {urls.map((url, index) => (
+        <a key={`${url}:${index}`} href={url} target="_blank" rel="noreferrer" className="relative size-14 overflow-hidden rounded-lg border border-white bg-[#eef1f4] shadow-sm dark:border-[#343a43]">
+          <Image src={url} alt={`参考素材 ${index + 1}`} fill unoptimized sizes="56px" className="object-cover" />
+        </a>
+      ))}
+    </div>
+  );
+}
+
+function CreativeAssistantMessage({ message, run }: { message: CreativeMessageClient; run?: CreativeRunClient }) {
+  const process = creativeMessageProcess(message);
+  const running = message.status === "running";
+  return (
+    <article className="group/message flex min-w-0 items-start gap-4 sm:gap-5" data-status={message.status}>
+      <span className={`mt-0.5 grid size-9 shrink-0 place-items-center overflow-hidden rounded-xl border border-[#e4e7ec] bg-white shadow-sm dark:border-[#30363e] dark:bg-[#20242a] ${running ? "animate-pulse" : ""}`} aria-hidden="true">
+        <Image src="/logo.svg" alt="" width={20} height={20} className="size-5 object-contain" />
+      </span>
+      <div className="min-w-0 flex-1">
+        {process ? <AgentProcessTrace process={process} running={running} /> : null}
+        {running ? (
+          <div className="flex items-start gap-2.5 py-1 text-[#596474] dark:text-[#b0b8c2]" aria-live="polite">
+            <Sparkles className="mt-1 size-4 shrink-0 animate-pulse text-[#6d70da]" />
+            <div>
+              <p className="text-sm leading-6">{creativeWaitingCopy(message.content, run)}</p>
+              <ElapsedTime startedAt={message.createdAt} />
+            </div>
+          </div>
+        ) : (
+          <div className={`max-w-[860px] text-[15px] leading-7 ${message.status === "failed" ? "text-red-600 dark:text-red-300" : message.status === "cancelled" ? "text-[#929aa5]" : "text-[#343b44] dark:text-[#e1e5ea]"}`}>
+            <AgentMessageMarkdown>{message.content}</AgentMessageMarkdown>
+          </div>
+        )}
+        {run ? <CreativeRunCard run={run} /> : null}
+        {!running && message.content.trim() ? <MessageActions text={message.content} /> : null}
+      </div>
+    </article>
+  );
+}
+
+function AgentProcessTrace({ process, running }: { process: CreativeAgentProcess; running: boolean }) {
+  const [open, setOpen] = useState(true);
+  const elapsed = typeof process.elapsedMs === "number" ? ` · ${formatElapsedMilliseconds(process.elapsedMs)}` : "";
+  return (
+    <div className="mb-3 max-w-[680px]">
+      <button type="button" onClick={() => setOpen((value) => !value)} className="flex min-h-8 items-center gap-2 rounded-lg pr-2 text-left text-[13px] font-medium text-[#687381] transition hover:text-[#343b44] dark:text-[#aab3be] dark:hover:text-white" aria-expanded={open}>
+        {running ? <Loader2 className="size-3.5 animate-spin text-[#6b6ed8]" /> : process.status === "failed" ? <CircleDashed className="size-3.5 text-red-500" /> : <CheckCircle2 className="size-3.5 text-[#6b6ed8]" />}
+        <span>{running ? "正在思考并执行" : process.status === "failed" ? "执行过程" : `已完成思考${elapsed}`}</span>
+        <ChevronDown className={`size-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open ? (
+        <ol className="ml-[7px] mt-1 border-l border-[#dfe3e8] pl-4 dark:border-[#343a42]" aria-label="Agent 执行过程">
+          {process.steps.map((step) => <ProcessStep key={step.id} step={step} />)}
+        </ol>
+      ) : null}
+    </div>
+  );
+}
+
+function ProcessStep({ step }: { step: CreativeAgentProcessStep }) {
+  const icon = step.status === "running"
+    ? <Loader2 className="size-3 animate-spin" />
+    : step.status === "completed" ? <CheckCircle2 className="size-3" /> : <CircleDashed className="size-3" />;
+  return (
+    <li className={`relative py-1.5 text-[13px] leading-5 ${step.status === "pending" ? "text-[#a0a8b2]" : step.status === "failed" ? "text-red-500" : "text-[#626d79] dark:text-[#aeb7c1]"}`}>
+      <span className="absolute -left-[23px] top-2.5 grid size-3.5 place-items-center rounded-full bg-white dark:bg-[#111316]">{icon}</span>
+      <span className="font-medium">{step.title}</span>
+      {step.detail ? <span className="ml-2 text-[#929ca8] dark:text-[#7f8996]">{step.detail}</span> : null}
+    </li>
+  );
+}
+
+function CreativeRunCard({ run }: { run: CreativeRunClient }) {
+  const running = ["draft", "queued", "running"].includes(run.status);
+  const failed = run.status === "failed";
+  const outputs = run.steps.flatMap((step) => step.resultUrls.map((url) => ({ url, step })));
+  return (
+    <section className="mt-4 max-w-[900px] rounded-2xl border border-[#e2e6ea] bg-[#fafbfc] p-4 dark:border-[#30363e] dark:bg-[#15181c]" aria-label="创作任务状态">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {running ? <Loader2 className="size-4 animate-spin text-[#666adb]" /> : failed ? <CircleDashed className="size-4 text-red-500" /> : <CheckCircle2 className="size-4 text-emerald-500" />}
+          <h3 className="text-sm font-semibold">{run.summary || "创作任务"}</h3>
+        </div>
+        <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-[#6c7682] shadow-sm dark:bg-[#22262c] dark:text-[#aeb6c0]">{creativeRunStatusLabel(run.status)}</span>
+      </div>
+      {run.steps.length ? <ol className="mt-3 space-y-2">{run.steps.map((step) => (
+        <li key={step.id} className="flex items-start gap-2 text-[13px] leading-5 text-[#657080] dark:text-[#aeb6c0]">
+          {step.status === "completed" ? <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-emerald-500" /> : step.status === "failed" ? <CircleDashed className="mt-0.5 size-3.5 shrink-0 text-red-500" /> : <Loader2 className="mt-0.5 size-3.5 shrink-0 animate-spin text-[#6b6ed8]" />}
+          <span><span className="font-medium text-[#414a55] dark:text-[#d6dbe1]">{step.title}</span>{step.errorMessage ? <span className="ml-2 text-red-500">{step.errorMessage}</span> : null}</span>
+        </li>
+      ))}</ol> : running ? <p className="mt-3 text-xs text-[#8f99a5]">正在创建生成步骤，请勿重复发送。</p> : null}
+      {outputs.length ? <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">{outputs.map(({ url, step }, index) => (
+        <a key={`${step.id}:${url}`} href={url} target="_blank" rel="noreferrer" className="group/result relative aspect-square overflow-hidden rounded-xl border border-[#e0e4e8] bg-white dark:border-[#30363e] dark:bg-[#20242a]">
+          {isVideoUrl(url)
+            ? <video src={url} muted playsInline preload="metadata" className="h-full w-full object-cover transition duration-300 group-hover/result:scale-[1.02]" />
+            : <Image src={url} alt={`${step.title} 结果 ${index + 1}`} fill unoptimized className="object-cover transition duration-300 group-hover/result:scale-[1.02]" sizes="(max-width: 640px) 45vw, 280px" />}
+        </a>
+      ))}</div> : null}
+    </section>
+  );
+}
+
+function MessageActions({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="mt-1 flex min-h-7 items-center text-[#8c96a2] opacity-70 transition sm:opacity-0 sm:group-hover/message:opacity-100 sm:group-focus-within/message:opacity-100">
+      <button type="button" className="grid size-7 place-items-center rounded-md transition hover:bg-[#f3f5f7] hover:text-[#343b44] dark:hover:bg-[#252a31] dark:hover:text-white" onClick={() => void navigator.clipboard.writeText(text).then(() => { setCopied(true); window.setTimeout(() => setCopied(false), 1200); })} aria-label="复制消息" title="复制">
+        {copied ? <CheckCircle2 className="size-3.5" /> : <Copy className="size-3.5" />}
+      </button>
+    </div>
+  );
+}
+
+function ElapsedTime({ startedAt }: { startedAt: string }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const seconds = Math.max(0, Math.floor((now - new Date(startedAt).getTime()) / 1000));
+  return <p className="mt-0.5 text-[11px] tabular-nums leading-4 text-[#98a2b3]">已等待 {seconds < 60 ? `${seconds}秒` : `${Math.floor(seconds / 60)}分${seconds % 60}秒`}</p>;
 }
 
 function SidebarLink({ href, collapsed, label, icon }: { href: string; collapsed: boolean; label: string; icon: React.ReactNode }) {
@@ -825,6 +1025,7 @@ async function loadLegacyGenerationRuns(): Promise<CreativeRunClient[]> {
       intent,
       summary: intent.slice(0, 120),
       surface: "agent",
+      conversationId: null,
       projectId: null,
       createdAt,
       updatedAt: completedAt,
@@ -947,6 +1148,81 @@ function isAgentGenerationPreferences(value: unknown): value is AgentGenerationP
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const row = value as Partial<AgentGenerationPreferences>;
   return Boolean(row.image && typeof row.image === "object" && row.video && typeof row.video === "object" && row.audio && typeof row.audio === "object");
+}
+
+function creativeMessageProcess(message: CreativeMessageClient): CreativeAgentProcess | null {
+  const raw = message.metadata.process;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    if (message.status !== "running") return null;
+    return {
+      status: "running",
+      steps: [{ id: "execute", title: "处理请求", status: "running", detail: message.content }],
+    };
+  }
+  const record = raw as Record<string, unknown>;
+  const steps = Array.isArray(record.steps) ? record.steps.flatMap((value): CreativeAgentProcessStep[] => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return [];
+    const step = value as Record<string, unknown>;
+    if (typeof step.id !== "string" || typeof step.title !== "string") return [];
+    const status = step.status === "running" || step.status === "completed" || step.status === "failed" ? step.status : "pending";
+    return [{ id: step.id, title: step.title, status, ...(typeof step.detail === "string" ? { detail: step.detail } : {}) }];
+  }) : [];
+  if (!steps.length) return null;
+  return {
+    status: record.status === "running" || record.status === "failed" ? record.status : "completed",
+    ...(typeof record.elapsedMs === "number" ? { elapsedMs: record.elapsedMs } : {}),
+    steps,
+  };
+}
+
+function generationProcessMetadata(metadata: Record<string, unknown>, stage: "planning" | "running") {
+  const base = creativeMessageProcess({
+    id: "", conversationId: "", runId: null, sequence: 0, role: "assistant", status: "completed", content: "", metadata, createdAt: "", updatedAt: "",
+  });
+  const steps: CreativeAgentProcessStep[] = (base?.steps || []).map((step) => ({ ...step, status: step.status === "failed" ? "failed" : "completed" }));
+  steps.push(stage === "planning"
+    ? { id: "create-run", title: "创建后台任务", status: "running" as const, detail: "正在固定模型、参数与 Skill 版本" }
+    : { id: "create-run", title: "创建后台任务", status: "completed" as const, detail: "执行身份与参数已固定" });
+  if (stage === "running") steps.push({ id: "generate", title: "执行生成任务", status: "running" as const, detail: "已进入任务队列，正在等待生成结果" });
+  return { ...metadata, process: { status: "running", elapsedMs: base?.elapsedMs, steps } };
+}
+
+function failedProcessMetadata(metadata: Record<string, unknown>, error: string) {
+  const base = creativeMessageProcess({
+    id: "", conversationId: "", runId: null, sequence: 0, role: "assistant", status: "failed", content: "", metadata, createdAt: "", updatedAt: "",
+  });
+  const steps = base?.steps || [];
+  const runningIndex = steps.findIndex((step) => step.status === "running");
+  const next = steps.map((step, index) => index === runningIndex ? { ...step, status: "failed" as const, detail: error } : step);
+  return { ...metadata, process: { status: "failed", elapsedMs: base?.elapsedMs, steps: next.length ? next : [{ id: "failed", title: "执行失败", status: "failed", detail: error }] } };
+}
+
+function creativeWaitingCopy(progress: string, run?: CreativeRunClient) {
+  if (run?.status === "paused") return "任务已经暂停，进度已保存，可以稍后继续。";
+  if (/创建后台任务|方案已确定/.test(progress)) return "方案已经确定，正在固定模型、参数与 Skill 版本。";
+  if (run?.steps.some((step) => step.status === "running")) return "创作任务正在执行，不需要重复发送，我会持续更新结果。";
+  if (/处理创作任务|生成/.test(progress)) return "灵感已经接住，作品正在生成中。";
+  return "正在理解你的需求并选择合适的创作能力。";
+}
+
+function creativeRunStatusLabel(status: string) {
+  if (status === "draft") return "正在创建";
+  if (status === "queued") return "排队中";
+  if (status === "running") return "生成中";
+  if (status === "paused") return "已暂停";
+  if (status === "completed") return "已完成";
+  if (status === "cancelled") return "已取消";
+  return "执行失败";
+}
+
+function formatElapsedMilliseconds(value: number) {
+  if (value < 1000) return `${Math.max(1, Math.round(value))} 毫秒`;
+  return `${Math.max(0.1, value / 1000).toFixed(value < 10_000 ? 1 : 0)} 秒`;
+}
+
+function formatMessageTime(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "刚刚" : new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit" }).format(date);
 }
 
 function formatDate(value: string) {

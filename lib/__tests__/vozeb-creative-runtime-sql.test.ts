@@ -14,6 +14,10 @@ const textProviderMigration = readFileSync(
   resolve(process.cwd(), "supabase/migrations/20260825054554_repair_minimax_openai_base_url.sql"),
   "utf8",
 );
+const messageRuntimeMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260825061720_complete_vozeb_agent_message_runtime.sql"),
+  "utf8",
+);
 
 describe("VOZEB creative runtime SQL contract", () => {
   it("replaces the old Agent tables with owner-scoped creative runs", () => {
@@ -77,5 +81,13 @@ describe("VOZEB creative runtime SQL contract", () => {
     expect(textProviderMigration).toContain("legacy-vision-minimax");
     expect(textProviderMigration).toContain("https://api.minimaxi.com/v1");
     expect(textProviderMigration).toContain("config.value IS DISTINCT FROM repaired.value");
+  });
+
+  it("keeps the VOZEB assistant message attached to its durable run", () => {
+    expect(messageRuntimeMigration).toContain("role IN ('user', 'assistant', 'system', 'tool')");
+    expect(messageRuntimeMigration).toContain("status IN ('running', 'completed', 'failed', 'cancelled')");
+    expect(messageRuntimeMigration).toContain("sync_creative_run_agent_message");
+    expect(messageRuntimeMigration).toContain("message.run_id = NEW.id");
+    expect(messageRuntimeMigration).toContain("creative_agent_complete_process");
   });
 });

@@ -8,6 +8,7 @@ export type CreativeRunClient = {
   intent: string;
   summary: string;
   surface: string;
+  conversationId: string | null;
   projectId: string | null;
   createdAt: string;
   updatedAt: string;
@@ -143,7 +144,7 @@ export async function listUserCreativeRuns(client: SupabaseClient, userId: strin
   const pageSize = Math.min(50, Math.max(1, Math.floor(limit)));
   const { data: runs, error: runError } = await client
     .from("creative_runs")
-    .select("id,status,intent,summary,surface,project_id,error_message,created_at,updated_at")
+    .select("id,status,intent,summary,surface,project_id,conversation_id,error_message,created_at,updated_at")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(pageSize);
@@ -183,6 +184,7 @@ export async function listUserCreativeRuns(client: SupabaseClient, userId: strin
     intent: String(run.intent || ""),
     summary: String(run.summary || ""),
     surface: String(run.surface || "agent"),
+    conversationId: typeof run.conversation_id === "string" ? run.conversation_id : null,
     projectId: typeof run.project_id === "string" ? run.project_id : null,
     createdAt: String(run.created_at || ""),
     updatedAt: String(run.updated_at || ""),
