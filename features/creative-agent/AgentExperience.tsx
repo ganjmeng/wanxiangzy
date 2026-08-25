@@ -785,7 +785,14 @@ function RecentResults({ runs, results, loading, onReload }: { runs: CreativeRun
 
 function AgentRunRow({ run }: { run: CreativeRunClient }) {
   const active = ["draft", "queued", "running"].includes(run.status);
-  return <article className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 py-3"><span className="grid size-8 place-items-center rounded-lg bg-[#f1f3f5] text-[#697381] dark:bg-[#252a31] dark:text-[#aab2bd]">{active ? <Loader2 className="size-4 animate-spin" /> : run.status === "completed" ? <CheckCircle2 className="size-4" /> : <CircleDashed className="size-4" />}</span><div className="min-w-0"><strong className="block truncate text-xs font-medium">{run.summary || run.intent}</strong><p className="mt-1 text-[11px] text-[#9aa2ad]">{run.steps.length ? `${run.steps.length} 个执行步骤` : "正在准备执行计划"}</p></div><time className="hidden items-center gap-1 text-[11px] text-[#9aa2ad] sm:flex"><Clock3 className="size-3" />{formatDate(run.createdAt)}</time></article>;
+  const detail = run.steps.length
+    ? `${run.steps.length} 个执行步骤`
+    : active
+      ? "正在准备执行计划"
+      : run.status === "completed"
+        ? "已完成"
+        : run.errorMessage || "执行失败，请重新提交";
+  return <article className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 py-3"><span className="grid size-8 place-items-center rounded-lg bg-[#f1f3f5] text-[#697381] dark:bg-[#252a31] dark:text-[#aab2bd]">{active ? <Loader2 className="size-4 animate-spin" /> : run.status === "completed" ? <CheckCircle2 className="size-4" /> : <CircleDashed className="size-4" />}</span><div className="min-w-0"><strong className="block truncate text-xs font-medium">{run.summary || run.intent}</strong><p className="mt-1 text-[11px] text-[#9aa2ad]">{detail}</p></div><time className="hidden items-center gap-1 text-[11px] text-[#9aa2ad] sm:flex"><Clock3 className="size-3" />{formatDate(run.createdAt)}</time></article>;
 }
 
 async function loadLegacyGenerationRuns(): Promise<CreativeRunClient[]> {
