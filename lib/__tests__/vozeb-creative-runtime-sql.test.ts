@@ -6,6 +6,14 @@ const migration = readFileSync(
   resolve(process.cwd(), "supabase/migrations/20260824153558_vozeb_creative_runtime_foundation.sql"),
   "utf8",
 );
+const conversationMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260825043413_fix_agent_conversation_runtime.sql"),
+  "utf8",
+);
+const textProviderMigration = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260825054554_repair_minimax_openai_base_url.sql"),
+  "utf8",
+);
 
 describe("VOZEB creative runtime SQL contract", () => {
   it("replaces the old Agent tables with owner-scoped creative runs", () => {
@@ -54,5 +62,20 @@ describe("VOZEB creative runtime SQL contract", () => {
     expect(migration).toContain("private.sync_creative_run_from_generation");
     expect(migration).toContain("CREATE OR REPLACE FUNCTION public.attach_generation_to_creative_run(");
     expect(migration).toContain("GRANT EXECUTE ON FUNCTION public.attach_generation_to_creative_run");
+  });
+
+  it("persists real Agent conversations and fixes the Postgres 17 attach ambiguity", () => {
+    expect(migration).toContain("ON CONFLICT ON CONSTRAINT creative_run_steps_run_id_step_key_key DO NOTHING");
+    expect(conversationMigration).toContain("CREATE TABLE IF NOT EXISTS public.creative_conversations");
+    expect(conversationMigration).toContain("CREATE TABLE IF NOT EXISTS public.creative_messages");
+    expect(conversationMigration).toContain("append_creative_conversation_exchange");
+    expect(conversationMigration).toContain("creative_runs_conversation_id_fkey");
+  });
+
+  it("repairs the legacy MiniMax OpenAI-compatible base URL", () => {
+    expect(textProviderMigration).toContain("legacy-text-minimax");
+    expect(textProviderMigration).toContain("legacy-vision-minimax");
+    expect(textProviderMigration).toContain("https://api.minimaxi.com/v1");
+    expect(textProviderMigration).toContain("config.value IS DISTINCT FROM repaired.value");
   });
 });

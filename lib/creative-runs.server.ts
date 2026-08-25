@@ -41,6 +41,7 @@ export async function createUserCreativeRun(
   if (!intent || intent.length > 4_000) throw new CreativeRunError("创作需求需为 1-4000 个字符", 400);
   const surface = body.surface === "canvas" ? "canvas" : "agent";
   const projectId = optionalUuid(body.projectId, "画布项目 ID");
+  const conversationId = optionalUuid(body.conversationId, "对话 ID");
   if (surface === "canvas" && !projectId) throw new CreativeRunError("画布任务缺少项目 ID", 400);
   if (surface === "canvas" && projectId) {
     const { data: project, error: projectError } = await client
@@ -51,6 +52,18 @@ export async function createUserCreativeRun(
       .maybeSingle();
     if (projectError) throw databaseError(projectError.message);
     if (!project) throw new CreativeRunError("画布项目不存在或无权访问", 404);
+  }
+  if (surface === "agent" && conversationId) {
+    const { data: conversation, error: conversationError } = await client
+      .from("creative_conversations")
+      .select("id")
+      .eq("id", conversationId)
+      .eq("user_id", input.userId)
+      .eq("surface", "agent")
+      .eq("status", "active")
+      .maybeSingle();
+    if (conversationError) throw databaseError(conversationError.message);
+    if (!conversation) throw new CreativeRunError("对话不存在或无权访问", 404);
   }
   const clientRequestId = typeof body.clientRequestId === "string" ? body.clientRequestId.trim().slice(0, 160) : undefined;
   const mode = body.mode === "video" ? "video" : body.mode === "image" ? "image" : body.mode === "audio" ? "audio" : "agent";
@@ -74,6 +87,7 @@ export async function createUserCreativeRun(
     summary: intent.slice(0, 120),
     surface,
     projectId: surface === "canvas" ? projectId || undefined : undefined,
+    conversationId: surface === "agent" ? conversationId || undefined : undefined,
     clientRequestId,
     inputPayload: {
       mode,

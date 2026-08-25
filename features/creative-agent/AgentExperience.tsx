@@ -15,6 +15,7 @@ import { useStudioAuth } from "@/components/studio/useStudioAuth";
 import { useResourcePicker, assetUrls, type ResourceAsset } from "@/features/resource-library";
 import { uploadLocalResources } from "@/features/resource-library/api";
 import { buildAgentGenerationIdempotencyKey } from "@/lib/agent-generation-idempotency";
+import type { CreativeAgentTurnDecision, CreativeConversationClient, CreativeMessageClient } from "@/lib/creative-conversations";
 import type { CreativeRunClient } from "@/lib/creative-runs.server";
 import {
   AgentComposerControls,
@@ -63,7 +64,11 @@ export function AgentExperience() {
   const [focusedReferenceId, setFocusedReferenceId] = useState("");
   const [replaceReferenceId, setReplaceReferenceId] = useState("");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeRunId, setActiveRunId] = useState("");
+  const [activeConversationId, setActiveConversationId] = useState("");
+  const [conversations, setConversations] = useState<CreativeConversationClient[]>([]);
+  const [messages, setMessages] = useState<CreativeMessageClient[]>([]);
+  const [loadingConversations, setLoadingConversations] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(false);
   const [runs, setRuns] = useState<CreativeRunClient[]>([]);
   const [loadingRuns, setLoadingRuns] = useState(true);
   const selectedSkill = skills.find((skill) => skill.id === selectedSkillId);
@@ -84,6 +89,45 @@ export function AgentExperience() {
     } finally { setLoadingRuns(false); }
   }, []);
 
+  const loadConversations = useCallback(async () => {
+    try {
+      const response = await fetch("/api/creative-agent/conversations?limit=30", { cache: "no-store" });
+      if (response.status === 401) { setConversations([]); return; }
+      const payload = await response.json().catch(() => ({})) as { conversations?: CreativeConversationClient[]; error?: string };
+      if (!response.ok) throw new Error(payload.error || "对话记录加载失败");
+      setConversations(Array.isArray(payload.conversations) ? payload.conversations : []);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "对话记录加载失败");
+    } finally {
+      setLoadingConversations(false);
+    }
+  }, []);
+
+  const loadMessages = useCallback(async (conversationId: string) => {
+    if (!conversationId) { setMessages([]); return; }
+    setLoadingMessages(true);
+    try {
+      const response = await fetch(`/api/creative-agent/conversations/${encodeURIComponent(conversationId)}/messages`, { cache: "no-store" });
+      const payload = await response.json().catch(() => ({})) as { messages?: CreativeMessageClient[]; error?: string };
+      if (!response.ok) throw new Error(payload.error || "对话消息加载失败");
+      setMessages(Array.isArray(payload.messages) ? payload.messages : []);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "对话消息加载失败");
+    } finally {
+      setLoadingMessages(false);
+    }
+  }, []);
+
+  const ensureConversation = useCallback(async () => {
+    if (activeConversationId) return activeConversationId;
+    const response = await fetch("/api/creative-agent/conversations", { method: "POST" });
+    const payload = await response.json().catch(() => ({})) as { conversation?: CreativeConversationClient; error?: string };
+    if (!response.ok || !payload.conversation?.id) throw new Error(payload.error || "对话创建失败");
+    setActiveConversationId(payload.conversation.id);
+    setConversations((current) => [payload.conversation!, ...current.filter((item) => item.id !== payload.conversation!.id)]);
+    return payload.conversation.id;
+  }, [activeConversationId]);
+
   useEffect(() => {
     const incoming = new URLSearchParams(window.location.search).get("prompt");
     if (!incoming) return;
@@ -93,9 +137,9 @@ export function AgentExperience() {
 
   useEffect(() => {
     if (!authChecked) return;
-    if (!isAuthenticated) { setLoadingRuns(false); return; }
-    void loadRuns();
-  }, [authChecked, isAuthenticated, loadRuns]);
+    if (!isAuthenticated) { setLoadingRuns(false); setLoadingConversations(false); return; }
+    void Promise.all([loadRuns(), loadConversations()]);
+  }, [authChecked, isAuthenticated, loadConversations, loadRuns]);
 
   useEffect(() => {
     const stored = window.localStorage.getItem("vozeb-agent-sidebar-collapsed");
@@ -352,42 +396,53 @@ export function AgentExperience() {
       toast.error(`Skill「${selectedSkill.name}」需要先添加参考素材`);
       return;
     }
-    const selectedModels = availableModels.filter((item) => selectedModelIds.includes(item.id));
-    const explicitCapability = creationMode === "agent" ? undefined : creationMode;
-    const capability: AgentCapability = explicitCapability === "audio"
-      ? "audio"
-      : explicitCapability || selectedModels[0]?.capability || preferredCapability;
-    if (capability === "audio") {
-      toast.info("当前站点尚未配置音频生成服务，请先在模型控制台启用音频模型");
-      return;
-    }
-    if (capability === "video" && !generationReferences.length) {
-      toast.error("视频生成需要至少添加 1 张参考图");
-      return;
-    }
-    if (capability === "video" && preferences.video.referenceMode === "first_last" && generationReferences.length < 2) {
-      toast.error("首尾帧视频需要添加 2 张参考图");
-      return;
-    }
-    const modelsForRun = selectedModels.filter((item) => item.capability === capability);
-    if (!modelsForRun.length) {
-      const defaultModel = availableModels.find((item) => item.capability === capability);
-      if (defaultModel) modelsForRun.push(defaultModel);
-    }
-    if (!modelsForRun.length) {
-      toast.error(`当前没有可用的${capability === "video" ? "视频" : "图片"}模型`);
-      return;
-    }
-    const outputCount = capability === "video" ? preferences.video.count : preferences.image.count;
-    const expectedCount = outputCount * modelsForRun.length;
     setSubmitting(true);
-    const optimistic = taskQueue.startTask({ inputThumbnails: assetUrls(generationReferences), expectedCount });
+    let optimisticTaskId = "";
     try {
+      const conversationId = await ensureConversation();
+      const plannerResponse = await fetch(`/api/creative-agent/conversations/${encodeURIComponent(conversationId)}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: intent,
+          creationMode,
+          preferredCapability,
+          hasReferences: generationReferences.length > 0,
+          hasSkill: Boolean(selectedSkillId),
+        }),
+      });
+      const plannerPayload = await plannerResponse.json().catch(() => ({})) as {
+        decision?: CreativeAgentTurnDecision;
+        messages?: CreativeMessageClient[];
+        error?: string;
+      };
+      if (!plannerResponse.ok || !plannerPayload.decision) throw new Error(plannerPayload.error || "Agent 未能完成本轮规划");
+      if (Array.isArray(plannerPayload.messages)) setMessages(plannerPayload.messages);
+      setPrompt("");
+      await loadConversations();
+      if (plannerPayload.decision.kind === "conversation") return;
+
+      const capability: AgentCapability = plannerPayload.decision.capability || preferredCapability;
+      if (capability === "video" && !generationReferences.length) throw new Error("视频生成需要至少添加 1 张参考图");
+      if (capability === "video" && preferences.video.referenceMode === "first_last" && generationReferences.length < 2) {
+        throw new Error("首尾帧视频需要添加 2 张参考图");
+      }
+      const selectedModels = availableModels.filter((item) => selectedModelIds.includes(item.id));
+      const modelsForRun = selectedModels.filter((item) => item.capability === capability);
+      if (!modelsForRun.length) {
+        const defaultModel = availableModels.find((item) => item.capability === capability);
+        if (defaultModel) modelsForRun.push(defaultModel);
+      }
+      if (!modelsForRun.length) throw new Error(`当前没有可用的${capability === "video" ? "视频" : "图片"}模型`);
+      const outputCount = capability === "video" ? preferences.video.count : preferences.image.count;
+      const expectedCount = outputCount * modelsForRun.length;
+      const optimistic = taskQueue.startTask({ inputThumbnails: assetUrls(generationReferences), expectedCount });
+      optimisticTaskId = optimistic.id;
       const clientRequestId = crypto.randomUUID();
       const runResponse = await fetch("/api/creative-runs", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          intent, mode: capability, clientRequestId,
+          intent, mode: capability, clientRequestId, conversationId,
           aspectRatio: capability === "video" ? preferences.video.aspectRatio : preferences.image.aspectRatio,
           imageSize: preferences.image.imageSize,
           selectedModelIds, selectedSkillIds: selectedSkillId ? [selectedSkillId] : [], generationPreferences: preferences,
@@ -398,7 +453,6 @@ export function AgentExperience() {
       const runPayload = await runResponse.json().catch(() => ({})) as { run?: { id?: string; execution?: { generationPreferences?: AgentGenerationPreferences } }; error?: string };
       const runId = runResponse.ok && runPayload.run?.id ? runPayload.run.id : undefined;
       if (!runId) throw new Error(runPayload.error || "Agent Run 创建失败");
-      if (runId) setActiveRunId(runId);
       const runPreferences = isAgentGenerationPreferences(runPayload.run?.execution?.generationPreferences)
         ? runPayload.run.execution.generationPreferences
         : preferences;
@@ -446,7 +500,7 @@ export function AgentExperience() {
           taskQueue.upsertTask({ id: generation.generation_id, status: "processing", statusGroup: "running", progress: 18, expectedCount: resolvedOutputCount, inputThumbnails: referenceUrls });
         }
       }
-      setPrompt(""); setReferences([]); setFocusedReferenceId(""); setSkillRoleAssignments({});
+      setReferences([]); setFocusedReferenceId(""); setSkillRoleAssignments({});
       await loadRuns();
       await Promise.all(generations.map((generation) => pollGeneration(generation.id, {
         onProgress: (status) => taskQueue.markRunning(generation.id, { progress: status.progress ?? 40 }),
@@ -459,14 +513,16 @@ export function AgentExperience() {
       await loadRuns();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Agent 创作失败";
-      taskQueue.markFailed(optimistic.id, message); toast.error(message);
+      if (optimisticTaskId) taskQueue.markFailed(optimisticTaskId, message);
+      toast.error(message);
     } finally { setSubmitting(false); }
   };
 
   const latestResults = useMemo(() => runs.flatMap((run) => run.steps.flatMap((step) => step.resultUrls.map((url) => ({ url, run, step })))).slice(0, 8), [runs]);
-  const activeRun = runs.find((run) => run.id === activeRunId);
+  const activeConversation = conversations.find((conversation) => conversation.id === activeConversationId);
   const newConversation = () => {
-    setActiveRunId("");
+    setActiveConversationId("");
+    setMessages([]);
     setPrompt("");
     setReferences([]);
     setFocusedReferenceId("");
@@ -479,26 +535,29 @@ export function AgentExperience() {
     <main className="studio-workbench relative min-h-[calc(100vh-64px)] text-[#20242a] dark:text-[#f3f5f7]">
       <div className="relative flex h-full min-h-[620px] overflow-hidden bg-white dark:bg-[#111316]">
         <ConversationSidebar
-          runs={runs}
-          loading={loadingRuns}
+          conversations={conversations}
+          loading={loadingConversations}
           collapsed={sidebarCollapsed}
-          activeRunId={activeRunId}
+          activeConversationId={activeConversationId}
           onToggle={toggleSidebar}
           onNew={newConversation}
-          onSelect={(run) => {
-            setActiveRunId(run.id);
-            setPrompt(run.intent);
+          onSelect={(conversation) => {
+            setActiveConversationId(conversation.id);
+            setPrompt("");
+            void loadMessages(conversation.id);
             if (window.matchMedia("(max-width: 767px)").matches) setSidebarCollapsed(true);
           }}
         />
         <div className="relative flex min-w-0 flex-1 flex-col max-md:pl-[68px]">
           <header className="flex h-14 shrink-0 items-center border-b border-[#eceef1] px-5 dark:border-[#292d33]">
-            <h2 className="truncate text-sm font-semibold">{activeRun?.summary || "新对话"}</h2>
+            <h2 className="truncate text-sm font-semibold">{activeConversation?.title || "新对话"}</h2>
           </header>
           <div className="min-h-0 flex-1 overflow-y-auto">
-            <div className="mx-auto flex min-h-full w-full min-w-0 max-w-[1240px] flex-col items-center px-2.5 pb-8 pt-10 sm:px-8 sm:pt-14 lg:pt-[8vh]">
-              <div className="text-center"><h1 className="text-[23px] font-semibold leading-tight sm:text-[31px]">Pixel Diffusion 创作 Agent</h1><p className="mt-2 text-sm text-[#8b949f] dark:text-[#7f8996]">从一个想法开始</p></div>
-              <div ref={composerRef} className="mt-5 w-full max-w-[1080px] scroll-mt-4 sm:mt-8">
+            <div className={`mx-auto flex min-h-full w-full min-w-0 max-w-[1240px] flex-col items-center px-2.5 pb-8 sm:px-8 ${messages.length || loadingMessages ? "pt-6 sm:pt-8" : "pt-10 sm:pt-14 lg:pt-[8vh]"}`}>
+              {!messages.length && !loadingMessages ? <div className="text-center"><h1 className="text-[23px] font-semibold leading-tight sm:text-[31px]">Pixel Diffusion 创作 Agent</h1><p className="mt-2 text-sm text-[#8b949f] dark:text-[#7f8996]">从一个想法开始</p></div> : null}
+              {loadingMessages ? <div className="flex min-h-48 items-center gap-2 text-sm text-[#8b949f]"><Loader2 className="size-4 animate-spin" />正在载入对话...</div> : null}
+              {messages.length ? <ConversationThread messages={messages} /> : null}
+              <div ref={composerRef} className={`w-full max-w-[1080px] scroll-mt-4 ${messages.length ? "mt-6" : "mt-5 sm:mt-8"}`}>
                 <div className="overflow-visible rounded-[22px] border border-[#e2e6ea] bg-white p-3 shadow-[0_10px_32px_rgba(32,36,42,0.06)] dark:border-[#30363e] dark:bg-[#181b20] dark:shadow-black/25 sm:p-4">
                   {selectedSkill ? (
                     <AgentSkillWorkspace
@@ -563,7 +622,7 @@ export function AgentExperience() {
                   </div>
                 </div>
               </div>
-              <QuickStarts onPrompt={setPrompt} onSkill={selectSkill} onMode={(mode) => { setCreationMode(mode); if (mode !== "agent") setPreferredCapability(mode); }} />
+              {!messages.length ? <QuickStarts onPrompt={setPrompt} onSkill={selectSkill} onMode={(mode) => { setCreationMode(mode); if (mode !== "agent") setPreferredCapability(mode); }} /> : null}
               <RecentResults runs={runs} results={latestResults} loading={loadingRuns} onReload={loadRuns} />
             </div>
           </div>
@@ -574,7 +633,7 @@ export function AgentExperience() {
   );
 }
 
-function ConversationSidebar({ runs, loading, collapsed, activeRunId, onToggle, onNew, onSelect }: { runs: CreativeRunClient[]; loading: boolean; collapsed: boolean; activeRunId: string; onToggle: () => void; onNew: () => void; onSelect: (run: CreativeRunClient) => void }) {
+function ConversationSidebar({ conversations, loading, collapsed, activeConversationId, onToggle, onNew, onSelect }: { conversations: CreativeConversationClient[]; loading: boolean; collapsed: boolean; activeConversationId: string; onToggle: () => void; onNew: () => void; onSelect: (conversation: CreativeConversationClient) => void }) {
   return (
     <aside
       className={`flex h-full min-h-0 shrink-0 flex-col border-r border-[#e8ebef] bg-[#f7f8fb] transition-[width] duration-200 dark:border-[#292d33] dark:bg-[#15181c] max-md:absolute max-md:inset-y-0 max-md:left-0 max-md:z-40 ${collapsed ? "w-[68px]" : "w-[286px] max-md:shadow-2xl"}`}
@@ -598,12 +657,12 @@ function ConversationSidebar({ runs, loading, collapsed, activeRunId, onToggle, 
         {!collapsed ? <h2 className="px-4 pb-2 text-[13px] font-semibold text-[#20242a] dark:text-[#f3f5f7]">对话历史</h2> : null}
         {!collapsed ? <div className="h-full overflow-y-auto px-2.5 pb-4">
           {loading ? <div className="grid h-12 place-items-center text-[#9aa2ad]"><Loader2 className="size-4 animate-spin" /></div> : null}
-          {!loading && !runs.length ? <p className="py-6 text-center text-xs text-[#9aa2ad]">暂无对话记录</p> : null}
-          {runs.map((run) => {
-            const active = run.id === activeRunId;
+          {!loading && !conversations.length ? <p className="py-6 text-center text-xs text-[#9aa2ad]">暂无对话记录</p> : null}
+          {conversations.map((conversation) => {
+            const active = conversation.id === activeConversationId;
             return (
-              <button key={run.id} type="button" className={`mb-1 flex min-h-12 w-full items-center rounded-xl px-3 py-2 text-left transition ${active ? "bg-white text-[#20242a] shadow-[inset_0_0_0_1px_rgba(224,228,236,0.9)] dark:bg-[#242930] dark:text-white dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]" : "text-[#657080] hover:bg-white/80 hover:text-[#20242a] dark:text-[#9ca6b2] dark:hover:bg-[#20242a] dark:hover:text-white"}`} onClick={() => onSelect(run)} title={run.summary || run.intent}>
-                <span className="min-w-0"><span className="block truncate text-[13px] font-medium">{run.summary || run.intent || "新对话"}</span><span className="mt-1 block text-[10px] text-[#9aa2ad]">{formatDate(run.createdAt)}</span></span>
+              <button key={conversation.id} type="button" className={`mb-1 flex min-h-12 w-full items-center rounded-xl px-3 py-2 text-left transition ${active ? "bg-white text-[#20242a] shadow-[inset_0_0_0_1px_rgba(224,228,236,0.9)] dark:bg-[#242930] dark:text-white dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]" : "text-[#657080] hover:bg-white/80 hover:text-[#20242a] dark:text-[#9ca6b2] dark:hover:bg-[#20242a] dark:hover:text-white"}`} onClick={() => onSelect(conversation)} title={conversation.title}>
+                <span className="min-w-0"><span className="block truncate text-[13px] font-medium">{conversation.title || "新对话"}</span><span className="mt-1 block text-[10px] text-[#9aa2ad]">{formatDate(conversation.lastMessageAt)}</span></span>
               </button>
             );
           })}
@@ -615,6 +674,27 @@ function ConversationSidebar({ runs, loading, collapsed, activeRunId, onToggle, 
         <SidebarLink href="/resource-library" collapsed={collapsed} label="资源仓库" icon={<FolderOpen className="size-[18px]" />} />
       </div>
     </aside>
+  );
+}
+
+function ConversationThread({ messages }: { messages: CreativeMessageClient[] }) {
+  return (
+    <section className="w-full max-w-[1080px] space-y-5" aria-label="对话消息">
+      {messages.map((message) => message.role === "user" ? (
+        <article key={message.id} className="flex justify-end">
+          <div className="max-w-[min(78%,720px)] whitespace-pre-wrap rounded-[18px] rounded-br-md bg-[#20242a] px-4 py-3 text-[14px] leading-6 text-white shadow-sm dark:bg-[#f1f3f5] dark:text-[#20242a]">
+            {message.content}
+          </div>
+        </article>
+      ) : (
+        <article key={message.id} className="flex items-start gap-3">
+          <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-xl bg-[#edf1ff] text-[#5f63dc] dark:bg-[#262b3c] dark:text-[#aeb4ff]" aria-hidden="true"><Sparkles className="size-4" /></span>
+          <div className="max-w-[min(82%,760px)] whitespace-pre-wrap rounded-[18px] rounded-tl-md border border-[#e5e8ec] bg-white px-4 py-3 text-[14px] leading-6 text-[#343b44] shadow-[0_4px_18px_rgba(32,36,42,0.04)] dark:border-[#30363e] dark:bg-[#181b20] dark:text-[#e1e5ea]">
+            {message.content}
+          </div>
+        </article>
+      ))}
+    </section>
   );
 }
 

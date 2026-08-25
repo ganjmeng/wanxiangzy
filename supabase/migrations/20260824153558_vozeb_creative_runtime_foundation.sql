@@ -433,7 +433,7 @@ BEGIN
     p_parent_step_id, COALESCE(p_depends_on_step_ids, '{}'), p_generation_id,
     COALESCE(p_input_payload, '{}'::jsonb)
   )
-  ON CONFLICT (run_id, step_key) DO NOTHING
+  ON CONFLICT ON CONSTRAINT creative_run_steps_run_id_step_key_key DO NOTHING
   RETURNING id INTO v_step_id;
 
   IF v_step_id IS NULL THEN
