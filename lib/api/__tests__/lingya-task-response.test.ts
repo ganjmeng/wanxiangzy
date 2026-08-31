@@ -12,6 +12,7 @@ const {
   getImageEditUrl,
   getImageGenerationUrl,
   getGeminiGenerateContentUrl,
+  isDefinitelyUnacceptedProviderResponse,
   normalizeImageTaskResponse,
   resolveGptImage2Size,
   resolveProviderImageModel,
@@ -59,6 +60,13 @@ afterEach(() => {
 });
 
 describe("lingya async task response parsing", () => {
+  it("fails over only for gateway responses that prove submission never happened", () => {
+    expect(isDefinitelyUnacceptedProviderResponse(503, "model_not_found")).toBe(true);
+    expect(isDefinitelyUnacceptedProviderResponse(500, "local:convert_request_failed")).toBe(true);
+    expect(isDefinitelyUnacceptedProviderResponse(503, "upstream_timeout")).toBe(false);
+    expect(isDefinitelyUnacceptedProviderResponse(500)).toBe(false);
+  });
+
   it("forwards a stable idempotency key on image submissions", () => {
     const request = buildImageGenerationRequest({
       apiBase: "https://api.example.com/v1",

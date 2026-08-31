@@ -112,4 +112,9 @@ describe("generation batch capacity resume", () => {
     expect(__generationJobTestUtils.clearResumableBatchProgress(payload))
       .not.toHaveProperty("generationBatchProgress");
   });
+
+  it("settles durable partial results instead of failing the whole batch after retry exhaustion", () => {
+    expect(__generationJobTestUtils.shouldSettlePartialResultOnRetryExhaustion(1)).toBe(false);
+    expect(__generationJobTestUtils.shouldSettlePartialResultOnRetryExhaustion(2)).toBe(true);
+  });
 });

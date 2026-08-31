@@ -12,7 +12,19 @@ export async function requireApiUser(): Promise<RequireApiUserResult> {
   const supabase = await createServerSupabase();
   const {
     data: { user },
+    error,
   } = await supabase.auth.getUser();
+
+  if (error) {
+    return {
+      supabase,
+      user: null,
+      response: NextResponse.json(
+        { error: "登录状态暂时无法验证，请稍后重试", code: "AUTH_TEMPORARILY_UNAVAILABLE", retryable: true },
+        { status: 503, headers: { "Cache-Control": "private, no-store", "Retry-After": "2" } },
+      ),
+    };
+  }
 
   if (!user) {
     return {

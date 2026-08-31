@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
@@ -24,7 +23,6 @@ import { ResetSentView } from "@/features/login/ResetSentView";
  */
 export default function LoginPage() {
   const supabase = useMemo(() => createClient(), []);
-  const router = useRouter();
   const t = useTranslations("Login");
 
   const [view, setView] = useState<AuthView>("login");
@@ -62,7 +60,7 @@ export default function LoginPage() {
     supabase.auth
       .getUser()
       .then(({ data }) => {
-        if (mounted && data.user) router.replace(getSafeAuthRedirectTarget());
+        if (mounted && data.user) redirectAfterAuthentication();
       })
       .catch(() => undefined);
 
@@ -70,7 +68,7 @@ export default function LoginPage() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session && window.location.pathname === "/login") {
-        router.replace(getSafeAuthRedirectTarget());
+        redirectAfterAuthentication();
       }
     });
 
@@ -78,7 +76,7 @@ export default function LoginPage() {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [supabase, router]);
+  }, [supabase]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,7 +106,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push(getSafeAuthRedirectTarget());
+      redirectAfterAuthentication();
     } catch {
       setError(t("errors.network"));
     } finally {
@@ -154,7 +152,7 @@ export default function LoginPage() {
       }
 
       if (payload.session) {
-        router.push(getSafeAuthRedirectTarget());
+        redirectAfterAuthentication();
         return;
       }
 
@@ -270,4 +268,12 @@ export default function LoginPage() {
       </div>
     </div>
   );
+}
+
+function redirectAfterAuthentication() {
+  // The session cookies were written by a Route Handler, while this page's
+  // Supabase singleton was created before login. A document navigation makes
+  // both Server Components and the browser client observe the new session and
+  // avoids reusing an anonymous router cache entry.
+  window.location.replace(getSafeAuthRedirectTarget());
 }

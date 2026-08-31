@@ -17,10 +17,12 @@ export async function POST(request: Request) {
     baseUrl?: unknown;
     apiKey?: unknown;
     protocol?: unknown;
+    upstreamModel?: unknown;
   };
   const providerId = text(body.providerId);
   const baseUrl = text(body.baseUrl);
   const protocol = normalizeProtocol(body.protocol);
+  const upstreamModel = text(body.upstreamModel);
   if (!providerId || !baseUrl || !protocol) return NextResponse.json({ error: "供应商、Base URL 和协议不能为空" }, { status: 400 });
   const safeUrl = await validateOutboundUrl(baseUrl);
   if (!safeUrl.ok) return NextResponse.json({ error: safeUrl.error }, { status: 400 });
@@ -40,6 +42,12 @@ export async function POST(request: Request) {
     if (!response.ok) {
       return NextResponse.json({ error: `连接失败（HTTP ${response.status}）：${textBody.slice(0, 160) || "请检查地址、协议和密钥"}` }, { status: 400 });
     }
+    const availableModels = extractModelIds(textBody);
+    if (upstreamModel && availableModels.size && !availableModels.has(normalizeModelId(upstreamModel))) {
+      return NextResponse.json({
+        error: `连接成功，但账号模型列表中不存在 ${upstreamModel}。请修正上游模型名或停用该部署。`,
+      }, { status: 400 });
+    }
     const latencyMs = Date.now() - startedAt;
     await writeAdminAuditLog(auth.context, {
       action: "ai_provider.connection_test",
@@ -48,7 +56,13 @@ export async function POST(request: Request) {
       reason: "执行无计费连接测试",
       metadata: { protocol, latencyMs, ok: true },
     });
-    return NextResponse.json({ ok: true, latencyMs, message: `连接成功，响应耗时 ${latencyMs} ms（未执行计费生成）` });
+    return NextResponse.json({
+      ok: true,
+      latencyMs,
+      message: upstreamModel
+        ? `连接及模型 ${upstreamModel} 校验成功，响应耗时 ${latencyMs} ms（未执行计费生成）`
+        : `连接成功，响应耗时 ${latencyMs} ms（未执行计费生成）`,
+    });
   } catch (error) {
     const message = error instanceof Error && error.name === "AbortError" ? "连接超时（10 秒）" : error instanceof Error ? error.message : "网络错误";
     return NextResponse.json({ error: `连接失败：${message}` }, { status: 400 });
@@ -57,9 +71,34 @@ export async function POST(request: Request) {
 
 function connectionTestTarget(baseUrl: string, protocol: AiProviderProtocol, apiKey: string): { url: string; method: string; headers: Record<string, string> } {
   const normalized = baseUrl.replace(/\/+$/, "");
-  if (protocol === "gemini-native") return { url: `${normalized}/v1beta/models`, method: "GET", headers: { "x-goog-api-key": apiKey } };
+  if (protocol === "gemini-native") {
+    const root = normalized.replace(/\/v1(?:beta)?$/i, "");
+    return { url: `${root}/v1beta/models`, method: "GET", headers: { "x-goog-api-key": apiKey } };
+  }
   const v1 = /\/v1$/i.test(normalized) ? normalized : `${normalized}/v1`;
   return { url: `${v1}/models`, method: "GET", headers: { Authorization: `Bearer ${apiKey}` } };
+}
+
+function extractModelIds(body: string) {
+  const ids = new Set<string>();
+  try {
+    const parsed = JSON.parse(body) as { data?: unknown; models?: unknown };
+    const items = Array.isArray(parsed.data) ? parsed.data : Array.isArray(parsed.models) ? parsed.models : [];
+    for (const item of items) {
+      if (!item || typeof item !== "object") continue;
+      const record = item as { id?: unknown; name?: unknown };
+      const id = text(record.id) || text(record.name);
+      if (id) ids.add(normalizeModelId(id));
+    }
+  } catch {
+    // A provider may return a non-standard but successful health response. In
+    // that case the endpoint remains a connection-only check.
+  }
+  return ids;
+}
+
+function normalizeModelId(value: string) {
+  return value.trim().replace(/^models\//i, "");
 }
 
 async function validateOutboundUrl(value: string): Promise<{ ok: true; url: string } | { ok: false; error: string }> {

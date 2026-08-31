@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   clearCachedProfile,
   createClient,
+  getBrowserAuthState,
   getCachedProfile,
   getCachedProfileCredits,
   setCachedProfileCredits,
@@ -42,11 +43,6 @@ export function useStudioAuth() {
     if (userIdRef.current === user.id) setCreditsState(creditsFromCache);
   }, []);
 
-  const applyAnonymous = useCallback(() => {
-    requestSeqRef.current += 1;
-    setAnonymousState();
-  }, [setAnonymousState]);
-
   const refreshAuth = useCallback(async () => {
     const seq = requestSeqRef.current + 1;
     requestSeqRef.current = seq;
@@ -57,6 +53,12 @@ export function useStudioAuth() {
       return true;
     };
 
+    const browserState = await getBrowserAuthState();
+    if (browserState.status === "authenticated") {
+      await applyIfCurrent(() => applyAuthenticatedUser(browserState.user));
+      return true;
+    }
+
     try {
       const profile = await getCachedProfile();
       if (profile?.user?.id) {
@@ -64,22 +66,17 @@ export function useStudioAuth() {
         return true;
       }
     } catch {
-      // Fall back to the browser session below.
+      // The browser state below distinguishes an outage from real logout.
     }
 
-    try {
-      const { data } = await supabase.auth.getUser();
-      if (data.user) {
-        await applyIfCurrent(() => applyAuthenticatedUser(data.user));
-        return true;
-      }
-    } catch {
-      // If both profile and user verification fail, treat it as anonymous only after this fallback.
+    if (browserState.status === "unavailable") {
+      await applyIfCurrent(() => setAuthChecked(true));
+      return userIdRef.current !== null;
     }
 
     await applyIfCurrent(setAnonymousState);
     return false;
-  }, [applyAuthenticatedUser, setAnonymousState, supabase]);
+  }, [applyAuthenticatedUser, setAnonymousState]);
 
   const setCredits = useCallback((nextCredits: number | null) => {
     setCreditsState(nextCredits);
@@ -109,7 +106,7 @@ export function useStudioAuth() {
       if (cancelled) return;
       if (event === "SIGNED_OUT") {
         clearCachedProfile();
-        applyAnonymous();
+        void refreshAuth();
         return;
       }
       if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
@@ -122,7 +119,7 @@ export function useStudioAuth() {
       requestSeqRef.current += 1;
       subscription.unsubscribe();
     };
-  }, [applyAnonymous, applyAuthenticatedUser, refreshAuth, supabase]);
+  }, [refreshAuth, supabase]);
 
   return {
     authChecked,

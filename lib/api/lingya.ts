@@ -301,7 +301,7 @@ export async function generateImage(input: GenerateInput, retries = 1): Promise<
           code: providerErrorCode || `PROVIDER_HTTP_${res.status}`,
           retryAfterSeconds,
           providerRequestId,
-          safeToFailover: isDefinitelyUnacceptedProviderStatus(res.status),
+          safeToFailover: isDefinitelyUnacceptedProviderResponse(res.status, providerErrorCode),
         });
       }
 
@@ -382,8 +382,17 @@ function describeProviderRejection(status: number) {
   return `供应商拒绝了生成请求（HTTP ${status}）`;
 }
 
-function isDefinitelyUnacceptedProviderStatus(status: number) {
-  return status === 401 || status === 403 || status === 404 || status === 429;
+function isDefinitelyUnacceptedProviderResponse(status: number, code?: string) {
+  if (status === 401 || status === 403 || status === 404 || status === 429) return true;
+
+  // Some gateways wrap a pre-submission routing/configuration rejection in a
+  // 5xx response. These codes prove that no billable upstream task was
+  // created, so cross-deployment failover is safe. Generic 5xx responses stay
+  // ambiguous and must never be replayed automatically.
+  const normalizedCode = String(code || "").trim().toLowerCase();
+  return normalizedCode === "model_not_found"
+    || normalizedCode === "model-not-found"
+    || normalizedCode === "local:convert_request_failed";
 }
 
 function parseRetryAfterSeconds(value: string | null) {
@@ -2964,6 +2973,7 @@ export const __lingyaTaskResponseTestUtils = {
   getImageEditUrl,
   getImageGenerationUrl,
   getGeminiGenerateContentUrl,
+  isDefinitelyUnacceptedProviderResponse,
   normalizeImageTaskResponse,
   resolveGptImage2Size,
   resolveProviderImageModel,

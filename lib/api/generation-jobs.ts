@@ -900,6 +900,10 @@ async function runClaimedJob(
     // and refunding here would turn a short outage into a user-visible terminal
     // failure and make BullMQ's durable retry policy ineffective.
     if (isRetryableGenerationError(err)) {
+      if (shouldSettlePartialResultOnRetryExhaustion(job.job_attempts)) {
+        const settled = await settleFailedGenerationFromProgress(supabase, job, message);
+        if (settled) return { businessFailed: false, deferred: false };
+      }
       const outcome = await deferGenerationForRetryableError(supabase, job, message);
       return { businessFailed: outcome === "failed", deferred: outcome === "deferred" };
     }
@@ -922,6 +926,10 @@ async function runClaimedJob(
     }
     return { businessFailed: true, deferred: false };
   }
+}
+
+function shouldSettlePartialResultOnRetryExhaustion(jobAttempts: number) {
+  return Math.max(0, Math.floor(Number(jobAttempts) || 0)) >= GENERATION_MAX_EXECUTION_ATTEMPTS;
 }
 
 async function deferGenerationForTenantCapacity(
@@ -3322,6 +3330,7 @@ function clearResumableBatchProgress<T extends GenerationJobPayload>(payload: T)
 export const __generationJobTestUtils = {
   appendResumableBatchProgress,
   readResumableBatchResultUrls,
+  shouldSettlePartialResultOnRetryExhaustion,
   clearResumableBatchProgress,
   isCanonicalMediaAssetUrl,
 };

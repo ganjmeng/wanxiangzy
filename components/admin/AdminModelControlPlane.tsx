@@ -260,13 +260,21 @@ export function AdminModelControlPlane({ canManage = false }: { canManage?: bool
 
   async function testProvider(provider: DraftProvider) {
     if (!canManage || !draft) return;
-    const protocol = draft.deployments.find((item) => item.providerId === provider.id)?.protocol || "openai-chat";
+    const deployment = draft.deployments.find((item) => item.providerId === provider.id && item.enabled)
+      || draft.deployments.find((item) => item.providerId === provider.id);
+    const protocol = deployment?.protocol || "openai-chat";
     setTestingProvider(provider.id);
     try {
       const response = await fetch("/api/admin/model-control/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ providerId: provider.id, baseUrl: provider.baseUrl, apiKey: provider.apiKey, protocol }),
+        body: JSON.stringify({
+          providerId: provider.id,
+          baseUrl: provider.baseUrl,
+          apiKey: provider.apiKey,
+          protocol,
+          upstreamModel: deployment?.upstreamModel,
+        }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "连接测试失败");

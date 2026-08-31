@@ -23,4 +23,23 @@ describe("auth form transport security", () => {
     expect(page).toContain("url.searchParams.delete(key)");
     expect(page).toContain("window.history.replaceState");
   });
+
+  it("performs a document navigation after server-side login writes the session cookies", () => {
+    const page = read("app/(home)/login/page.tsx");
+
+    expect(page).toContain("window.location.replace(getSafeAuthRedirectTarget())");
+    expect(page).not.toContain("router.push(getSafeAuthRedirectTarget())");
+  });
+
+  it("uses an explicit sliding session cookie lifetime", () => {
+    const config = read("lib/supabase/session-config.ts");
+    const browser = read("lib/supabase/client.ts");
+    const server = read("lib/supabase/server.ts");
+
+    expect(config).toContain("30 * 24 * 60 * 60");
+    expect(browser).toContain("getSupabaseSessionCookieOptions()");
+    expect(browser).toContain("Max-Age=${deleting ? 0 : AUTH_SESSION_MAX_AGE_SECONDS}");
+    expect(server).toContain("getSupabaseSessionCookieOptions()");
+    expect(server).toContain("maxAge: cookieOptions.maxAge === 0 ? 0 : AUTH_SESSION_MAX_AGE_SECONDS");
+  });
 });

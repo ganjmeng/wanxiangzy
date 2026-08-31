@@ -13,6 +13,7 @@ export function getSafeAuthRedirectTarget(): string {
   if (typeof window === "undefined") return "/create";
   const next = new URLSearchParams(window.location.search).get("next") || "";
   if (!next.startsWith("/") || next.startsWith("//") || next.startsWith("/api/")) return "/create";
+  if (next === "/login" || next.startsWith("/login?") || next.startsWith("/auth/")) return "/create";
   return next;
 }
 

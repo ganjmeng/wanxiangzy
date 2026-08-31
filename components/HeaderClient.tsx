@@ -167,10 +167,10 @@ function useHeaderAccount(): HeaderAccountState {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         await loadUserCredits(session.user);
-      } else {
+      } else if (event === "SIGNED_OUT") {
         clearCachedProfile();
         clearCachedProfileCredits();
         loadedCreditsForUserRef.current = null;
