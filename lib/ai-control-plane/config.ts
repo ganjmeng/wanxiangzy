@@ -320,10 +320,10 @@ function imageModel(id: string, displayName: string, creditPrices: Record<string
     : id === "nano-banana-pro"
       ? { shortTitle: "香蕉Pro", badge: "PRO", iconUrl: `${assetBase}/banana-pro.png`, sortOrder: 30, featured: false }
     : id === "qwen3"
-      ? { shortTitle: "千问3", badge: "NEW", iconUrl: `${assetBase}/qwen.png`, sortOrder: 40, featured: false }
+      ? { shortTitle: "千问3", badge: "NEW", iconUrl: `${assetBase}/qwen-mascot-v2.png`, sortOrder: 40, featured: false }
     : id === "qwen3-pro"
-      ? { shortTitle: "千问3 Pro", badge: "PRO", iconUrl: `${assetBase}/qwen.png`, sortOrder: 50, featured: false }
-      : { shortTitle: "Z-Image", badge: "NEW", iconUrl: `${assetBase}/z-image.png`, sortOrder: 60, featured: false };
+      ? { shortTitle: "千问3 Pro", badge: "PRO", iconUrl: `${assetBase}/qwen-mascot-v2.png`, sortOrder: 50, featured: false }
+      : { shortTitle: "Z-Image", badge: "NEW", iconUrl: `${assetBase}/z-image-mascot-v2.png`, sortOrder: 60, featured: false };
   return { ...baseModel(id, displayName, "image", true, false), capabilities: ["generation", "edit"], creditPrices, presentation };
 }
 

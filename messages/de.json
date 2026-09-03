@@ -4326,6 +4326,7 @@
     "modelDesc": {
       "max4k": "Bis zu 4K",
       "fastGeneral": "Schnell und kosteneffizient für Serienbilder, schnelle Entwürfe und alltägliche Produktbearbeitung; bis zu 4K.",
+      "fastLite1k": "Schnell und kosteneffizient für Serienbilder, schnelle Entwürfe und alltägliche Produktbearbeitung; unterstützt nur 1K.",
       "fineDetail": "Starke Befehlsbefolgung und Textgestaltung für Poster, E-Commerce-Sets und komplexe Bearbeitungen; klare Details bis 4K.",
       "commercialRetouch": "Für komplexe Referenzen und kommerziellen Feinschliff, mit besseren Materialdetails, konsistenten Figuren und Premium-Retusche; bis 4K."
     },

@@ -4326,6 +4326,7 @@
     "modelDesc": {
       "max4k": "Fino a 4K",
       "fastGeneral": "Veloce ed economico per generazione in serie, bozze rapide e normali modifiche prodotto; fino a 4K.",
+      "fastLite1k": "Veloce ed economico per generazione in serie, bozze rapide e normali modifiche prodotto; supporta solo 1K.",
       "fineDetail": "Ottima aderenza alle istruzioni e impaginazione del testo per poster, set e-commerce e modifiche complesse; dettagli nitidi fino a 4K.",
       "commercialRetouch": "Privilegia riferimenti complessi e finitura commerciale, con materiali più accurati, coerenza dei personaggi e ritocco premium; fino a 4K."
     },

@@ -4326,6 +4326,7 @@
     "modelDesc": {
       "max4k": "Jusqu’à 4K",
       "fastGeneral": "Rapide et économique pour les séries, les brouillons rapides et les retouches produit courantes ; jusqu’à 4K.",
+      "fastLite1k": "Rapide et économique pour les séries, les brouillons rapides et les retouches produit courantes ; 1K uniquement.",
       "fineDetail": "Excellent suivi des consignes et mise en page du texte pour affiches, séries e-commerce et retouches complexes ; détails nets jusqu’à 4K.",
       "commercialRetouch": "Privilégie les références complexes et la finition commerciale, avec de meilleurs matériaux, une cohérence des personnages et une retouche premium ; jusqu’à 4K."
     },

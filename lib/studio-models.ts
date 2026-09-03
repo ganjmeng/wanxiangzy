@@ -41,7 +41,7 @@ export const STUDIO_IMAGE_MODEL_META: Record<
   "nano-banana-2-lite": {
     label: "香蕉2 Lite",
     englishLabel: "Nano Banana 2 Lite",
-    descKey: "Shared.modelDesc.fastGeneral",
+    descKey: "Shared.modelDesc.fastLite1k",
     badgeKey: "Shared.modelBadge.recommended",
     icon: `${STUDIO_MODEL_ASSET_BASE}/banana-2-lite-v2.png`,
   },
@@ -57,21 +57,21 @@ export const STUDIO_IMAGE_MODEL_META: Record<
     englishLabel: "Qwen3 Image",
     descKey: "Shared.modelDesc.fastGeneral",
     badgeKey: "Shared.modelBadge.latest",
-    icon: `${STUDIO_MODEL_ASSET_BASE}/qwen.png`,
+    icon: `${STUDIO_MODEL_ASSET_BASE}/qwen-mascot-v2.png`,
   },
   "qwen3-pro": {
     label: "千问3 Pro",
     englishLabel: "Qwen3 Image Pro",
     descKey: "Shared.modelDesc.commercialRetouch",
     badgeKey: "Shared.modelBadge.highQuality",
-    icon: `${STUDIO_MODEL_ASSET_BASE}/qwen.png`,
+    icon: `${STUDIO_MODEL_ASSET_BASE}/qwen-mascot-v2.png`,
   },
   "z-image": {
     label: "Z-Image",
     englishLabel: "Z-Image",
     descKey: "Shared.modelDesc.fastGeneral",
     badgeKey: "Shared.modelBadge.latest",
-    icon: `${STUDIO_MODEL_ASSET_BASE}/z-image.png`,
+    icon: `${STUDIO_MODEL_ASSET_BASE}/z-image-mascot-v2.png`,
   },
 };
 

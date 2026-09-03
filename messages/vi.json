@@ -4326,6 +4326,7 @@
     "modelDesc": {
       "max4k": "Tối đa 4K",
       "fastGeneral": "Nhanh và tiết kiệm cho tạo ảnh hàng loạt, bản nháp nhanh và chỉnh sửa sản phẩm thường ngày; tối đa 4K.",
+      "fastLite1k": "Nhanh và tiết kiệm cho tạo ảnh hàng loạt, bản nháp nhanh và chỉnh sửa sản phẩm thường ngày; chỉ hỗ trợ 1K.",
       "fineDetail": "Bám sát chỉ dẫn và bố cục chữ tốt cho áp phích, bộ ảnh thương mại điện tử và chỉnh sửa phức tạp; chi tiết sắc nét đến 4K.",
       "commercialRetouch": "Ưu tiên tham chiếu phức tạp và độ hoàn thiện thương mại, mạnh về chất liệu, tính nhất quán nhân vật và retouch cao cấp; tối đa 4K."
     },

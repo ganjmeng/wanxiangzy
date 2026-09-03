@@ -4348,6 +4348,7 @@
     "modelDesc": {
       "max4k": "Up to 4K",
       "fastGeneral": "Fast and cost-efficient for batch generation, rapid drafts, and everyday product edits; quicker turnaround, up to 4K.",
+      "fastLite1k": "Fast and cost-efficient for batch generation, rapid drafts, and everyday product edits; supports 1K only.",
       "fineDetail": "Strong instruction following and text layout for posters, ecommerce sets, and complex edits; crisp detail, up to 4K.",
       "commercialRetouch": "Prioritizes complex references and commercial polish, with stronger material detail, character consistency, and premium retouching; up to 4K."
     },
