@@ -273,7 +273,15 @@ function requestPinnedAddress(url: URL, init: RequestInit, resolved: ResolvedAdd
       headers: Object.fromEntries(new Headers(init.headers).entries()),
       signal: init.signal ?? undefined,
       ...tlsServerName,
-      lookup: (_hostname, _options, callback) => {
+      lookup: (_hostname, lookupOptions, callback) => {
+        // Node 22+ may enable autoSelectFamily and invoke custom lookup with
+        // `all: true`. In that mode the callback contract is an address array;
+        // returning the scalar form makes Node later connect to `undefined`
+        // and surface ERR_INVALID_IP_ADDRESS.
+        if (lookupOptions?.all) {
+          callback(null, [{ address: resolved.address, family: resolved.family }]);
+          return;
+        }
         callback(null, resolved.address, resolved.family);
       },
     }, (incoming) => {
