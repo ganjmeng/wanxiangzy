@@ -65,6 +65,9 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "cn-hongkong.thepacificgls.com" },
       { protocol: "https", hostname: "webstatic.aiproxy.vip" },
       { protocol: "https", hostname: "oss.filenest.top" },
+      // Kie Market image results are currently served from this short-lived
+      // public host before they are mirrored into our canonical OSS assets.
+      { protocol: "https", hostname: "tempfile.aiquickdraw.com" },
     ],
     formats: ["image/avif", "image/webp"],
     unoptimized: true, // disable next/image server-side Sharp processing on the 1.9G EC2 box
@@ -102,7 +105,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://*.supabase.co https://replicate.delivery https://*.fashn.ai https://*.sssai.vip https://i.ibb.co https://*.ibb.co https://t.filesystem.site https://*.oss-cn-hongkong.aliyuncs.com https://*.oss-cn-hangzhou.aliyuncs.com https://*.oss-cn-shanghai.aliyuncs.com https://vasthk.cn-hongkong.thepacificgls.com https://cn-hongkong.thepacificgls.com https://webstatic.aiproxy.vip https://oss.filenest.top",
+              "img-src 'self' data: blob: https://*.supabase.co https://replicate.delivery https://*.fashn.ai https://*.sssai.vip https://i.ibb.co https://*.ibb.co https://t.filesystem.site https://*.oss-cn-hongkong.aliyuncs.com https://*.oss-cn-hangzhou.aliyuncs.com https://*.oss-cn-shanghai.aliyuncs.com https://vasthk.cn-hongkong.thepacificgls.com https://cn-hongkong.thepacificgls.com https://webstatic.aiproxy.vip https://oss.filenest.top https://tempfile.aiquickdraw.com",
               "media-src 'self' data: blob: https://*.oss-cn-hongkong.aliyuncs.com https://*.oss-cn-hangzhou.aliyuncs.com https://*.oss-cn-shanghai.aliyuncs.com https://vasthk.cn-hongkong.thepacificgls.com https://cn-hongkong.thepacificgls.com",
               "font-src 'self'",
               "connect-src 'self' https://*.supabase.co https://api.lingyaai.cn https://api.bltcy.ai https://api.xiaomimimo.com https://api.imgbb.com https://value.apiqik.online https://*.ibb.co https://*.aliyuncs.com",
