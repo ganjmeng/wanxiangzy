@@ -67,6 +67,7 @@ import {
   sanitizeGenerationErrorMessage,
 } from "@/lib/api/generation-errors";
 import type { AiResolvedDeployment } from "@/lib/ai-control-plane/types";
+import { generateKieImage } from "@/lib/api/kie-image";
 
 const CONCISE_TRYON_PROMPT_MODE = true;
 const IMAGE_REQUEST_PROGRESS_INITIAL = 2;
@@ -124,12 +125,15 @@ export function getCreditCost(model: LingyaModel, size: ImageSize = "1K", aspect
 export function getSupportedImageSizes(model: LingyaModel, aspectRatio?: AspectRatio): ImageSize[] {
   const registered = getRegisteredImageSizes(model);
   if (registered?.length) return registered;
+  if (model === "nano-banana-2-lite" || model === "z-image") return ["1K"];
+  if (model === "qwen3" || model === "qwen3-pro") return ["1K", "2K"];
   if (isSeedreamModel(model)) return ["2K", "4K"];
   return ["1K", "2K", "4K"];
 }
 
 export function normalizeImageSize(model: LingyaModel, size: ImageSize = "1K", aspectRatio?: AspectRatio): ImageSize {
-  if (model === "nano-banana-2-lite") return "1K";
+  if (model === "nano-banana-2-lite" || model === "z-image") return "1K";
+  if ((model === "qwen3" || model === "qwen3-pro") && size === "4K") return "2K";
   const supported = getSupportedImageSizes(model, aspectRatio);
   return supported.includes(size) ? size : supported[0] || "1K";
 }
@@ -171,7 +175,7 @@ type ImageProvider = {
   apiBase: string;
   apiKey?: string;
   upstreamModel?: string;
-  responseType: "openai-image" | "gemini-native";
+  responseType: "openai-image" | "gemini-native" | "kie-market";
   enabled?: boolean;
 };
 
@@ -230,6 +234,25 @@ export async function generateImage(input: GenerateInput, retries = 1): Promise<
     model: requestInput.model,
     prompt: requestInput.prompt,
   });
+
+  if (provider.responseType === "kie-market") {
+    logger.info(`[api:${provider.name}] Kie 图片任务: model=${requestInput.model}, image_count=${requestInput.image?.length || 0}`);
+    const result = await generateKieImage({
+      deployment: requestInput.routingDeployment,
+      model: requestInput.model,
+      prompt: compiledPrompt,
+      imageUrls: requestInput.image,
+      aspectRatio: requestInput.aspect_ratio,
+      imageSize: requestInput.image_size,
+      onProgress: requestInput.onProgress,
+    });
+    return {
+      url: result.url,
+      prompt: requestInput.prompt,
+      compiledPrompt,
+      taskId: result.taskId,
+    };
+  }
 
   const useGeminiNativeEndpoint = shouldUseGeminiNativeEndpoint(requestInput, provider);
   const useImageEditEndpoint = !useGeminiNativeEndpoint && shouldUseImageEditEndpoint(requestInput, provider);
@@ -480,10 +503,12 @@ function sanitizeProviderDiagnosticToken(value: unknown) {
 }
 
 function imageProviderFromDeployment(deployment: AiResolvedDeployment): ImageProvider {
-  if (deployment.protocol !== "openai-image" && deployment.protocol !== "gemini-native") {
+  if (deployment.protocol !== "openai-image" && deployment.protocol !== "gemini-native" && deployment.protocol !== "kie-market") {
     throw new Error(`图片部署 ${deployment.id} 的协议 ${deployment.protocol} 不受支持`);
   }
-  const apiBase = deployment.protocol === "gemini-native"
+  const apiBase = deployment.protocol === "kie-market"
+    ? deployment.provider.baseUrl.trim().replace(/\/+$/, "")
+    : deployment.protocol === "gemini-native"
     ? normalizeGeminiNativeApiBaseUrl(deployment.provider.baseUrl, deployment.provider.baseUrl)
     : normalizeOpenAiCompatibleBaseUrl(deployment.provider.baseUrl);
   return {

@@ -29,9 +29,9 @@ const runtimeCatalog = new Map<string, ImageModelCatalogItem>();
 export const LEGACY_IMAGE_MODEL_CATALOG: ImageModelCatalogItem[] = IMAGE_MODEL_DISPLAY_ORDER.map((id) => ({
   id,
   displayName: legacyDisplayName(id),
-  creditPrices: id === "nano-banana-2-lite" ? { "1K": IMAGE_CREDIT_COSTS[id]["1K"] } : { ...IMAGE_CREDIT_COSTS[id] },
-  supportedSizes: id === "nano-banana-2-lite" ? ["1K"] : Object.keys(IMAGE_CREDIT_COSTS[id]) as PricedImageSize[],
-  capabilities: ["generation", "edit"],
+  creditPrices: legacyPrices(id),
+  supportedSizes: legacySupportedSizes(id),
+  capabilities: id === "z-image" ? ["generation"] : ["generation", "edit"],
 }));
 
 export function registerImageModelCatalog(items: readonly ImageModelCatalogItem[]) {
@@ -60,5 +60,18 @@ function legacyDisplayName(id: PricedImageModel) {
   if (id === "nano-banana-2") return "Nano Banana 2";
   if (id === "nano-banana-2-lite") return "Nano Banana 2 Lite";
   if (id === "nano-banana-pro") return "Nano Banana Pro";
+  if (id === "qwen3") return "Qwen3 Image";
+  if (id === "qwen3-pro") return "Qwen3 Image Pro";
+  if (id === "z-image") return "Z-Image";
   return "GPT Image 2";
+}
+
+function legacySupportedSizes(id: PricedImageModel): PricedImageSize[] {
+  if (id === "nano-banana-2-lite" || id === "z-image") return ["1K"];
+  if (id === "qwen3" || id === "qwen3-pro") return ["1K", "2K"];
+  return ["1K", "2K", "4K"];
+}
+
+function legacyPrices(id: PricedImageModel): Partial<Record<PricedImageSize, number>> {
+  return Object.fromEntries(legacySupportedSizes(id).map((size) => [size, IMAGE_CREDIT_COSTS[id][size]]));
 }

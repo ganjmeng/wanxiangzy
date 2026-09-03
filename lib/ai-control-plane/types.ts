@@ -6,6 +6,7 @@ export type AiRoutingMode = "stable" | "smart";
 export type AiProviderProtocol =
   | "openai-image"
   | "gemini-native"
+  | "kie-market"
   | "openai-chat"
   | "newapi-video";
 

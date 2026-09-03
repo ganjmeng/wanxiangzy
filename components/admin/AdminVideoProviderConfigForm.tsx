@@ -6,7 +6,7 @@ import { Loader2, Save } from "lucide-react";
 import { AdminStatusBadge } from "@/components/admin/AdminPrimitives";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 
-type VideoProviderName = "minimax" | "seedance";
+type VideoProviderName = "minimax" | "seedance" | "seedance25" | "wan";
 
 type SnapshotEntry = {
   key: VideoProviderName;
@@ -28,14 +28,18 @@ type Snapshot = {
 const PROVIDER_LABELS: Record<VideoProviderName, string> = {
   minimax: "MiniMax H3（768p / 2K）",
   seedance: "豆包 Seedance 2.0（mini / fast / 标准）",
+  seedance25: "豆包 Seedance 2.5",
+  wan: "Wan 3.0",
 };
 
 const PROVIDER_BASE_URLS: Record<VideoProviderName, string> = {
-  minimax: "https://api.new.bi",
-  seedance: "https://api.new.bi",
+  minimax: "https://api.kie.ai",
+  seedance: "https://api.kie.ai",
+  seedance25: "https://api.kie.ai",
+  wan: "https://api.kie.ai",
 };
 
-const EMPTY_KEYS: Record<VideoProviderName, string> = { minimax: "", seedance: "" };
+const EMPTY_KEYS: Record<VideoProviderName, string> = { minimax: "", seedance: "", seedance25: "", wan: "" };
 
 export function AdminVideoProviderConfigForm() {
   const router = useRouter();

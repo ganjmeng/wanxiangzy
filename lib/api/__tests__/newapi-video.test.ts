@@ -76,7 +76,7 @@ describe("newapi video adapter (new.bi gateway)", () => {
     const gets = requests.filter((item) => item.method === "GET");
 
     expect(post?.url).toBe("https://api.new.bi/v1/video/generations");
-    expect(post?.body).toMatchObject({ model: "minimax-h3", duration: 5 });
+    expect(post?.body).toMatchObject({ model: "minimax-h3/image-to-video", duration: 5 });
     expect(post?.body?.image).toBe("https://cdn.example.com/model.png");
     expect(gets[0]?.url).toBe("https://api.new.bi/v1/video/generations/task_1");
     expect(result).toMatchObject({ taskId: "task_1", url: "https://cdn.example.com/result.mp4", providerStatus: "completed" });
@@ -153,7 +153,7 @@ describe("newapi video adapter (new.bi gateway)", () => {
     await pending;
 
     const body1 = JSON.parse(String((fetchMock.mock.calls[0]?.[1] as RequestInit).body)) as { model: string };
-    expect(body1.model).toBe("minimax-h3-768p");
+    expect(body1.model).toBe("minimax-h3/image-to-video");
   });
 
   it("passes the first and last frames as top-level fields", async () => {
@@ -184,7 +184,7 @@ describe("newapi video adapter (new.bi gateway)", () => {
 
     const post = (fetchMock.mock.calls[0]?.[1] as RequestInit);
     const body = JSON.parse(String(post.body)) as { model: string; first_frame_image: string; last_frame_image: string; duration: number };
-    expect(body.model).toBe("minimax-h3-768p");
+    expect(body.model).toBe("minimax-h3/image-to-video");
     expect(body.first_frame_image).toBe("https://cdn.example.com/first.png");
     expect(body.last_frame_image).toBe("https://cdn.example.com/last.png");
     expect(body).not.toHaveProperty("metadata");

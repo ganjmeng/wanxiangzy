@@ -1,5 +1,6 @@
 import { supportsVideoMotionControl, type VideoProviderName } from "@/lib/api/video-catalog";
 import { generateNewApiFirstLastFrame, generateNewApiImageToVideo, generateNewApiMotionControl } from "@/lib/api/newapi-video";
+import { generateKieVideo } from "@/lib/api/kie-video";
 import { executeAiRouted } from "@/lib/ai-control-plane/router.server";
 import { getAiControlPlaneConfig } from "@/lib/ai-control-plane/server";
 import type { AiResolvedDeployment } from "@/lib/ai-control-plane/types";
@@ -19,19 +20,21 @@ export async function getEnabledVideoProviders(): Promise<VideoProviderName[]> {
   const config = await getAiControlPlaneConfig({ decryptSecrets: false, allowLegacy: true });
   if (!config) return [];
   const enabledProviders = new Set(config.providers.filter((item) => item.enabled && item.apiKey).map((item) => item.id));
-  return (["minimax", "seedance"] as const).filter((provider) => {
+  return (["minimax", "seedance", "seedance25", "wan"] as const).filter((provider) => {
     const modelId = videoModelId(provider);
     return config.models.some((model) => model.id === modelId && model.enabled && model.modality === "video")
       && config.deployments.some((deployment) => deployment.modelId === modelId
         && deployment.enabled
-        && deployment.protocol === "newapi-video"
+        && (deployment.protocol === "kie-market" || deployment.protocol === "newapi-video")
         && enabledProviders.has(deployment.providerId));
   });
 }
 
 export async function generateVideoImageToVideo(input: VideoImageToVideoInput): Promise<VideoGenerationResult> {
   return executeRoutedVideo(input, "image-to-video", (deployment, routedInput) =>
-    generateNewApiImageToVideo(routedInput as VideoImageToVideoInput, toNewApiProvider(deployment, input.provider)));
+    deployment.protocol === "kie-market"
+      ? generateKieVideo("image-to-video", routedInput as VideoImageToVideoInput, deployment)
+      : generateNewApiImageToVideo(routedInput as VideoImageToVideoInput, toNewApiProvider(deployment, input.provider)));
 }
 
 export async function generateVideoMotionControl(input: VideoMotionControlInput): Promise<VideoGenerationResult> {
@@ -39,12 +42,16 @@ export async function generateVideoMotionControl(input: VideoMotionControlInput)
     throw new Error("当前视频模型暂不支持参考视频动作模仿，请使用图生视频或首尾帧功能。");
   }
   return executeRoutedVideo(input, "motion-control", (deployment, routedInput) =>
-    generateNewApiMotionControl(routedInput as VideoMotionControlInput, toNewApiProvider(deployment, input.provider)));
+    deployment.protocol === "kie-market"
+      ? generateKieVideo("motion-control", routedInput as VideoMotionControlInput, deployment)
+      : generateNewApiMotionControl(routedInput as VideoMotionControlInput, toNewApiProvider(deployment, input.provider)));
 }
 
 export async function generateVideoFirstLastFrame(input: VideoFirstLastFrameInput): Promise<VideoGenerationResult> {
   return executeRoutedVideo(input, "first-last-frame", (deployment, routedInput) =>
-    generateNewApiFirstLastFrame(routedInput as VideoFirstLastFrameInput, toNewApiProvider(deployment, input.provider)));
+    deployment.protocol === "kie-market"
+      ? generateKieVideo("first-last-frame", routedInput as VideoFirstLastFrameInput, deployment)
+      : generateNewApiFirstLastFrame(routedInput as VideoFirstLastFrameInput, toNewApiProvider(deployment, input.provider)));
 }
 
 async function executeRoutedVideo<T extends RoutedVideoInput>(
@@ -64,8 +71,8 @@ async function executeRoutedVideo<T extends RoutedVideoInput>(
     },
     canFailover: () => !upstreamSubmitted,
     execute: async (deployment) => {
-      if (deployment.protocol !== "newapi-video") {
-        throw new Error(`视频部署 ${deployment.id} 的协议不是 newapi-video`);
+      if (deployment.protocol !== "newapi-video" && deployment.protocol !== "kie-market") {
+        throw new Error(`视频部署 ${deployment.id} 的协议不受支持`);
       }
       const onProgress = input.onProgress;
       const routedInput = {
@@ -94,6 +101,9 @@ async function executeRoutedVideo<T extends RoutedVideoInput>(
 }
 
 function toNewApiProvider(deployment: AiResolvedDeployment, provider: VideoProviderName): NewApiVideoProviderConfig {
+  if (provider !== "minimax" && provider !== "seedance") {
+    throw new Error(`旧版 newapi-video 协议不支持 ${provider}`);
+  }
   const apiBase = deployment.provider.baseUrl.trim().replace(/\/+$/, "").replace(/\/v1$/i, "");
   return { provider, apiBase, apiKey: deployment.apiKey };
 }

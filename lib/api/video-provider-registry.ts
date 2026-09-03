@@ -2,7 +2,7 @@ import { getVideoProviderBaseUrl, type VideoProviderName } from "@/lib/api/video
 
 export const VIDEO_PROVIDERS_CONFIG_KEY = "video.providers";
 
-export type VideoProviderResponseType = "newapi-video";
+export type VideoProviderResponseType = "kie-market" | "newapi-video";
 
 export type VideoProviderOverride = {
   enabled: boolean;
@@ -14,9 +14,9 @@ export type VideoProviderOverride = {
 
 export type VideoProviderOverrides = Partial<Record<VideoProviderName, VideoProviderOverride>>;
 
-export const ALL_VIDEO_PROVIDERS: readonly VideoProviderName[] = ["minimax", "seedance"];
+export const ALL_VIDEO_PROVIDERS: readonly VideoProviderName[] = ["minimax", "seedance", "seedance25", "wan"];
 
-export const DEFAULT_VIDEO_BASE_URL = "https://api.new.bi";
+export const DEFAULT_VIDEO_BASE_URL = "https://api.kie.ai";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -24,11 +24,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 export function normalizeVideoProviderName(value: unknown): VideoProviderName {
   const token = typeof value === "string" ? value.trim().toLowerCase() : "";
+  if (token === "wan" || token === "wan3" || token === "wan-3") return "wan";
+  if (token === "seedance25" || token === "seedance-2.5" || token === "seedance2.5") return "seedance25";
   if (token === "seedance" || token === "doubao" || token === "doubao-seedance") return "seedance";
   return "minimax";
 }
 
 export function normalizeVideoProviderResponseType(value: unknown): VideoProviderResponseType | null {
+  if (value === "kie-market") return "kie-market";
   if (value === "newapi-video" || value === "minimax-video" || value === "seedance-video" || value === "happyhorse-video") {
     return "newapi-video";
   }
@@ -47,7 +50,7 @@ function buildProviderOverride(provider: VideoProviderName, raw: Record<string, 
     provider,
     baseUrl: normalizeVideoProviderBaseUrl(typeof raw.baseUrl === "string" ? raw.baseUrl : undefined, provider),
     apiKey: typeof raw.apiKey === "string" ? raw.apiKey.trim() : undefined,
-    responseType: normalizeVideoProviderResponseType(raw.responseType) ?? "newapi-video",
+    responseType: normalizeVideoProviderResponseType(raw.responseType) ?? "kie-market",
   };
 }
 
@@ -61,7 +64,7 @@ export function getEnvVideoProviderOverrides(): VideoProviderOverrides {
       provider,
     ),
     apiKey: process.env.VIDEO_API_KEY?.trim() || process.env.MINIMAX_VIDEO_API_KEY?.trim() || process.env.MINIMAX_API_KEY?.trim(),
-    responseType: "newapi-video",
+    responseType: "kie-market",
   };
   return { [provider]: override };
 }

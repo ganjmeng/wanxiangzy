@@ -13,7 +13,7 @@ describe("model pricing", () => {
     const sizes = ["1K", "2K", "4K"] as const;
     expect(sizes.map((size) => getImageCreditCost("nano-banana-2", size))).toEqual([4, 6, 8]);
     expect(sizes.map((size) => getImageCreditCost("nano-banana-pro", size))).toEqual([8, 10, 12]);
-    expect(IMAGE_MODEL_DISPLAY_ORDER.at(-1)).toBe("nano-banana-pro");
+    expect(IMAGE_MODEL_DISPLAY_ORDER.at(-1)).toBe("z-image");
   });
 
   it("keeps the non-Nano image and audio increases modest", () => {

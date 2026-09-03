@@ -29,6 +29,8 @@ export const AI_TOOL_GENERATIVE_MODELS = [
   "nano-banana-2",
   "gpt-image-2",
   "nano-banana-pro",
+  "qwen3",
+  "qwen3-pro",
 ] as const;
 export type AiToolGenerativeModel = (typeof AI_TOOL_GENERATIVE_MODELS)[number];
 export function isAiToolGenerativeModel(value: string): value is AiToolGenerativeModel {

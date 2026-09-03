@@ -14,6 +14,7 @@ const MODALITIES: readonly AiModality[] = ["image", "text", "vision", "video", "
 const PROTOCOLS: readonly AiProviderProtocol[] = [
   "openai-image",
   "gemini-native",
+  "kie-market",
   "openai-chat",
   "newapi-video",
 ];
@@ -57,10 +58,15 @@ export function createDefaultAiControlPlaneConfig(): AiControlPlaneConfig {
       imageModel("nano-banana-2-lite", "Nano Banana 2 Lite", { "1K": 3 }),
       imageModel("gpt-image-2", "GPT Image 2", { "1K": 3, "2K": 4, "4K": 5 }),
       imageModel("nano-banana-pro", "Nano Banana Pro", { "1K": 8, "2K": 10, "4K": 12 }),
+      imageModel("qwen3", "Qwen3 Image", { "1K": 3, "2K": 5 }),
+      imageModel("qwen3-pro", "Qwen3 Image Pro", { "1K": 5, "2K": 7 }),
+      { ...imageModel("z-image", "Z-Image", { "1K": 3 }), capabilities: ["generation"] },
       baseModel("text-default", "默认文本模型", "text", false, false),
       baseModel("vision-default", "默认视觉模型", "vision", false, false),
-      { ...baseModel("video-minimax", "MiniMax 视频", "video", false, false), capabilities: ["image-to-video", "first-last-frame"], defaultRoutingMode: "smart", creditPrices: { "pro:768p:minimum": 15, "pro:768p:perSecond": 3, "pro:2k:minimum": 20, "pro:2k:perSecond": 4 } },
+      { ...baseModel("video-minimax", "MiniMax 视频", "video", false, false), capabilities: ["image-to-video", "motion-control", "first-last-frame"], defaultRoutingMode: "smart", creditPrices: { "pro:768p:minimum": 15, "pro:768p:perSecond": 3, "pro:2k:minimum": 20, "pro:2k:perSecond": 4 } },
       { ...baseModel("video-seedance", "Seedance 视频", "video", false, false), capabilities: ["image-to-video", "motion-control", "first-last-frame"], defaultRoutingMode: "smart", creditPrices: { "mini:720p:minimum": 20, "mini:720p:perSecond": 5, "fast:480p:minimum": 16, "fast:480p:perSecond": 4, "fast:720p:minimum": 24, "fast:720p:perSecond": 6, "pro:720p:minimum": 28, "pro:720p:perSecond": 7, "pro:1080p:minimum": 80, "pro:1080p:perSecond": 20 } },
+      { ...baseModel("video-seedance25", "Seedance 2.5", "video", false, false), capabilities: ["image-to-video", "motion-control", "first-last-frame"], defaultRoutingMode: "smart", creditPrices: { "pro:480p:minimum": 20, "pro:480p:perSecond": 5, "pro:720p:minimum": 28, "pro:720p:perSecond": 7, "pro:1080p:minimum": 80, "pro:1080p:perSecond": 20 } },
+      { ...baseModel("video-wan", "Wan 3.0", "video", false, false), capabilities: ["image-to-video", "motion-control", "first-last-frame"], defaultRoutingMode: "smart", creditPrices: { "pro:480p:minimum": 20, "pro:480p:perSecond": 5, "pro:720p:minimum": 28, "pro:720p:perSecond": 7, "pro:1080p:minimum": 80, "pro:1080p:perSecond": 20 } },
     ],
     // Provider endpoints and real upstream model codes are deployment data,
     // not source-code defaults. A new installation starts unconfigured and
@@ -134,8 +140,8 @@ export function validateAiControlPlaneConfig(value: unknown): {
 }
 
 function protocolsForModality(modality: AiModality): AiProviderProtocol[] {
-  if (modality === "image") return ["openai-image", "gemini-native"];
-  if (modality === "video") return ["newapi-video"];
+  if (modality === "image") return ["openai-image", "gemini-native", "kie-market"];
+  if (modality === "video") return ["newapi-video", "kie-market"];
   return ["openai-chat"];
 }
 
@@ -311,7 +317,13 @@ function imageModel(id: string, displayName: string, creditPrices: Record<string
       ? { shortTitle: "香蕉2 Lite", badge: "快速", iconUrl: `${assetBase}/banana-2-lite-v2.png`, sortOrder: 15, featured: false }
     : id === "gpt-image-2"
       ? { shortTitle: "GPT Image 2", badge: "NEW", iconUrl: `${assetBase}/gpt-image-2.png`, sortOrder: 20, featured: false }
-      : { shortTitle: "香蕉Pro", badge: "PRO", iconUrl: `${assetBase}/banana-pro.png`, sortOrder: 30, featured: false };
+    : id === "nano-banana-pro"
+      ? { shortTitle: "香蕉Pro", badge: "PRO", iconUrl: `${assetBase}/banana-pro.png`, sortOrder: 30, featured: false }
+    : id === "qwen3"
+      ? { shortTitle: "千问3", badge: "NEW", iconUrl: `${assetBase}/qwen.png`, sortOrder: 40, featured: false }
+    : id === "qwen3-pro"
+      ? { shortTitle: "千问3 Pro", badge: "PRO", iconUrl: `${assetBase}/qwen.png`, sortOrder: 50, featured: false }
+      : { shortTitle: "Z-Image", badge: "NEW", iconUrl: `${assetBase}/z-image.png`, sortOrder: 60, featured: false };
   return { ...baseModel(id, displayName, "image", true, false), capabilities: ["generation", "edit"], creditPrices, presentation };
 }
 

@@ -1,4 +1,11 @@
-export type PricedImageModel = "gpt-image-2" | "nano-banana-pro" | "nano-banana-2" | "nano-banana-2-lite";
+export type PricedImageModel =
+  | "gpt-image-2"
+  | "nano-banana-pro"
+  | "nano-banana-2"
+  | "nano-banana-2-lite"
+  | "qwen3"
+  | "qwen3-pro"
+  | "z-image";
 export type PricedImageSize = "1K" | "2K" | "4K";
 
 export const IMAGE_MODEL_DISPLAY_ORDER: readonly PricedImageModel[] = [
@@ -6,6 +13,9 @@ export const IMAGE_MODEL_DISPLAY_ORDER: readonly PricedImageModel[] = [
   "nano-banana-2-lite",
   "gpt-image-2",
   "nano-banana-pro",
+  "qwen3",
+  "qwen3-pro",
+  "z-image",
 ];
 
 /**
@@ -22,6 +32,9 @@ export const IMAGE_CREDIT_COSTS = {
   "nano-banana-2-lite": { "1K": 3, "2K": 3, "4K": 3 },
   "gpt-image-2": { "1K": 3, "2K": 4, "4K": 5 },
   "nano-banana-pro": { "1K": 8, "2K": 10, "4K": 12 },
+  "qwen3": { "1K": 3, "2K": 5, "4K": 5 },
+  "qwen3-pro": { "1K": 5, "2K": 7, "4K": 7 },
+  "z-image": { "1K": 3, "2K": 3, "4K": 3 },
 } as const satisfies Record<PricedImageModel, Record<PricedImageSize, number>>;
 
 export const VIDEO_CREDIT_RATES = {

@@ -69,6 +69,8 @@ import {
   getVideoModes,
   getVideoResolutions,
   resolveVideoSelection,
+  VIDEO_PROVIDER_DESCRIPTIONS,
+  VIDEO_PROVIDER_LABELS,
   type VideoProviderName,
 } from "@/lib/api/video-catalog";
 import { fetchHistoryApplyDetail, getHistoryApplyFailureMessage, isHistoryApplyRowFailed, takeApplyDetail, type HistoryJobPayload } from "@/lib/history-apply";
@@ -136,7 +138,9 @@ export function AiVideoExperience({ mode }: AiVideoExperienceProps) {
         const providerEntries = Array.isArray(data?.providers)
           ? (data.providers as Array<{ provider: VideoProviderName; pricingByMode?: Record<string, { minimum: number; perSecond: number }> }>)
           : [];
-        const providers = providerEntries.map((item) => item.provider).filter((item) => item === "minimax" || item === "seedance");
+        const providers = providerEntries
+          .map((item) => item.provider)
+          .filter((item): item is VideoProviderName => ["minimax", "seedance", "seedance25", "wan"].includes(item));
         if (providers.length) {
           setAvailableProviders(providers);
           setVideoProvider((current) => current && providers.includes(current) ? current : providers[0]);
@@ -1101,8 +1105,16 @@ export function AiVideoExperience({ mode }: AiVideoExperienceProps) {
             <StudioOptionGrid
               options={availableProviders.map((provider) => ({
                 value: provider,
-                label: provider === "minimax" ? t("modelMinimaxLabel") : t("modelSeedanceLabel"),
-                description: provider === "minimax" ? t("modelMinimaxDesc") : t("modelSeedanceDesc"),
+                label: provider === "minimax"
+                  ? t("modelMinimaxLabel")
+                  : provider === "seedance"
+                    ? t("modelSeedanceLabel")
+                    : VIDEO_PROVIDER_LABELS[provider],
+                description: provider === "minimax"
+                  ? t("modelMinimaxDesc")
+                  : provider === "seedance"
+                    ? t("modelSeedanceDesc")
+                    : VIDEO_PROVIDER_DESCRIPTIONS[provider],
               }))}
               value={providerKey}
               onChange={(value) => {

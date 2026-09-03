@@ -37,6 +37,15 @@ export const AI_PROTOCOL_ADAPTERS: Record<AiProviderProtocol, AiProtocolAdapterD
     defaultAuthMode: "x-goog-api-key",
     defaultPaths: { generation: "/v1beta/models/{model}:generateContent" },
   },
+  "kie-market": {
+    id: "kie-market",
+    label: "Kie Market Jobs",
+    modalities: ["image", "video"],
+    requestShape: "model + input 异步任务 JSON",
+    responseShape: "data.taskId + recordInfo.resultJson.resultUrls",
+    defaultAuthMode: "bearer",
+    defaultPaths: { generation: "/api/v1/jobs/createTask", status: "/api/v1/jobs/recordInfo" },
+  },
   "openai-chat": {
     id: "openai-chat",
     label: "OpenAI Chat Completions",

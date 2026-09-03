@@ -17,6 +17,8 @@ const SUPPORTED_MODELS: LingyaModel[] = [
   "gpt-image-2",
   "nano-banana-2",
   "nano-banana-pro",
+  "qwen3",
+  "qwen3-pro",
 ];
 
 const SUPPORTED_ASPECTS: AspectRatio[] = ["auto", "4:3", "3:4", "9:16", "16:9", "1:1", "3:2", "2:3", "21:9"];

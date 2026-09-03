@@ -52,6 +52,27 @@ export const STUDIO_IMAGE_MODEL_META: Record<
     badgeKey: "Shared.modelBadge.highQuality",
     icon: `${STUDIO_MODEL_ASSET_BASE}/banana-pro.png`,
   },
+  "qwen3": {
+    label: "千问3",
+    englishLabel: "Qwen3 Image",
+    descKey: "Shared.modelDesc.fastGeneral",
+    badgeKey: "Shared.modelBadge.latest",
+    icon: `${STUDIO_MODEL_ASSET_BASE}/qwen.png`,
+  },
+  "qwen3-pro": {
+    label: "千问3 Pro",
+    englishLabel: "Qwen3 Image Pro",
+    descKey: "Shared.modelDesc.commercialRetouch",
+    badgeKey: "Shared.modelBadge.highQuality",
+    icon: `${STUDIO_MODEL_ASSET_BASE}/qwen.png`,
+  },
+  "z-image": {
+    label: "Z-Image",
+    englishLabel: "Z-Image",
+    descKey: "Shared.modelDesc.fastGeneral",
+    badgeKey: "Shared.modelBadge.latest",
+    icon: `${STUDIO_MODEL_ASSET_BASE}/z-image.png`,
+  },
 };
 
 const ALL_CURATED_MODELS = Object.keys(STUDIO_IMAGE_MODEL_META) as LingyaModel[];
@@ -119,7 +140,7 @@ export function useImageSizeOptions(
   );
 }
 
-export function useStudioImageModelOptions() {
+export function useStudioImageModelOptions(requiredCapability: "generation" | "edit" = "edit") {
   const tRoot = useTranslations();
   const locale = useLocale();
   const isChinese = locale.toLowerCase().startsWith("zh");
@@ -136,13 +157,16 @@ export function useStudioImageModelOptions() {
           ? "NEW"
           : value === "nano-banana-2"
             ? "REC"
-            : "PRO";
+            : value === "nano-banana-pro" || value === "qwen3-pro"
+              ? "PRO"
+              : "NEW";
         return {
           value,
           label: localized?.title || published?.shortTitle || published?.displayName || (isChinese ? meta.label : meta.englishLabel),
           desc: localized?.description || published?.description || tRoot(meta.descKey),
           badge: localized?.badge || published?.badge || (isChinese ? tRoot(meta.badgeKey) : compactBadge),
           icon: published?.iconUrl || published?.coverUrl || meta.icon,
+          capabilities: published?.capabilities || (value === "z-image" ? ["generation"] : ["generation", "edit"]),
         };
       });
       const curatedIds = new Set(curated.map((item) => item.value));
@@ -156,14 +180,16 @@ export function useStudioImageModelOptions() {
             desc: localized?.description || item.description || `${item.supportedSizes.join(" / ")} · ${item.capabilities.join(" · ")}`,
             badge: localized?.badge || item.badge || (item.featured ? "REC" : "NEW"),
             icon: item.iconUrl || item.coverUrl,
+            capabilities: item.capabilities,
           };
         });
       const combined = [...curated, ...dynamic];
-      if (!catalog?.length) return combined;
+      const eligible = combined.filter((item) => item.capabilities.includes(requiredCapability));
+      if (!catalog?.length) return eligible;
       const publishedOrder = new Map(catalog.map((item, index) => [item.id, index]));
-      return combined.sort((a, b) => (publishedOrder.get(a.value) ?? Number.MAX_SAFE_INTEGER) - (publishedOrder.get(b.value) ?? Number.MAX_SAFE_INTEGER));
+      return eligible.sort((a, b) => (publishedOrder.get(a.value) ?? Number.MAX_SAFE_INTEGER) - (publishedOrder.get(b.value) ?? Number.MAX_SAFE_INTEGER));
     },
-    [catalog, isChinese, locale, tRoot],
+    [catalog, isChinese, locale, requiredCapability, tRoot],
   );
 }
 

@@ -134,7 +134,7 @@ export function GeneralImageExperience({ initialMode = "text-to-image" }: { init
   const [aiModel, setAiModel] = useState<LingyaModel>(
     defaultSettings.model,
   );
-  const modelOptions = useStudioImageModelOptions();
+  const modelOptions = useStudioImageModelOptions(mode === "text-to-image" ? "generation" : "edit");
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>(defaultSettings.aspectRatio);
   const [imageSize, setImageSize] = useState<ImageSize>(defaultSettings.imageSize);
   const [genCount, setGenCount] = useState(1);

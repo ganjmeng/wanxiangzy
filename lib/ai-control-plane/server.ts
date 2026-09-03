@@ -257,6 +257,8 @@ async function buildLegacyControlPlaneConfig(): Promise<AiControlPlaneConfig | n
       enabled: config.deployments.some((item) => item.modelId === model.id && item.enabled),
       ...(model.id === "video-minimax" ? { capabilities: videoCapabilities("minimax"), defaultRoutingMode: "smart" as const } : {}),
       ...(model.id === "video-seedance" ? { capabilities: videoCapabilities("seedance"), defaultRoutingMode: "smart" as const } : {}),
+      ...(model.id === "video-seedance25" ? { capabilities: videoCapabilities("seedance25"), defaultRoutingMode: "smart" as const } : {}),
+      ...(model.id === "video-wan" ? { capabilities: videoCapabilities("wan"), defaultRoutingMode: "smart" as const } : {}),
     }));
     return config;
   } catch {
@@ -264,10 +266,8 @@ async function buildLegacyControlPlaneConfig(): Promise<AiControlPlaneConfig | n
   }
 }
 
-function videoCapabilities(providerName: string) {
-  return providerName === "seedance"
-    ? ["image-to-video", "motion-control", "first-last-frame"]
-    : ["image-to-video", "first-last-frame"];
+function videoCapabilities(_providerName: string) {
+  return ["image-to-video", "motion-control", "first-last-frame"];
 }
 
 function finite(value: unknown, fallback = 0) {

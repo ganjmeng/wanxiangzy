@@ -33,6 +33,7 @@ describe("AI protocol adapter registry", () => {
   it("registers a documented adapter for every exposed protocol", () => {
     expect(Object.keys(AI_PROTOCOL_ADAPTERS).sort()).toEqual([
       "gemini-native",
+      "kie-market",
       "newapi-video",
       "openai-chat",
       "openai-image",

@@ -12,17 +12,17 @@ import {
 } from "@/lib/api/video-catalog";
 
 describe("video catalog", () => {
-  it("maps minimax resolutions to dedicated upstream model ids", () => {
-    expect(resolveUpstreamVideoModel("minimax", "pro", "768p")).toBe("minimax-h3-768p");
-    expect(resolveUpstreamVideoModel("minimax", "pro", "2k")).toBe("minimax-h3");
+  it("maps minimax resolutions to the documented Kie operation id", () => {
+    expect(resolveUpstreamVideoModel("minimax", "pro", "768p")).toBe("minimax-h3/image-to-video");
+    expect(resolveUpstreamVideoModel("minimax", "pro", "2k")).toBe("minimax-h3/image-to-video");
   });
 
   it("maps seedance tiers and resolutions to dedicated model ids", () => {
-    expect(resolveUpstreamVideoModel("seedance", "mini", "720p")).toBe("doubao-seedance-2-0-mini-260615");
-    expect(resolveUpstreamVideoModel("seedance", "fast", "480p")).toBe("doubao-seedance-2-0-fast-260128-480p");
-    expect(resolveUpstreamVideoModel("seedance", "fast", "720p")).toBe("doubao-seedance-2-0-fast-260128");
-    expect(resolveUpstreamVideoModel("seedance", "pro", "720p")).toBe("doubao-seedance-2-0-260128");
-    expect(resolveUpstreamVideoModel("seedance", "pro", "1080p")).toBe("doubao-seedance-2-0-260128-1080p");
+    expect(resolveUpstreamVideoModel("seedance", "mini", "720p")).toBe("bytedance/seedance-2-mini");
+    expect(resolveUpstreamVideoModel("seedance", "fast", "480p")).toBe("bytedance/seedance-2-fast");
+    expect(resolveUpstreamVideoModel("seedance", "fast", "720p")).toBe("bytedance/seedance-2-fast");
+    expect(resolveUpstreamVideoModel("seedance", "pro", "720p")).toBe("bytedance/seedance-2");
+    expect(resolveUpstreamVideoModel("seedance", "pro", "1080p")).toBe("bytedance/seedance-2");
   });
 
   it("exposes the seedance tiers and minimax resolution options", () => {
@@ -40,9 +40,11 @@ describe("video catalog", () => {
     expect(getVideoCreditCost({ provider: "seedance", modelMode: "pro", resolution: "1080p", duration: 5 })).toBe(100);
   });
 
-  it("enables reference-video motion control for Seedance only", () => {
-    expect(supportsVideoMotionControl("minimax")).toBe(false);
+  it("enables reference-video operations exposed by each configured Kie family", () => {
+    expect(supportsVideoMotionControl("minimax")).toBe(true);
     expect(supportsVideoMotionControl("seedance")).toBe(true);
+    expect(supportsVideoMotionControl("seedance25")).toBe(true);
+    expect(supportsVideoMotionControl("wan")).toBe(true);
   });
 
   it("calculates configurable rates with the same duration and batch rules", () => {

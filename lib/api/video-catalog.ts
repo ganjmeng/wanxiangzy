@@ -5,7 +5,7 @@ import type {
   AiVideoResolution,
 } from "@/lib/ai-video";
 
-export type VideoProviderName = "minimax" | "seedance";
+export type VideoProviderName = "minimax" | "seedance" | "seedance25" | "wan";
 
 export type VideoModelPrice = { minimum: number; perSecond: number };
 
@@ -21,11 +21,8 @@ export type VideoCatalogEntry = {
 };
 
 /**
- * Upstream model + pricing catalog for the video providers delivered through
- * the new.bi new-api gateway (`POST /v1/video/generations`).
- *
- * Resolution is selected by the upstream model id, not by a `resolution`
- * request field. Prices are in 灵点 (credits); roughly 8 credits ≈ 1 USD.
+ * Kie Market model + pricing catalog. Prices are application credits and are
+ * deliberately independent from Kie's upstream billing currency.
  */
 export const VIDEO_CATALOG: readonly VideoCatalogEntry[] = [
   // MiniMax H3
@@ -33,7 +30,7 @@ export const VIDEO_CATALOG: readonly VideoCatalogEntry[] = [
     provider: "minimax",
     mode: "pro",
     resolution: "768p",
-    upstreamModel: "minimax-h3-768p",
+    upstreamModel: "minimax-h3/image-to-video",
     resolutionLabel: "768p",
     price: { minimum: 15, perSecond: 3 },
     minDuration: 5,
@@ -43,7 +40,7 @@ export const VIDEO_CATALOG: readonly VideoCatalogEntry[] = [
     provider: "minimax",
     mode: "pro",
     resolution: "2k",
-    upstreamModel: "minimax-h3",
+    upstreamModel: "minimax-h3/image-to-video",
     resolutionLabel: "2K",
     price: { minimum: 20, perSecond: 4 },
     minDuration: 5,
@@ -54,7 +51,7 @@ export const VIDEO_CATALOG: readonly VideoCatalogEntry[] = [
     provider: "seedance",
     mode: "mini",
     resolution: "720p",
-    upstreamModel: "doubao-seedance-2-0-mini-260615",
+    upstreamModel: "bytedance/seedance-2-mini",
     resolutionLabel: "720p",
     price: { minimum: 20, perSecond: 5 },
     minDuration: 4,
@@ -64,7 +61,7 @@ export const VIDEO_CATALOG: readonly VideoCatalogEntry[] = [
     provider: "seedance",
     mode: "fast",
     resolution: "480p",
-    upstreamModel: "doubao-seedance-2-0-fast-260128-480p",
+    upstreamModel: "bytedance/seedance-2-fast",
     resolutionLabel: "480p",
     price: { minimum: 16, perSecond: 4 },
     minDuration: 4,
@@ -74,7 +71,7 @@ export const VIDEO_CATALOG: readonly VideoCatalogEntry[] = [
     provider: "seedance",
     mode: "fast",
     resolution: "720p",
-    upstreamModel: "doubao-seedance-2-0-fast-260128",
+    upstreamModel: "bytedance/seedance-2-fast",
     resolutionLabel: "720p",
     price: { minimum: 24, perSecond: 6 },
     minDuration: 4,
@@ -84,7 +81,7 @@ export const VIDEO_CATALOG: readonly VideoCatalogEntry[] = [
     provider: "seedance",
     mode: "pro",
     resolution: "720p",
-    upstreamModel: "doubao-seedance-2-0-260128",
+    upstreamModel: "bytedance/seedance-2",
     resolutionLabel: "720p",
     price: { minimum: 28, perSecond: 7 },
     minDuration: 4,
@@ -94,13 +91,35 @@ export const VIDEO_CATALOG: readonly VideoCatalogEntry[] = [
     provider: "seedance",
     mode: "pro",
     resolution: "1080p",
-    upstreamModel: "doubao-seedance-2-0-260128-1080p",
+    upstreamModel: "bytedance/seedance-2",
     resolutionLabel: "1080p",
-    price: { minimum: 80, perSecond:20 },
+    price: { minimum: 80, perSecond: 20 },
     minDuration: 4,
     maxDuration: 15,
   },
+  // Seedance 2.5
+  { provider: "seedance25", mode: "pro", resolution: "480p", upstreamModel: "bytedance/seedance-2-5", resolutionLabel: "480p", price: { minimum: 20, perSecond: 5 }, minDuration: 4, maxDuration: 15 },
+  { provider: "seedance25", mode: "pro", resolution: "720p", upstreamModel: "bytedance/seedance-2-5", resolutionLabel: "720p", price: { minimum: 28, perSecond: 7 }, minDuration: 4, maxDuration: 15 },
+  { provider: "seedance25", mode: "pro", resolution: "1080p", upstreamModel: "bytedance/seedance-2-5", resolutionLabel: "1080p", price: { minimum: 80, perSecond: 20 }, minDuration: 4, maxDuration: 15 },
+  // Wan 3.0
+  { provider: "wan", mode: "pro", resolution: "480p", upstreamModel: "wan/3-0-video", resolutionLabel: "480p", price: { minimum: 20, perSecond: 5 }, minDuration: 3, maxDuration: 15 },
+  { provider: "wan", mode: "pro", resolution: "720p", upstreamModel: "wan/3-0-video", resolutionLabel: "720p", price: { minimum: 28, perSecond: 7 }, minDuration: 3, maxDuration: 15 },
+  { provider: "wan", mode: "pro", resolution: "1080p", upstreamModel: "wan/3-0-video", resolutionLabel: "1080p", price: { minimum: 80, perSecond: 20 }, minDuration: 3, maxDuration: 15 },
 ];
+
+export const VIDEO_PROVIDER_LABELS: Record<VideoProviderName, string> = {
+  minimax: "MiniMax H3",
+  seedance: "Seedance 2.0",
+  seedance25: "Seedance 2.5",
+  wan: "Wan 3.0",
+};
+
+export const VIDEO_PROVIDER_DESCRIPTIONS: Record<VideoProviderName, string> = {
+  minimax: "MiniMax H3，支持 768p / 2K",
+  seedance: "Seedance 2.0 系列，支持 mini / fast / pro",
+  seedance25: "Seedance 2.5，支持最长 15 秒",
+  wan: "Wan 3.0，支持首尾帧与参考视频",
+};
 
 export const VIDEO_MODE_ORDER: readonly AiVideoModelMode[] = ["mini", "fast", "pro"];
 
@@ -278,16 +297,14 @@ export function getVideoPerVideoCreditCost(params: {
   return getVideoCreditCost({ ...params, genCount: 1 });
 }
 
-function getVideoAudioCreditCost(audioMode?: AiVideoAudioMode): number {
+function getVideoAudioCreditCost(_audioMode?: AiVideoAudioMode): number {
   // Audio is generated natively by MiniMax H3 / Seedance and is included in the
   // base price; custom audio is not charged separately for now.
   return 0;
 }
 
 export function supportsVideoMotionControl(provider: VideoProviderName): boolean {
-  // Seedance 2.0 natively supports motion from a reference video;
-  // MiniMax H3 does not.
-  return provider === "seedance";
+  return provider === "minimax" || provider === "seedance" || provider === "seedance25" || provider === "wan";
 }
 
 export function supportsVideoFirstLastFrame(_provider: VideoProviderName): boolean {
@@ -311,6 +328,6 @@ export function resolveVideoSelection(
   return { mode, resolution };
 }
 
-export function getVideoProviderBaseUrl(provider: VideoProviderName): string {
-  return "https://api.new.bi";
+export function getVideoProviderBaseUrl(_provider: VideoProviderName): string {
+  return "https://api.kie.ai";
 }

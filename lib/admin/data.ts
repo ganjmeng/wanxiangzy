@@ -1656,6 +1656,9 @@ export async function getAdminProviderCatalog(): Promise<AdminProviderCatalog> {
     "nano-banana-2-lite": "更快的 1K 模型，适合低延迟批量任务。",
     "gpt-image-2": "适合稳定编辑类任务。",
     "nano-banana-pro": "高质量模型，建议用于品牌大片和复杂参考图。",
+    qwen3: "千问 3 图片模型，支持 1K / 2K 和参考图编辑。",
+    "qwen3-pro": "千问 3 Pro，适合高质量文生图与参考图编辑。",
+    "z-image": "Z-Image 文生图模型，不支持参考图编辑。",
   };
 
   return {
@@ -1665,7 +1668,7 @@ export async function getAdminProviderCatalog(): Promise<AdminProviderCatalog> {
       model: controlPlane?.source === "unified",
       video: Boolean(videoRaw),
     },
-    modelProviders: (["nano-banana-2", "nano-banana-2-lite", "gpt-image-2", "nano-banana-pro"] as const).map((model) => {
+    modelProviders: (["nano-banana-2", "nano-banana-2-lite", "gpt-image-2", "nano-banana-pro", "qwen3", "qwen3-pro", "z-image"] as const).map((model) => {
       const deployment = controlPlane?.config.deployments.find((item) => item.modelId === model && item.enabled);
       const provider = deployment
         ? controlPlane?.config.providers.find((item) => item.id === deployment.providerId && item.enabled)

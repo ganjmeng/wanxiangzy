@@ -8,7 +8,7 @@ import { AdminStatusBadge } from "@/components/admin/AdminPrimitives";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import type { PricedImageModel } from "@/lib/model-pricing";
 
-type ResponseType = "openai-image" | "gemini-native";
+type ResponseType = "openai-image" | "gemini-native" | "kie-market";
 
 type SnapshotEntry = {
   model: PricedImageModel;
@@ -33,11 +33,15 @@ const MODEL_LABELS: Record<PricedImageModel, string> = {
   "nano-banana-2-lite": "Nano Banana 2 Lite",
   "nano-banana-pro": "Nano Banana Pro",
   "gpt-image-2": "GPT-Image-2",
+  qwen3: "Qwen3 Image",
+  "qwen3-pro": "Qwen3 Image Pro",
+  "z-image": "Z-Image",
 };
 
 const RESPONSE_TYPE_OPTIONS: ReadonlyArray<{ value: ResponseType; label: string }> = [
   { value: "gemini-native", label: "Gemini native (generateContent)" },
   { value: "openai-image", label: "OpenAI image (/images/generations)" },
+  { value: "kie-market", label: "Kie Market (异步任务)" },
 ];
 
 export function AdminModelProviderConfigForm() {
