@@ -316,14 +316,14 @@ function imageModel(id: string, displayName: string, creditPrices: Record<string
     : id === "nano-banana-2-lite"
       ? { shortTitle: "香蕉2 Lite", badge: "快速", iconUrl: `${assetBase}/banana-2-lite-v2.png`, sortOrder: 15, featured: false }
     : id === "gpt-image-2"
-      ? { shortTitle: "GPT Image 2", badge: "NEW", iconUrl: `${assetBase}/gpt-image-2.png`, sortOrder: 20, featured: false }
+      ? { shortTitle: "GPT Image 2", badge: "NEW", iconUrl: `${assetBase}/gpt-image-2-gptstyle.png`, sortOrder: 20, featured: false }
     : id === "nano-banana-pro"
       ? { shortTitle: "香蕉Pro", badge: "PRO", iconUrl: `${assetBase}/banana-pro.png`, sortOrder: 30, featured: false }
     : id === "qwen3"
-      ? { shortTitle: "千问3", badge: "NEW", iconUrl: `${assetBase}/qwen-mascot-v2.png`, sortOrder: 40, featured: false }
+      ? { shortTitle: "千问3", badge: "NEW", iconUrl: `${assetBase}/qwen3-gptstyle.png`, sortOrder: 40, featured: false }
     : id === "qwen3-pro"
-      ? { shortTitle: "千问3 Pro", badge: "PRO", iconUrl: `${assetBase}/qwen-mascot-v2.png`, sortOrder: 50, featured: false }
-      : { shortTitle: "Z-Image", badge: "NEW", iconUrl: `${assetBase}/z-image-mascot-v2.png`, sortOrder: 60, featured: false };
+      ? { shortTitle: "千问3 Pro", badge: "PRO", iconUrl: `${assetBase}/qwen3-pro-gptstyle.png`, sortOrder: 50, featured: false }
+      : { shortTitle: "Z-Image", badge: "NEW", iconUrl: `${assetBase}/z-image-gptstyle.png`, sortOrder: 60, featured: false };
   return { ...baseModel(id, displayName, "image", true, false), capabilities: ["generation", "edit"], creditPrices, presentation };
 }
 

@@ -117,11 +117,11 @@ function imageModels(): AiLogicalModel[] {
   return [
     imageModel("nano-banana-2", "Nano Banana 2", ["generation", "edit"], { "1K": 4, "2K": 6, "4K": 8 }, "香蕉2", "推荐", "banana-2.png", 10, true),
     imageModel("nano-banana-2-lite", "Nano Banana 2 Lite", ["generation", "edit"], { "1K": 3 }, "香蕉2 Lite", "快速", "banana-2-lite-v2.png", 15),
-    imageModel("gpt-image-2", "GPT Image 2", ["generation", "edit"], { "1K": 3, "2K": 4, "4K": 5 }, "GPT Image 2", "NEW", "gpt-image-2.png", 20),
+    imageModel("gpt-image-2", "GPT Image 2", ["generation", "edit"], { "1K": 3, "2K": 4, "4K": 5 }, "GPT Image 2", "NEW", "gpt-image-2-gptstyle.png", 20),
     imageModel("nano-banana-pro", "Nano Banana Pro", ["generation", "edit"], { "1K": 8, "2K": 10, "4K": 12 }, "香蕉Pro", "PRO", "banana-pro.png", 30),
-    imageModel("qwen3", "Qwen3 Image", ["generation", "edit"], { "1K": 3, "2K": 5 }, "千问3", "NEW", "qwen-mascot-v2.png", 40),
-    imageModel("qwen3-pro", "Qwen3 Image Pro", ["generation", "edit"], { "1K": 5, "2K": 7 }, "千问3 Pro", "PRO", "qwen-mascot-v2.png", 50),
-    imageModel("z-image", "Z-Image", ["generation"], { "1K": 3 }, "Z-Image", "NEW", "z-image-mascot-v2.png", 60),
+    imageModel("qwen3", "Qwen3 Image", ["generation", "edit"], { "1K": 3, "2K": 5 }, "千问3", "NEW", "qwen3-gptstyle.png", 40),
+    imageModel("qwen3-pro", "Qwen3 Image Pro", ["generation", "edit"], { "1K": 5, "2K": 7 }, "千问3 Pro", "PRO", "qwen3-pro-gptstyle.png", 50),
+    imageModel("z-image", "Z-Image", ["generation"], { "1K": 3 }, "Z-Image", "NEW", "z-image-gptstyle.png", 60),
   ];
 }
 
