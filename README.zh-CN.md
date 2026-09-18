@@ -8,6 +8,12 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-22.x-339933?logo=node.js&logoColor=white)](package.json)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](package.json)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](package.json)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](package.json)
+[![Supabase](https://img.shields.io/badge/Supabase-Auth%20%2B%20PostgreSQL-3FCF8E?logo=supabase&logoColor=white)](docs/CONFIGURATION.md)
+[![Redis](https://img.shields.io/badge/Redis-BullMQ-DC382D?logo=redis&logoColor=white)](docs/ARCHITECTURE.md)
+[![Stripe](https://img.shields.io/badge/Stripe-Billing-635BFF?logo=stripe&logoColor=white)](docs/CONFIGURATION.md)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
@@ -137,11 +143,24 @@ psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/schema.sql
 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/credits-update.sql
 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/set-signup-credits-50.sql
 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/atomic-credit-rpc.sql
+psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/admin-console.sql
 ```
 
 后续顺序见 [docs/supabase-migration-order.md](docs/supabase-migration-order.md)。早期时间戳迁移包含破坏性变更，应用到已有数据库前必须备份。
 
-### 4. 启动应用
+### 4. 自动创建第一个管理员，无需手动注册
+
+下面的命令使用 `SUPABASE_SERVICE_ROLE_KEY` 调用 Supabase Admin API，创建已确认邮箱的 Auth 用户，并同步写入 `public.admin_members`：
+
+```bash
+npm run admin:create -- --email owner@example.com --role owner
+```
+
+未传 `--password` 时脚本会生成强密码并只显示一次。重复执行会复用已有 Auth 用户，默认不修改密码；需要重置时增加 `--update-password`。这条路径不需要配置 `ADMIN_BOOTSTRAP_EMAILS`。
+
+角色、验证 SQL 和紧急环境变量旁路见 [docs/admin-bootstrap.md](docs/admin-bootstrap.md)。
+
+### 5. 启动应用
 
 仅调试界面/API 时，可在 `.env.local` 中设置 `GENERATION_QUEUE_MODE=inline`：
 
@@ -168,6 +187,7 @@ npm run worker:dev
 | `npm run lint` | 运行 ESLint |
 | `npm run typecheck` | 运行 TypeScript 类型检查 |
 | `npm run build` | 创建生产构建 |
+| `npm run admin:create -- --email owner@example.com` | 自动创建或授权管理员，无需手动注册 |
 | `npm run check:release` | 依次运行测试、提示词回归、Lint、类型检查、构建和 SSR 体积检查 |
 | `npm run check:ssr-size` | 检查服务端包体积预算 |
 

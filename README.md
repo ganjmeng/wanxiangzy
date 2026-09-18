@@ -8,6 +8,12 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-22.x-339933?logo=node.js&logoColor=white)](package.json)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](package.json)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](package.json)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](package.json)
+[![Supabase](https://img.shields.io/badge/Supabase-Auth%20%2B%20PostgreSQL-3FCF8E?logo=supabase&logoColor=white)](docs/CONFIGURATION.md)
+[![Redis](https://img.shields.io/badge/Redis-BullMQ-DC382D?logo=redis&logoColor=white)](docs/ARCHITECTURE.md)
+[![Stripe](https://img.shields.io/badge/Stripe-Billing-635BFF?logo=stripe&logoColor=white)](docs/CONFIGURATION.md)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
@@ -137,11 +143,24 @@ psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/schema.sql
 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/credits-update.sql
 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/set-signup-credits-50.sql
 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/atomic-credit-rpc.sql
+psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/admin-console.sql
 ```
 
 Continue with [docs/supabase-migration-order.md](docs/supabase-migration-order.md). Several timestamped migrations are intentionally ordered and one early group is destructive; always back up before applying them to an existing environment.
 
-### 4. Start the application
+### 4. Create the first admin without manual registration
+
+The command below calls the Supabase Admin API with `SUPABASE_SERVICE_ROLE_KEY`, creates an email-confirmed Auth user, and writes the matching row in `public.admin_members`:
+
+```bash
+npm run admin:create -- --email owner@example.com --role owner
+```
+
+If `--password` is omitted, the script generates a strong password and prints it once. Re-running the command reuses an existing Auth user and keeps the existing password unless `--update-password` is supplied. `ADMIN_BOOTSTRAP_EMAILS` is not required for this path.
+
+See [docs/admin-bootstrap.md](docs/admin-bootstrap.md) for roles, verification queries, and the emergency environment bootstrap fallback.
+
+### 5. Start the application
 
 For a minimal UI/API development loop, set `GENERATION_QUEUE_MODE=inline` in `.env.local`:
 
@@ -168,6 +187,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `npm run lint` | Run ESLint |
 | `npm run typecheck` | Run TypeScript without emitting files |
 | `npm run build` | Create a production build |
+| `npm run admin:create -- --email owner@example.com` | Create or grant an admin account without manual signup |
 | `npm run check:release` | Run tests, prompt checks, lint, typecheck, build, and SSR size checks |
 | `npm run check:ssr-size` | Inspect server bundle size against the configured budget |
 

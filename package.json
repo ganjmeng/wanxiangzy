@@ -29,6 +29,7 @@
     "typecheck": "tsc --noEmit --pretty false --incremental false",
     "check:ssr-size": "node scripts/check-next-ssr-size.js",
     "check:prompts": "node scripts/prompt-regression-check.js",
+    "admin:create": "tsx --env-file-if-exists=.env.production --env-file-if-exists=.env.local scripts/create-admin-account.ts",
     "oss:configure-mirror": "node --env-file-if-exists=.env.production --env-file-if-exists=.env.local scripts/configure-oss-mirror.mjs",
     "oss:upload-site-assets": "node scripts/upload-site-assets-to-oss.mjs",
     "oss:configure-mirror": "node scripts/configure-oss-mirror.mjs",

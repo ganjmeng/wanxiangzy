@@ -55,6 +55,45 @@ These values are required before starting a production web or worker process. Th
 | `AI_ROUTER_CAPACITY_MODE` | Distributed capacity mode | Must be `redis` in production |
 | `IMAGE_STORAGE_PROVIDER` | Media storage adapter | Production requires `aliyun-oss` |
 
+## Supabase Configuration Facts
+
+Supabase provides both the Auth service and the PostgreSQL database. The application relies on the following facts:
+
+- `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are browser-visible values.
+- `SUPABASE_SERVICE_ROLE_KEY` is server-only and bypasses Row Level Security. Never expose it through a `NEXT_PUBLIC_*` variable or browser bundle.
+- Auth users live in `auth.users`. The application profile trigger and credit initialization depend on the base SQL order documented in [supabase-migration-order.md](supabase-migration-order.md).
+- Admin authorization is not stored in Auth user metadata. It comes from `public.admin_members`, keyed by `auth.users.id`, with `status='active'` and `enabled=true`.
+- The valid `admin_members.role` values are `owner`, `ops`, `support`, `finance`, `reviewer`, `engineer`, and `viewer`.
+- `supabase/admin-console.sql` must be applied before creating a non-bootstrap administrator or before granting admin access.
+- `ADMIN_BOOTSTRAP_EMAILS` is an emergency owner bypass only. Remove it after a durable `admin_members` row exists.
+
+Create the first admin account without opening the signup flow:
+
+```bash
+npm run admin:create -- --email owner@example.com --role owner
+```
+
+The command uses the Supabase Admin API to create or reuse an Auth user, marks the email as confirmed, and upserts `public.admin_members`. If `--password` is omitted, it prints a generated password once. Use `--update-password` to rotate an existing user's password.
+
+Verify the result with the service-role-only database connection:
+
+```sql
+SELECT
+  u.id AS auth_user_id,
+  u.email AS auth_email,
+  u.email_confirmed_at IS NOT NULL AS email_confirmed,
+  m.user_id,
+  m.email AS admin_email,
+  m.role,
+  m.status,
+  m.enabled
+FROM auth.users AS u
+LEFT JOIN public.admin_members AS m ON m.user_id = u.id
+WHERE LOWER(u.email) = LOWER('owner@example.com');
+```
+
+See [admin-bootstrap.md](admin-bootstrap.md) for the full bootstrap and recovery procedure.
+
 ## Redis and Queue
 
 Redis is used for BullMQ, distributed provider capacity, upload admission, and task-cache hot data. The application expects a standard Redis endpoint and a dedicated database index where practical.
