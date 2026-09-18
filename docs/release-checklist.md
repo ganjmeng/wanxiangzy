@@ -1,6 +1,6 @@
 # AWS EC2 发布检查表
 
-本项目生产部署由 GitHub Actions 触发，目标是 AWS EC2。工作流文件是 `.github/workflows/deploy-aws-on-tag.yml`；当推送任意 Git tag 时，CI 会先运行 `npm run check:release`，再打包源码并通过 SSH 上传到 EC2，最后执行 `scripts/deploy-aws-release.sh`。
+本项目生产构建在本地 Mac 完成，目标主机为 AWS EC2。正式发布使用 `scripts/deploy-from-local.sh <tag> [worker_instances]`：脚本先验证远端数据库契约，再在本地执行生产构建、上传 `.next`，最后由远端脚本切换 release。`.github/workflows/deploy-aws-on-tag.yml` 仅保留为 `workflow_dispatch` 人工回退入口，推送 Git tag 不会自动部署。
 
 ## 发布前
 
@@ -26,7 +26,6 @@
    supabase/credits-update.sql
    supabase/set-signup-credits-50.sql
    supabase/atomic-credit-rpc.sql
-   supabase/agent-workflows.sql
    supabase/task-queue-items.sql
    supabase/admin-console.sql
    supabase/migrations/20260818072132_bullmq_generation_outbox.sql
@@ -38,9 +37,11 @@
    supabase/migrations/20260819101500_admin_dashboard_period_aggregate.sql
    supabase/migrations/20260819112000_admin_billing_summary.sql
    supabase/migrations/20260821123000_generation_capacity_backpressure.sql
+   supabase/migrations/20260822100000_generation_service_entitlements.sql
+   supabase/migrations/20260822190000_generation_parent_state_consistency.sql
    ```
 
-   前四个时间戳迁移是 clean-slate 破坏性迁移：先备份，在停写维护窗口严格顺序执行，随后只允许向前修复。统一模型、Worker 控制面、后台经营指标聚合和生成容量退避迁移是非破坏性的，必须在发布前紧随其后执行。部署会精确校验 runtime contract 和所需 RPC，旧签名同名 RPC 不能通过。
+   完整基础顺序和强制依赖见 `docs/supabase-migration-order.md`。前四个时间戳迁移是 clean-slate 破坏性迁移：先备份，在停写维护窗口严格顺序执行，随后只允许向前修复。统一模型、Worker 控制面、后台经营指标聚合、生成容量退避和父任务状态迁移是非破坏性的，必须在发布前紧随其后执行。部署会精确校验 runtime contract 和所需 RPC，旧签名同名 RPC 不能通过。
 
 4. 检查生产环境变量。EC2 上的文件位于 `AWS_APP_DIR`（未配置时默认 `~/apps/wanxiangzy`）下：
 
@@ -72,7 +73,7 @@
    管理端 BullMQ / Outbox / OSS mirror / media validation 健康卡片
    ```
 
-## GitHub Secrets
+## GitHub Secrets（仅供人工回退工作流）
 
 GitHub 仓库的 `Settings -> Secrets and variables -> Actions` 至少需要：
 
@@ -84,7 +85,6 @@ AWS_SSH_KNOWN_HOSTS=EC2固定主机公钥记录
 AWS_PORT=22
 AWS_APP_DIR=/home/ec2-user/apps/wanxiangzy
 AWS_APP_NAME=wanxiangzy
-PRODUCT_RETOUCH_RUNTIME_SKILL_ENABLED=true
 ```
 
 生图 / 视觉识别 / 文本 / 视频供应商统一在后台 `/admin/providers` 配置并加密存储到 Supabase，不再通过环境变量兜底。EC2 的 `.env.production` 以本地 `.env.local` 为准，可用 `scripts/sync-production-env.sh` 快速覆盖并校验一致。
@@ -97,13 +97,22 @@ PRODUCT_RETOUCH_RUNTIME_SKILL_ENABLED=true
    git tag v1.0.0
    ```
 
-2. 推送 tag 触发部署：
+2. 推送 tag 仅保存版本，不会触发部署：
 
    ```bash
    git push origin v1.0.0
    ```
 
-3. 在 GitHub Actions 中查看 `Deploy AWS on tag`。流程应该依次通过：
+3. 确认本地 `.env.local` 和 EC2 `shared/.env.production` 一致后执行正式部署：
+
+   ```bash
+   SSH_HOST=<host> \
+   SSH_KEY=<path-to-pem> \
+   NODE_BIN=/home/ec2-user/.nvm/versions/node/v22.23.0/bin/node \
+   ./scripts/deploy-from-local.sh v1.0.0 1
+   ```
+
+4. 仅在本地部署不可用时，才在 GitHub Actions 手动运行 `Deploy AWS manually`。流程应该依次通过：
 
    ```text
    Run release checks
@@ -113,7 +122,7 @@ PRODUCT_RETOUCH_RUNTIME_SKILL_ENABLED=true
    Deploy on EC2
    ```
 
-4. 部署成功后，EC2 上的当前版本链接应指向本次 tag release：
+5. 部署成功后，EC2 上的当前版本链接应指向本次 tag release：
 
    ```bash
    readlink -f ~/apps/wanxiangzy/current
@@ -152,10 +161,13 @@ PRODUCT_RETOUCH_RUNTIME_SKILL_ENABLED=true
 
 自动回滚还必须通过 `runtime-contract.json` 精确兼容门禁。上一版只有在数据库契约版本和哈希与当前发布完全一致时才会被重新启动；clean-slate 迁移后的首次发布或任何跨契约发布失败时，脚本会拒绝启动旧代码并停止 Web/Worker，保持不可写的 fail-closed 维护状态，要求向前修复，或将数据库与应用一起从备份恢复。
 
-如果发布已经成功但后续需要人工回滚，优先重新部署上一个稳定 tag：
+如果发布已经成功但后续需要人工回滚，优先从本地重新部署上一个稳定 tag：
 
 ```bash
-git push origin v0.9.9
+SSH_HOST=<host> \
+SSH_KEY=<path-to-pem> \
+NODE_BIN=/home/ec2-user/.nvm/versions/node/v22.23.0/bin/node \
+./scripts/deploy-from-local.sh v0.9.9 1
 ```
 
 如果必须在 EC2 上快速切回上一版，先列出保留的 release，再手动切换 `current`：

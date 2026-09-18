@@ -11,9 +11,10 @@ import json
 import re
 import subprocess
 import sys
+from pathlib import Path
 
-ROOT = "/Users/jingmeng.gan/Documents/New project/wanxiangzy"
-LOCK = f"{ROOT}/package-lock.json"
+ROOT = str(Path(__file__).resolve().parents[1])
+LOCK = str(Path(ROOT) / "package-lock.json")
 NPM10_LOCK = "/tmp/npm10-lock.json"
 
 

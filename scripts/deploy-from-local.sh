@@ -25,13 +25,13 @@ validate_optional_integer "worker_instances" "$WORKER_INSTANCES" 1 32
 validate_optional_integer "worker_concurrency" "$WORKER_CONCURRENCY" 1 64
 validate_optional_integer "image_batch_concurrency" "$IMAGE_BATCH_CONCURRENCY" 1 24
 
-SSH_KEY="${SSH_KEY:-$HOME/Downloads/hk01.pem}"
-SSH_HOST="${SSH_HOST:-13.237.73.135}"
+SSH_KEY="${SSH_KEY:?Set SSH_KEY to the PEM key used for the production host}"
+SSH_HOST="${SSH_HOST:?Set SSH_HOST to the production host or IP address}"
 SSH_USER="${SSH_USER:-ec2-user}"
 WEB_INSTANCES="${WEB_INSTANCES:-1}"
-APP_DIR="apps/wanxiangzy"
-NODE_BIN="/home/ec2-user/.nvm/versions/node/v22.23.0/bin/node"
-REPO="https://github.com/ganjmeng/wanxiangzy.git"
+APP_DIR="${APP_DIR:-apps/wanxiangzy}"
+NODE_BIN="${NODE_BIN:?Set NODE_BIN to the Node.js 22 binary path on the production host}"
+REPO="${REPO:-https://github.com/ganjmeng/wanxiangzy.git}"
 RELEASE_NAME="manual-$TAG"
 LOCAL_TAR="/tmp/wanxiangzy-next-$TAG.tar.gz"
 REMOTE_TAR="/tmp/wanxiangzy-next-$TAG.tar.gz"

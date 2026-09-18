@@ -1,6 +1,8 @@
-.env.local
+.env
+.env.*
+!.env.example
+!.env.local.example
 .env.local.txt
-.env*.local
 env.local
 
 node_modules/
@@ -16,6 +18,8 @@ tsconfig.tsbuildinfo
 
 .DS_Store
 Thumbs.db
+.idea/
+.vscode/
 
 .tools/
 .codex-logs/
@@ -39,3 +43,11 @@ laozhang-*.jpg
 yunwu-image-test.png
 wanxiangzy/
 lib/supabase/admin.ts.bak
+
+*.pem
+*.key
+*.p12
+*.pfx
+
+coverage/
+.turbo/

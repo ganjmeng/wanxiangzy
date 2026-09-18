@@ -45,25 +45,24 @@ psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260822190000
 4. supabase/atomic-credit-rpc.sql
 5. supabase/rls-and-ratelimit-update.sql
 6. supabase/fix-rate-limit-rls.sql
-7. supabase/agent-workflows.sql
-8. supabase/task-queue-items.sql
-9. supabase/task-queue-performance-indexes.sql
-10. supabase/admin-console.sql
-11. supabase/stripe-billing.sql
-12. supabase/invite-codes.sql
-13. supabase/tryon-reference-config.sql
-14. supabase/tryon-reference-favorites.sql
-15. supabase/tryon-reference-templates.sql
-16. supabase/product-set-favorite-plans.sql
-17. supabase/product-retouch.sql
-18. 上述四个 clean-slate 时间戳迁移（严格按顺序）
-19. supabase/migrations/20260818103000_ai_control_plane_runtime.sql
-20. supabase/migrations/20260818110000_worker_runtime_control.sql
-21. supabase/migrations/20260819101500_admin_dashboard_period_aggregate.sql
-22. supabase/migrations/20260819112000_admin_billing_summary.sql
-23. supabase/migrations/20260821123000_generation_capacity_backpressure.sql
-24. supabase/migrations/20260822100000_generation_service_entitlements.sql
-25. supabase/migrations/20260822190000_generation_parent_state_consistency.sql
+7. supabase/task-queue-items.sql
+8. supabase/task-queue-performance-indexes.sql
+9. supabase/admin-console.sql
+10. supabase/stripe-billing.sql
+11. supabase/invite-codes.sql
+12. supabase/tryon-reference-config.sql
+13. supabase/tryon-reference-favorites.sql
+14. supabase/tryon-reference-templates.sql
+15. supabase/product-set-favorite-plans.sql
+16. supabase/product-retouch.sql
+17. 上述四个 clean-slate 时间戳迁移（严格按顺序）
+18. supabase/migrations/20260818103000_ai_control_plane_runtime.sql
+19. supabase/migrations/20260818110000_worker_runtime_control.sql
+20. supabase/migrations/20260819101500_admin_dashboard_period_aggregate.sql
+21. supabase/migrations/20260819112000_admin_billing_summary.sql
+22. supabase/migrations/20260821123000_generation_capacity_backpressure.sql
+23. supabase/migrations/20260822100000_generation_service_entitlements.sql
+24. supabase/migrations/20260822190000_generation_parent_state_consistency.sql
 ```
 
 关键依赖：
@@ -74,32 +73,13 @@ credits-update.sql 创建 credit_logs 并更新注册发放积分逻辑。
 set-signup-credits-50.sql 会覆盖 handle_new_user 的默认注册积分，必须在 credits-update.sql 后执行。
 atomic-credit-rpc.sql 依赖 profiles、generations、credit_logs。
 rls-and-ratelimit-update.sql 创建 rate_limit_buckets，fix-rate-limit-rls.sql 依赖它。
-task-queue-items.sql 依赖 generations 和 agent_workflows。
+task-queue-items.sql 依赖 generations，并创建独立的 task_queue_items read model。
 stripe-billing.sql 文件头已标明需要在 schema、credits-update、admin-console 后执行。
 admin-console.sql 的积分调整函数依赖 profiles 和 credit_logs。
 product-retouch.sql 依赖 generations、credit_logs、admin_config_versions 和 task_queue_items。
 ```
 
-注意：Agent 模块的 API 当前是 no-op，但 `task-queue-items.sql` 里的 workflow read model 会引用 `public.agent_workflows`。因此如果要启用任务轨道和后台队列视图，仍需先运行 `agent-workflows.sql` 建表。不要跳过第 7 步后直接运行第 8 步。
-
-## 可选 Agent 恢复脚本
-
-只有恢复智能 Agent 模块时再运行：
-
-```text
-supabase/agent-conversations.sql
-supabase/agent-brain-traces.sql
-```
-
-恢复时建议顺序：
-
-```text
-agent-workflows.sql
-agent-conversations.sql
-agent-brain-traces.sql
-task-queue-items.sql
-task-queue-performance-indexes.sql
-```
+注意：Agent 数据库对象已从当前主线退役。新环境不要再执行历史 Agent 建表脚本；已有环境按需运行 `supabase/drop-agent-tables.sql` 清理旧表与任务轨道耦合。
 
 ## 兼容脚本说明
 
@@ -129,7 +109,6 @@ psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/set-signup-credits-50.sql
 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/atomic-credit-rpc.sql
 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/rls-and-ratelimit-update.sql
 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/fix-rate-limit-rls.sql
-psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/agent-workflows.sql
 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/task-queue-items.sql
 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/task-queue-performance-indexes.sql
 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/admin-console.sql
@@ -150,7 +129,6 @@ SELECT
   to_regclass('public.generations') AS generations,
   to_regclass('public.credit_logs') AS credit_logs,
   to_regclass('public.task_queue_items') AS task_queue_items,
-  to_regclass('public.agent_workflows') AS agent_workflows,
   to_regclass('public.admin_members') AS admin_members,
   to_regclass('public.billing_products') AS billing_products,
   to_regclass('public.tryon_reference_scenes') AS tryon_reference_scenes,

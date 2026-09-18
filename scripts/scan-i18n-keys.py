@@ -7,8 +7,9 @@
 """
 import re
 import os
+from pathlib import Path
 
-ROOT = "/Users/jingmeng.gan/Documents/New project/wanxiangzy"
+ROOT = str(Path(__file__).resolve().parents[1])
 EXCLUDE = {"node_modules", ".next", "messages", "admin"}
 
 key_def_re = re.compile(r"(labelKey|badgeKey|descKey|descriptionKey|titleKey|hintKey|countLabelKey)\s*[:=]\s*[\"'`]([^\"'`]+)[\"'`]")
