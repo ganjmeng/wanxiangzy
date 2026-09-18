@@ -64,6 +64,29 @@ The repository is the complete application source: Next.js UI, API routes, Supab
 
 <sub><b>Outfit fusion</b> — combine garments, accessories, references, and model inputs into consistent campaign-ready looks.</sub>
 
+<table>
+  <tr>
+    <td width="33%" valign="top">
+      <a href="https://vasthk.oss-cn-hongkong.aliyuncs.com/site-assets/original/home-showcase/showcase-black-floral-dress.png">
+        <img src="https://vasthk.oss-cn-hongkong.aliyuncs.com/site-assets/original/home-showcase/showcase-black-floral-dress.png" alt="Editorial black floral dress result" width="100%" />
+      </a>
+      <sub><b>Editorial polish</b> — studio-ready garment presentation with consistent lighting and detail.</sub>
+    </td>
+    <td width="33%" valign="top">
+      <a href="https://vasthk.oss-cn-hongkong.aliyuncs.com/site-assets/original/home-showcase/showcase-white-dress-sea.png">
+        <img src="https://vasthk.oss-cn-hongkong.aliyuncs.com/site-assets/original/home-showcase/showcase-white-dress-sea.png" alt="White dress by the sea result" width="100%" />
+      </a>
+      <sub><b>Scene generation</b> — place the same garment into a natural campaign environment without losing material detail.</sub>
+    </td>
+    <td width="33%" valign="top">
+      <a href="https://vasthk.oss-cn-hongkong.aliyuncs.com/site-assets/original/home-showcase/showcase-navy-shirt-pose-grid.jpg">
+        <img src="https://vasthk.oss-cn-hongkong.aliyuncs.com/site-assets/original/home-showcase/showcase-navy-shirt-pose-grid.jpg" alt="Navy shirt multi-angle pose grid" width="100%" />
+      </a>
+      <sub><b>Multi-angle output</b> — produce a reusable set of poses and crops from one product direction.</sub>
+    </td>
+  </tr>
+</table>
+
 ## Architecture
 
 ```mermaid
@@ -244,16 +267,13 @@ Do not report vulnerabilities in a public issue. Follow [SECURITY.md](SECURITY.m
 
 The application intentionally treats the server as a trusted boundary: browser requests are authenticated, privileged Supabase access is server-only, remote fetches are allowlisted, uploads are signed and bounded, and provider credentials are encrypted before storage.
 
-## Contributing
+## PRs Are Welcome
 
-Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) and follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+We actively welcome pull requests from the community. Good contributions include bug fixes, focused tests, documentation improvements, accessibility work, provider adapters, and clearly scoped feature changes.
 
-Useful first steps:
+Before opening a PR, read [CONTRIBUTING.md](CONTRIBUTING.md) and follow the [Code of Conduct](CODE_OF_CONDUCT.md). Then run `npm run check:release` and include the observed result in the PR description.
 
-- Reproduce a bug with a focused test.
-- Keep pull requests narrow and explain operational impact.
-- Run `npm run check:release` before requesting review.
-- Never include credentials, production data, or downloaded customer media.
+[Open a pull request](https://github.com/ganjmeng/wanxiangzy/compare) · [Browse issues](https://github.com/ganjmeng/wanxiangzy/issues) · [Read the contribution guide](CONTRIBUTING.md)
 
 ## License
 
