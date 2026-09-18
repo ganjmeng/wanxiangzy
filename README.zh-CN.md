@@ -64,6 +64,29 @@ Pixel Diffusion 是一个面向服装品牌、电商团队和内容创作者的 
 
 <sub><b>搭配融图</b> — 将服装、配饰、参考图和模特素材组合成风格一致的商业大片。</sub>
 
+<table>
+  <tr>
+    <td width="33%" valign="top">
+      <a href="https://vasthk.oss-cn-hongkong.aliyuncs.com/site-assets/original/home-showcase/showcase-black-floral-dress.png">
+        <img src="https://vasthk.oss-cn-hongkong.aliyuncs.com/site-assets/original/home-showcase/showcase-black-floral-dress.png" alt="黑色花卉连衣裙棚拍结果" width="100%" />
+      </a>
+      <sub><b>商业棚拍</b> — 统一光线和服装细节，生成可直接用于商品展示的棚拍成片。</sub>
+    </td>
+    <td width="33%" valign="top">
+      <a href="https://vasthk.oss-cn-hongkong.aliyuncs.com/site-assets/original/home-showcase/showcase-white-dress-sea.png">
+        <img src="https://vasthk.oss-cn-hongkong.aliyuncs.com/site-assets/original/home-showcase/showcase-white-dress-sea.png" alt="海边白色连衣裙场景结果" width="100%" />
+      </a>
+      <sub><b>场景生成</b> — 将服装自然放入海边场景，同时保持材质、褶皱和品牌视觉一致。</sub>
+    </td>
+    <td width="33%" valign="top">
+      <a href="https://vasthk.oss-cn-hongkong.aliyuncs.com/site-assets/original/home-showcase/showcase-navy-shirt-pose-grid.jpg">
+        <img src="https://vasthk.oss-cn-hongkong.aliyuncs.com/site-assets/original/home-showcase/showcase-navy-shirt-pose-grid.jpg" alt="藏青衬衫多角度姿势宫格" width="100%" />
+      </a>
+      <sub><b>多角度输出</b> — 从同一商品方向生成可复用的姿势、角度和裁切成片。</sub>
+    </td>
+  </tr>
+</table>
+
 ## 架构
 
 ```mermaid
@@ -244,16 +267,13 @@ docs/                 架构与运维文档
 
 服务端是明确的信任边界：浏览器请求需要认证，Supabase 高权限访问仅在服务端，远程抓取使用 allowlist，上传链接有签名和边界限制，供应商密钥加密后存储。
 
-## 贡献
+## 欢迎提交 PR
 
-欢迎提交贡献。请阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 并遵守 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)。
+我们欢迎社区提交 Pull Request，包括问题修复、聚焦测试、文档改进、可访问性优化、供应商适配和边界清晰的功能变更。
 
-建议：
+提交前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 并遵守 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)，运行 `npm run check:release`，并在 PR 描述中写清楚验证结果和生产影响。
 
-- 先用聚焦测试复现问题。
-- Pull Request 保持范围清晰，并说明生产影响。
-- 请求 Review 前运行 `npm run check:release`。
-- 不要提交密钥、生产数据或下载的用户媒体。
+[提交 PR](https://github.com/ganjmeng/wanxiangzy/compare) · [浏览 Issues](https://github.com/ganjmeng/wanxiangzy/issues) · [阅读贡献指南](CONTRIBUTING.md)
 
 ## 许可证
 
