@@ -25,6 +25,7 @@
     "start": "next start",
     "lint": "eslint .",
     "check:release": "node scripts/release-check.js",
+    "check:docs": "node scripts/check-docs.mjs",
     "audit:production": "npm audit --omit=dev --audit-level=high",
     "typecheck": "tsc --noEmit --pretty false --incremental false",
     "check:ssr-size": "node scripts/check-next-ssr-size.js",

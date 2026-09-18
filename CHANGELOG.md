@@ -11,6 +11,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Open-source README and Chinese README.
 - Architecture, configuration, contribution, security, and code-of-conduct documentation.
 - `npm run admin:create` command for creating or granting the first admin through the Supabase Admin API.
+- `npm run check:docs` documentation link, fence, index, and command validation gate.
+- A complete documentation index and historical-status labels for dated production audits.
 - GitHub issue forms, pull request template, CODEOWNERS, Dependabot, EditorConfig, and Git attributes.
 - Apache-2.0 license and third-party asset notice.
 

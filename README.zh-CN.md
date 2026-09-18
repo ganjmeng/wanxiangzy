@@ -185,6 +185,7 @@ npm run worker:dev
 | `npm run worker:dev` | 启动后台 Worker 监听模式 |
 | `npm run test` | 运行 Vitest 测试 |
 | `npm run lint` | 运行 ESLint |
+| `npm run check:docs` | 检查文档链接、代码块、索引覆盖和 npm 命令 |
 | `npm run typecheck` | 运行 TypeScript 类型检查 |
 | `npm run build` | 创建生产构建 |
 | `npm run admin:create -- --email owner@example.com` | 自动创建或授权管理员，无需手动注册 |
@@ -225,6 +226,7 @@ docs/                 架构与运维文档
 
 ## 文档索引
 
+- [完整文档索引](docs/README.md)
 - [环境变量配置](docs/CONFIGURATION.md)
 - [系统架构](docs/ARCHITECTURE.md)
 - [Supabase 迁移顺序](docs/supabase-migration-order.md)

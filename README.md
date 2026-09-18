@@ -185,6 +185,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `npm run worker:dev` | Start the background worker supervisor in watch mode |
 | `npm run test` | Run the Vitest suite |
 | `npm run lint` | Run ESLint |
+| `npm run check:docs` | Validate documentation links, code fences, index coverage, and npm commands |
 | `npm run typecheck` | Run TypeScript without emitting files |
 | `npm run build` | Create a production build |
 | `npm run admin:create -- --email owner@example.com` | Create or grant an admin account without manual signup |
@@ -225,6 +226,7 @@ docs/                 Architecture and operations documentation
 
 ## Documentation
 
+- [Documentation index](docs/README.md)
 - [Configuration reference](docs/CONFIGURATION.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Supabase migration order](docs/supabase-migration-order.md)

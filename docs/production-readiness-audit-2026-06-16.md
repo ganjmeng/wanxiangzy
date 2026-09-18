@@ -1,5 +1,7 @@
 # Production Readiness Audit - 2026-06-16
 
+> **Historical snapshot:** This audit records the repository state on 2026-06-16. It contains dated findings and proposed paths that may no longer exist. Use [docs/README.md](README.md) and the current architecture, configuration, and release documents for production decisions.
+
 ## A. 当前项目总体评分
 
 | 维度 | 评分 |

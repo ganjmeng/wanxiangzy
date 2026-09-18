@@ -25,6 +25,12 @@ function npmCheck(name, script, reason, fixHint, env = {}) {
 
 const checks = [
   npmCheck(
+    "docs",
+    "check:docs",
+    "Documentation links, code fences, index coverage, or documented npm commands are invalid.",
+    "Run `npm run check:docs` locally, fix the reported documentation issue, then rerun `npm run check:release`."
+  ),
+  npmCheck(
     "test",
     "test",
     "Unit/regression tests failed.",
@@ -67,12 +73,13 @@ function printHelp() {
   console.log(`Usage: node scripts/release-check.js [--help]
 
 Runs release gates in order:
-  1. npm run test
-  2. npm run check:prompts
-  3. npm run lint
-  4. npm run typecheck
-  5. npm run build
-  6. SSR_SIZE_FAIL_ON_RISK=1 npm run check:ssr-size
+  1. npm run check:docs
+  2. npm run test
+  3. npm run check:prompts
+  4. npm run lint
+  5. npm run typecheck
+  6. npm run build
+  7. SSR_SIZE_FAIL_ON_RISK=1 npm run check:ssr-size
 
 The first failing step stops the release check and returns its exit code.
 

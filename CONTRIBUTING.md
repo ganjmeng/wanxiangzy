@@ -85,6 +85,13 @@ For UI changes, include screenshots or a short recording and verify keyboard nav
 - Keep credit, generation, outbox, and settlement operations idempotent.
 - Include post-migration verification SQL for new functions or tables.
 
+## Documentation Changes
+
+- Add new documents to [docs/README.md](docs/README.md).
+- Keep README commands aligned with `package.json`.
+- Mark dated audits and remediation records as historical snapshots.
+- Run `npm run check:docs` before opening a documentation pull request.
+
 ## Security and Privacy
 
 - Treat all provider keys, Supabase service-role keys, OSS credentials, Stripe secrets, and processor secrets as production credentials.
